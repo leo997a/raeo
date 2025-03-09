@@ -76,13 +76,10 @@ def get_match_files_from_github():
     return list(match_info.keys())
 
 def display_match_options(match_files):
-    print("اختر المباراة التي تريد تحليلها:")
-    for i, match in enumerate(match_files, 1):
-        match_name = match.split('/')[-1].replace('.html', '').replace('%20', ' ')
-        print(f"{i}. {match_name}")
-    choice = int(input("أدخل رقم المباراة (مثل 1 أو 2): "))
-    if 1 <= choice <= len(match_files):
-        match_path = match_files[choice - 1]
+    st.write("اختر المباراة التي تريد تحليلها:")
+options = [match.split('/')[-1].replace('.html', '').replace('%20', ' ') for match in match_files]
+choice = st.selectbox("المباراة", options)  # استخدام selectbox بدلاً من input
+match_path = match_files[options.index(choice)]
         return github_base_url + match_path, match_info[match_path]
     else:
         raise ValueError("الرقم غير صحيح، حاول مرة أخرى.")
