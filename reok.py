@@ -213,6 +213,12 @@ def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=60, min_
     events_out = pd.concat([events_out, match_events_and_carries])
     return events_out
 
+# تعريف دالة get_passes_df (افتراضية بسيطة)
+def get_passes_df(events_df):
+    # تصفية الأحداث للحصول على التمريرات الناجحة فقط
+    passes_df = events_df[(events_df['type'] == 'Pass') & (events_df['outcomeType'] == 'Successful')]
+    return passes_df
+
 # الجزء الرئيسي
 st.title("تحليل شبكة التمريرات")
 
@@ -231,7 +237,7 @@ if st.button("تحليل المباراة"):
             df = pd.DataFrame(events_dict)
             dfp = pd.DataFrame(players_df)
 
-            # معالجة البيانات داخل try
+            # معالجة البيانات
             df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
             df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
             df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
@@ -243,46 +249,37 @@ if st.button("تحليل المباراة"):
             df = cumulative_match_mins(df)
             df = insert_ball_carries(df)
 
+            # إضافة معالجة التمريرات والشبكة
+            passes_df = get_passes_df(df)
+            player_node_df = passes_df.groupby(['playerId', 'name']).agg({'x': 'mean', 'y': 'mean'}).reset_index()
+            player_node_df['node_size'] = passes_df['playerId'].value_counts().reindex(player_node_df.playerId, fill_value=0).reset_index(drop=True) * 10
+            player_pass_count = passes_df.groupby(['playerId']).size().reset_index(name='pass_count')
+            player_node_df = player_node_df.merge(player_pass_count, on='playerId', how='left')
+            player_pass_count = passes_df.groupby(['playerId']).size().reset_index(name='pass_count')
+            passes_df['passer'] = passes_df['playerId']
+            passes_df['recipient'] = passes_df['playerId'].shift(-1)
+            passes_df = passes_df.dropna(subset=['recipient'])
+            passes_df['pair'] = passes_df['passer'].astype(str) + '-' + passes_df['recipient'].astype(str)
+            pass_count = passes_df.groupby(['pair']).size().reset_index(name='pass_count')
+            pass_count['passer'] = pass_count['pair'].str.split('-').str[0].astype(int)
+            pass_count['recipient'] = pass_count['pair'].str.split('-').str[1].astype(int)
+            pass_count = pass_count.drop('pair', axis=1)
+
             # عرض النتائج
             st.write("تم تحليل البيانات بنجاح!")
             st.write("بيانات الأحداث:")
             st.dataframe(df.head())
             st.write("بيانات اللاعبين:")
             st.dataframe(dfp.head())
+            st.write("بيانات التمريرات:")
+            st.dataframe(passes_df.head())
+            st.write("بيانات العقد (Nodes):")
+            st.dataframe(player_node_df.head())
+            st.write("عدد التمريرات بين اللاعبين:")
+            st.dataframe(pass_count.head())
 
         except Exception as e:
             st.error(f"حدث خطأ أثناء التحليل: {str(e)}")
-import json
-import re
-import pandas as pd
-import requests
-import numpy as np
-from unidecode import unidecode
-import matplotlib.pyplot as plt
-import matplotlib.patheffects as path_effects
-from mplsoccer import Pitch, VerticalPitch
-from matplotlib.colors import to_rgba
-
-# تعريف الألوان (يمكنك تغييرها حسب رغبتك)
-bg_color = "#0D1117"  # لون الخلفية (رمادي غامق)
-line_color = "#FFFFFF"  # لون الخطوط (أبيض)
-hcol = "#FF0000"  # لون الفريق المضيف (أحمر)
-acol = "#0000FF"  # لون الفريق الضيف (أزرق)
-
-# باقي الكود السابق (لتحليل البيانات وحفظها) ...
-# لن أكرره هنا للاختصار، لكن يجب إدراجه هنا إذا كنت تريد تشغيله كجزء واحد
-# افترض أن df و players_df و teams_dict معرفة من الكود السابق
-
-# دالة لاستخراج بيانات التمريرات
-def get_passes_df(df):
-    df1 = df[~df['type'].str.contains('SubstitutionOn|FormationChange|FormationSet|Card')]
-    df = df1
-    df.loc[:, "receiver"] = df["playerId"].shift(-1)
-    passes_ids = df.index[df['type'] == 'Pass']
-    df_passes = df.loc[passes_ids, ["index", "x", "y", "endX", "endY", "teamName", "playerId", "receiver", "type", "outcomeType", "pass_or_carry_angle"]]
-    return df_passes
-
-# استخراج بيانات التمريرات من df (يفترض أن df معرف مسبقًا)
 passes_df = get_passes_df(df)
 
 # تعريف path_effects للنصوص
