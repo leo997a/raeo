@@ -87,7 +87,7 @@ def extract_json_from_html(html_url, save_output=False):
         if save_output:
             st.write("تم تخزين البيانات مؤقتًا في الذاكرة بدلاً من حفظها على القرص.")
         
-        return json.loads(data_txt)
+        return json.loads(data_txt)  # تعيد dict مباشرة
     except requests.exceptions.RequestException as e:
         st.error(f"فشل في جلب البيانات من {html_url}: {str(e)}")
         return None
@@ -213,9 +213,7 @@ def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=60, min_
     events_out = pd.concat([events_out, match_events_and_carries])
     return events_out
 
-# تعريف دالة get_passes_df (افتراضية بسيطة)
 def get_passes_df(events_df):
-    # تصفية الأحداث للحصول على التمريرات الناجحة فقط
     passes_df = events_df[(events_df['type'] == 'Pass') & (events_df['outcomeType'] == 'Successful')]
     return passes_df
 
@@ -228,10 +226,9 @@ match_html_path, fotmob_matchId = display_match_options(match_files)
 if st.button("تحليل المباراة"):
     with st.spinner("جارٍ تحليل البيانات..."):
         try:
-            json_data_txt = extract_json_from_html(match_html_path, save_output=True)
-            if json_data_txt is None:
+            data = extract_json_from_html(match_html_path, save_output=True)  # لا حاجة لـ json.loads هنا
+            if data is None:
                 st.stop()
-            data = json.loads(json_data_txt)
             events_dict, players_df, teams_dict = extract_data_from_dict(data)
 
             df = pd.DataFrame(events_dict)
@@ -249,7 +246,7 @@ if st.button("تحليل المباراة"):
             df = cumulative_match_mins(df)
             df = insert_ball_carries(df)
 
-            # إضافة معالجة التمريرات والشبكة
+            # معالجة التمريرات والشبكة
             passes_df = get_passes_df(df)
             player_node_df = passes_df.groupby(['playerId', 'name']).agg({'x': 'mean', 'y': 'mean'}).reset_index()
             player_node_df['node_size'] = passes_df['playerId'].value_counts().reindex(player_node_df.playerId, fill_value=0).reset_index(drop=True) * 10
@@ -280,8 +277,6 @@ if st.button("تحليل المباراة"):
 
         except Exception as e:
             st.error(f"حدث خطأ أثناء التحليل: {str(e)}")
-passes_df = get_passes_df(df)
-
 # تعريف path_effects للنصوص
 path_eff = [path_effects.Stroke(linewidth=3, foreground=bg_color), path_effects.Normal()]
 
