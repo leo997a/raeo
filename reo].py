@@ -1,19 +1,4 @@
-# %% [markdown]
-# # Installs
-
-# %%
-pip install mplsoccer
-
-# %%
-pip install highlight_text
-
-# %%
-pip install unidecode
-
-# %% [markdown]
-# # Import Packages
-
-# %%
+# Import Packages
 import json
 import re
 import pandas as pd
