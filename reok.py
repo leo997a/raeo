@@ -39,28 +39,15 @@ from scipy.spatial import ConvexHull
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 
-# specify some custom colors to use
+# Specify some custom colors to use
 green = '#69f900'
 red = '#ff4b44'
 blue = '#00a0de'
 violet = '#a369ff'
-bg_color= '#f5f5f5'
-line_color= '#000000'
-# bg_color= '#000000'
-# line_color= '#ffffff'
+bg_color = '#f5f5f5'
+line_color = '#000000'
 col1 = '#ff4b44'
 col2 = '#000222'
-
-# %% [markdown]
-# # Extract Event data
-
-# %%
-import json
-import re
-import pandas as pd
-import requests
-import numpy as np
-from unidecode import unidecode
 
 # معلومات المستودع الخاص بك
 github_repo = "leo997a/Football_Matches_Analysis"
@@ -70,7 +57,6 @@ github_base_url = f"https://raw.githubusercontent.com/{github_repo}/{github_bran
 # قائمة المباريات ومعرفات Fotmob
 match_info = {
     "La_Liga/Barcelona_vs_Atletico Madrid.html": 4506932,
-    # أضف المزيد عند رفع ملفات جديدة
 }
 
 def get_match_files_from_github():
@@ -82,45 +68,36 @@ def display_match_options(match_files):
     choice = st.selectbox("المباراة", options)
     match_path = match_files[options.index(choice)]
     return github_base_url + match_path, match_info[match_path]
-    
- def display_match_options(match_files):
-     st.write("اختر المباراة التي تريد تحليلها:")
-     options = [match.split('/')[-1].replace('.html', '').replace('%20', ' ') for match in match_files]
-     choice = st.selectbox("المباراة", options)
-     match_path = match_files[options.index(choice)]
-     return github_base_url + match_path, match_info[match_path]
- 
- def extract_json_from_html(html_url, save_output=False):
-     try:
-         response = requests.get(html_url, timeout=10)
-         response.raise_for_status()
-         html = response.text
-         regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
-         matches = re.findall(regex_pattern, html)
-         if not matches:
-             raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}!")
-         data_txt = matches[0].strip()
-         if data_txt.endswith(';'):
-             data_txt = data_txt[:-1]
-         data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
-         
-         if save_output:
-             with open("match_data.txt", "wt", encoding='utf-8') as output_file:
-                 output_file.write(data_txt)
- 
-         return json.loads(data_txt)
-     except requests.exceptions.RequestException as e:
-         st.error(f"فشل في جلب البيانات من {html_url}: {str(e)}")
-         return None
-     except json.JSONDecodeError as e:
-         st.error(f"فشل في تحليل النص كـ JSON: {e}")
-         return None
-     except Exception as e:
-         st.error(f"حدث خطأ غير متوقع: {e}")
-         return None
- 
- def extract_data_from_dict(data):
-     event_types_json = data["matchCentreEventTypeJson"]
+
+def extract_json_from_html(html_url, save_output=False):
+    try:
+        response = requests.get(html_url, timeout=10)
+        response.raise_for_status()
+        html = response.text
+        regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
+        matches = re.findall(regex_pattern, html)
+        if not matches:
+            raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}!")
+        data_txt = matches[0].strip()
+        if data_txt.endswith(';'):
+            data_txt = data_txt[:-1]
+        data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
+        
+        if save_output:
+            # على Streamlit Cloud، لا يمكن حفظ الملفات محليًا، لذا نستخدم ذاكرة مؤقتة أو نتجاهل الحفظ
+            st.write("تم تخزين البيانات مؤقتًا في الذاكرة بدلاً من حفظها على القرص.")
+        
+        return json.loads(data_txt)
+    except requests.exceptions.RequestException as e:
+        st.error(f"فشل في جلب البيانات من {html_url}: {str(e)}")
+        return None
+    except json.JSONDecodeError as e:
+        st.error(f"فشل في تحليل النص كـ JSON: {e}")
+        return None
+    except Exception as e:
+        st.error(f"حدث خطأ غير متوقع: {e}")
+        return None
+
 def extract_data_from_dict(data):
     event_types_json = data["matchCentreEventTypeJson"]
     formation_mappings = data["formationIdNameMappings"]
@@ -135,7 +112,110 @@ def extract_data_from_dict(data):
     players_df = pd.concat([players_home_df, players_away_df])
     return events_dict, players_df, teams_dict
 
-# تنفيذ التحليل الكامل داخل try-except
+# دالة لحساب الدقائق التراكمية
+def cumulative_match_mins(events_df):
+    events_out = pd.DataFrame()
+    match_events = events_df.copy()
+    match_events['cumulative_mins'] = match_events['minute'] + (1/60) * match_events['second']
+    for period in np.arange(1, match_events['period'].max() + 1, 1):
+        if period > 1:
+            t_delta = match_events[match_events['period'] == period - 1]['cumulative_mins'].max() - \
+                      match_events[match_events['period'] == period]['cumulative_mins'].min()
+        elif period == 1 or period == 5:
+            t_delta = 0
+        else:
+            t_delta = 0
+        match_events.loc[match_events['period'] == period, 'cumulative_mins'] += t_delta
+    events_out = pd.concat([events_out, match_events])
+    return events_out
+
+# دالة لإدراج حركات الكرة (Carries)
+def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=60, min_carry_duration=1, max_carry_duration=10):
+    events_out = pd.DataFrame()
+    min_carry_length = 3.0
+    max_carry_length = 60.0
+    min_carry_duration = 1.0
+    max_carry_duration = 10.0
+    match_events = events_df.reset_index()
+    match_carries = pd.DataFrame()
+
+    for idx, match_event in match_events.iterrows():
+        if idx < len(match_events) - 1:
+            prev_evt_team = match_event['teamId']
+            next_evt_idx = idx + 1
+            init_next_evt = match_events.loc[next_evt_idx]
+            take_ons = 0
+            incorrect_next_evt = True
+
+            while incorrect_next_evt and next_evt_idx < len(match_events):
+                next_evt = match_events.loc[next_evt_idx]
+                if next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Successful':
+                    take_ons += 1
+                    incorrect_next_evt = True
+                elif ((next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Unsuccessful')
+                      or (next_evt['teamId'] != prev_evt_team and next_evt['type'] == 'Challenge' and next_evt['outcomeType'] == 'Unsuccessful')
+                      or (next_evt['type'] == 'Foul')):
+                    incorrect_next_evt = True
+                else:
+                    incorrect_next_evt = False
+                next_evt_idx += 1
+
+            same_team = prev_evt_team == next_evt['teamId']
+            not_ball_touch = match_event['type'] != 'BallTouch'
+            dx = 105 * (match_event['endX'] - next_evt['x']) / 100
+            dy = 68 * (match_event['endY'] - next_evt['y']) / 100
+            far_enough = dx ** 2 + dy ** 2 >= min_carry_length ** 2
+            not_too_far = dx ** 2 + dy ** 2 <= max_carry_length ** 2
+            dt = 60 * (next_evt['cumulative_mins'] - match_event['cumulative_mins'])
+            min_time = dt >= min_carry_duration
+            same_phase = dt < max_carry_duration
+            same_period = match_event['period'] == next_evt['period']
+
+            valid_carry = same_team & not_ball_touch & far_enough & not_too_far & min_time & same_phase & same_period
+
+            if valid_carry:
+                carry = pd.DataFrame()
+                prev = match_event
+                nex = next_evt
+                carry.loc[0, 'eventId'] = prev['eventId'] + 0.5
+                carry['minute'] = np.floor(((init_next_evt['minute'] * 60 + init_next_evt['second']) + 
+                                            (prev['minute'] * 60 + prev['second'])) / (2 * 60))
+                carry['second'] = (((init_next_evt['minute'] * 60 + init_next_evt['second']) + 
+                                    (prev['minute'] * 60 + prev['second'])) / 2) - (carry['minute'] * 60)
+                carry['teamId'] = nex['teamId']
+                carry['x'] = prev['endX']
+                carry['y'] = prev['endY']
+                carry['expandedMinute'] = np.floor(((init_next_evt['expandedMinute'] * 60 + init_next_evt['second']) + 
+                                                    (prev['expandedMinute'] * 60 + prev['second'])) / (2 * 60))
+                carry['period'] = nex['period']
+                carry['type'] = 'Carry'
+                carry['outcomeType'] = 'Successful'
+                carry['qualifiers'] = str({'type': {'value': 999, 'displayName': 'takeOns'}, 'value': str(take_ons)})
+                carry['satisfiedEventsTypes'] = str([])
+                carry['isTouch'] = True
+                carry['playerId'] = nex['playerId']
+                carry['endX'] = nex['x']
+                carry['endY'] = nex['y']
+                carry['blockedX'] = np.nan
+                carry['blockedY'] = np.nan
+                carry['goalMouthZ'] = np.nan
+                carry['goalMouthY'] = np.nan
+                carry['isShot'] = np.nan
+                carry['relatedEventId'] = nex['eventId']
+                carry['relatedPlayerId'] = np.nan
+                carry['isGoal'] = np.nan
+                carry['cardType'] = np.nan
+                carry['isOwnGoal'] = np.nan
+                carry['cumulative_mins'] = (prev['cumulative_mins'] + init_next_evt['cumulative_mins']) / 2
+
+                match_carries = pd.concat([match_carries, carry], ignore_index=True, sort=False)
+
+    match_events_and_carries = pd.concat([match_carries, match_events], ignore_index=True, sort=False)
+    match_events_and_carries = match_events_and_carries.sort_values(['period', 'cumulative_mins']).reset_index(drop=True)
+    events_out = pd.concat([events_out, match_events_and_carries])
+    return events_out
+
+# الجزء الرئيسي
 st.title("تحليل شبكة التمريرات")
 
 match_files = get_match_files_from_github()
@@ -144,24 +224,36 @@ match_html_path, fotmob_matchId = display_match_options(match_files)
 if st.button("تحليل المباراة"):
     with st.spinner("جارٍ تحليل البيانات..."):
         try:
-            print(f"جارٍ تحليل المباراة: {match_html_path}")
             json_data_txt = extract_json_from_html(match_html_path, save_output=True)
+            if json_data_txt is None:
+                st.stop()
             data = json.loads(json_data_txt)
             events_dict, players_df, teams_dict = extract_data_from_dict(data)
 
             df = pd.DataFrame(events_dict)
             dfp = pd.DataFrame(players_df)
-            # باقي كود التحليل الأصلي الخاص بك (من "حفظ البيانات الأولية" إلى نهاية الكود)
-            output_path = "C:/Users/Reo k/Documents/"
-            df.to_csv(f"{output_path}EventData.csv")
-            df = pd.read_csv(f"{output_path}EventData.csv")
-            dfp.to_csv(f"{output_path}PlayerData.csv")
-            dfp = pd.read_csv(f"{output_path}PlayerData.csv")
 
+            # معالجة البيانات بدون حفظ ملفات محلية (لأن Streamlit Cloud لا يدعم ذلك)
             df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
             df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
             df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
 
+            df['period'] = df['period'].replace({'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3, 
+                                                'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 
+                                                'PreMatch': 16})
+
+            df = cumulative_match_mins(df)
+            df = insert_ball_carries(df)
+
+            # عرض النتائج للتحقق
+            st.write("تم تحليل البيانات بنجاح!")
+            st.write("بيانات الأحداث:")
+            st.dataframe(df.head())
+            st.write("بيانات اللاعبين:")
+            st.dataframe(dfp.head())
+
+        except Exception as e:
+            st.error(f"حدث خطأ أثناء التحليل: {str(e)}")
     # تحويل الفترات إلى أرقام
     df['period'] = df['period'].replace({'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3, 
                                          'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 
