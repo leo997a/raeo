@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib.colors import to_rgba
 import seaborn as sns
 import requests
+import streamlit as st
 from bs4 import BeautifulSoup
 from pprint import pprint
 import matplotlib.image as mpimg
@@ -85,18 +86,23 @@ match_path = match_files[options.index(choice)]
         raise ValueError("الرقم غير صحيح، حاول مرة أخرى.")
 
 def extract_json_from_html(html_url, save_output=False):
-    try:
-        response = requests.get(html_url)
-        response.raise_for_status()
-        html = response.text
-
-        if not html.strip():
-            raise ValueError(f"الملف في {html_url} فارغ!")
-
-        regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
-        matches = re.findall(regex_pattern, html)
-        if not matches:
-            raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}! تأكد من تنسيق الملف.")
+    def extract_json_from_html(html_url):
+     try:
+         response = requests.get(html_url, timeout=10)
+         response.raise_for_status()
+         html = response.text
+         regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
+         matches = re.findall(regex_pattern, html)
+         if not matches:
+             raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}!")
+         data_txt = matches[0].strip()
+         if data_txt.endswith(';'):
+             data_txt = data_txt[:-1]
+         data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
+         return json.loads(data_txt)
+     except requests.exceptions.RequestException as e:
+         st.error(f"فشل في جلب البيانات من {html_url}: {str(e)}")
+         return None
 
         data_txt = matches[0]
         data_txt = data_txt.strip()
