@@ -85,22 +85,22 @@ def display_match_options(match_files):
     
 def extract_json_from_html(html_url, save_output=False):
     def extract_json_from_html(html_url):
-     try:
-         response = requests.get(html_url, timeout=10)
-         response.raise_for_status()
-         html = response.text
-         regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
-         matches = re.findall(regex_pattern, html)
-         if not matches:
-             raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}!")
-         data_txt = matches[0].strip()
-         if data_txt.endswith(';'):
-             data_txt = data_txt[:-1]
-         data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
-         return json.loads(data_txt)
-     except requests.exceptions.RequestException as e:
-         st.error(f"فشل في جلب البيانات من {html_url}: {str(e)}")
-         return None
+    try:
+        response = requests.get(html_url, timeout=10)
+        response.raise_for_status()
+        html = response.text
+        regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
+        matches = re.findall(regex_pattern, html)
+        if not matches:
+            raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}!")
+        data_txt = matches[0].strip()
+        if data_txt.endswith(';'):
+            data_txt = data_txt[:-1]
+        data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
+        return json.loads(data_txt)
+    except requests.exceptions.RequestException as e:
+        st.error(f"فشل في جلب البيانات من {html_url}: {str(e)}")
+        return None
 
         data_txt = matches[0]
         data_txt = data_txt.strip()
@@ -138,29 +138,31 @@ def extract_data_from_dict(data):
     return events_dict, players_df, teams_dict
 
 # تنفيذ التحليل الكامل داخل try-except
-try:
-    match_files = get_match_files_from_github()
-    match_html_path, fotmob_matchId = display_match_options(match_files)
+st.title("تحليل شبكة التمريرات")
 
-    print(f"جارٍ تحليل المباراة: {match_html_path}")
-    json_data_txt = extract_json_from_html(match_html_path, save_output=True)
-    data = json.loads(json_data_txt)
-    events_dict, players_df, teams_dict = extract_data_from_dict(data)
+match_files = get_match_files_from_github()
+match_html_path, fotmob_matchId = display_match_options(match_files)
 
-    df = pd.DataFrame(events_dict)
-    dfp = pd.DataFrame(players_df)
+if st.button("تحليل المباراة"):
+    with st.spinner("جارٍ تحليل البيانات..."):
+        try:
+            print(f"جارٍ تحليل المباراة: {match_html_path}")
+            json_data_txt = extract_json_from_html(match_html_path, save_output=True)
+            data = json.loads(json_data_txt)
+            events_dict, players_df, teams_dict = extract_data_from_dict(data)
 
-    # حفظ البيانات الأولية
-    output_path = "C:/Users/Reo k/Documents/"
-    df.to_csv(f"{output_path}EventData.csv")
-    df = pd.read_csv(f"{output_path}EventData.csv")
-    dfp.to_csv(f"{output_path}PlayerData.csv")
-    dfp = pd.read_csv(f"{output_path}PlayerData.csv")
+            df = pd.DataFrame(events_dict)
+            dfp = pd.DataFrame(players_df)
+            # باقي كود التحليل الأصلي الخاص بك (من "حفظ البيانات الأولية" إلى نهاية الكود)
+            output_path = "C:/Users/Reo k/Documents/"
+            df.to_csv(f"{output_path}EventData.csv")
+            df = pd.read_csv(f"{output_path}EventData.csv")
+            dfp.to_csv(f"{output_path}PlayerData.csv")
+            dfp = pd.read_csv(f"{output_path}PlayerData.csv")
 
-    # استخراج القيم
-    df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
-    df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
-    df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
+            df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
+            df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
+            df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
 
     # تحويل الفترات إلى أرقام
     df['period'] = df['period'].replace({'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3, 
