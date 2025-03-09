@@ -84,7 +84,6 @@ def extract_json_from_html(html_url, save_output=False):
         data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
         
         if save_output:
-            # على Streamlit Cloud، لا يمكن حفظ الملفات محليًا، لذا نستخدم ذاكرة مؤقتة أو نتجاهل الحفظ
             st.write("تم تخزين البيانات مؤقتًا في الذاكرة بدلاً من حفظها على القرص.")
         
         return json.loads(data_txt)
@@ -112,7 +111,6 @@ def extract_data_from_dict(data):
     players_df = pd.concat([players_home_df, players_away_df])
     return events_dict, players_df, teams_dict
 
-# دالة لحساب الدقائق التراكمية
 def cumulative_match_mins(events_df):
     events_out = pd.DataFrame()
     match_events = events_df.copy()
@@ -129,7 +127,6 @@ def cumulative_match_mins(events_df):
     events_out = pd.concat([events_out, match_events])
     return events_out
 
-# دالة لإدراج حركات الكرة (Carries)
 def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=60, min_carry_duration=1, max_carry_duration=10):
     events_out = pd.DataFrame()
     min_carry_length = 3.0
@@ -233,7 +230,7 @@ if st.button("تحليل المباراة"):
             df = pd.DataFrame(events_dict)
             dfp = pd.DataFrame(players_df)
 
-            # معالجة البيانات بدون حفظ ملفات محلية (لأن Streamlit Cloud لا يدعم ذلك)
+            # معالجة البيانات
             df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
             df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
             df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
