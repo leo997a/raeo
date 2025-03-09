@@ -83,46 +83,44 @@ def display_match_options(match_files):
     match_path = match_files[options.index(choice)]
     return github_base_url + match_path, match_info[match_path]
     
-def extract_json_from_html(html_url, save_output=False):
-    def extract_json_from_html(html_url):
-    try:
-        response = requests.get(html_url, timeout=10)
-        response.raise_for_status()
-        html = response.text
-        regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
-        matches = re.findall(regex_pattern, html)
-        if not matches:
-            raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}!")
-        data_txt = matches[0].strip()
-        if data_txt.endswith(';'):
-            data_txt = data_txt[:-1]
-        data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
-        return json.loads(data_txt)
-    except requests.exceptions.RequestException as e:
-        st.error(f"فشل في جلب البيانات من {html_url}: {str(e)}")
-        return None
-
-        data_txt = matches[0]
-        data_txt = data_txt.strip()
-        if data_txt.endswith(';'):
-            data_txt = data_txt[:-1]
-        data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
-
-        if save_output:
-            with open("match_data.txt", "wt", encoding='utf-8') as output_file:
-                output_file.write(data_txt)
-
-        try:
-            json.loads(data_txt)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"فشل في تحليل النص كـ JSON: {e}\nالنص المستخرج: {data_txt[:500]}...")
-
-        return data_txt
-    except requests.RequestException as e:
-        raise Exception(f"فشل في جلب الملف من {html_url}: {e}")
-    except ValueError as e:
-        raise e
-
+ def display_match_options(match_files):
+     st.write("اختر المباراة التي تريد تحليلها:")
+     options = [match.split('/')[-1].replace('.html', '').replace('%20', ' ') for match in match_files]
+     choice = st.selectbox("المباراة", options)
+     match_path = match_files[options.index(choice)]
+     return github_base_url + match_path, match_info[match_path]
+ 
+ def extract_json_from_html(html_url, save_output=False):
+     try:
+         response = requests.get(html_url, timeout=10)
+         response.raise_for_status()
+         html = response.text
+         regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
+         matches = re.findall(regex_pattern, html)
+         if not matches:
+             raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}!")
+         data_txt = matches[0].strip()
+         if data_txt.endswith(';'):
+             data_txt = data_txt[:-1]
+         data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
+         
+         if save_output:
+             with open("match_data.txt", "wt", encoding='utf-8') as output_file:
+                 output_file.write(data_txt)
+ 
+         return json.loads(data_txt)
+     except requests.exceptions.RequestException as e:
+         st.error(f"فشل في جلب البيانات من {html_url}: {str(e)}")
+         return None
+     except json.JSONDecodeError as e:
+         st.error(f"فشل في تحليل النص كـ JSON: {e}")
+         return None
+     except Exception as e:
+         st.error(f"حدث خطأ غير متوقع: {e}")
+         return None
+ 
+ def extract_data_from_dict(data):
+     event_types_json = data["matchCentreEventTypeJson"]
 def extract_data_from_dict(data):
     event_types_json = data["matchCentreEventTypeJson"]
     formation_mappings = data["formationIdNameMappings"]
