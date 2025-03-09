@@ -78,13 +78,11 @@ def get_match_files_from_github():
 
 def display_match_options(match_files):
     st.write("اختر المباراة التي تريد تحليلها:")
-options = [match.split('/')[-1].replace('.html', '').replace('%20', ' ') for match in match_files]
-choice = st.selectbox("المباراة", options)  # استخدام selectbox بدلاً من input
-match_path = match_files[options.index(choice)]
-        return github_base_url + match_path, match_info[match_path]
-    else:
-        raise ValueError("الرقم غير صحيح، حاول مرة أخرى.")
-
+    options = [match.split('/')[-1].replace('.html', '').replace('%20', ' ') for match in match_files]
+    choice = st.selectbox("المباراة", options)
+    match_path = match_files[options.index(choice)]
+    return github_base_url + match_path, match_info[match_path]
+    
 def extract_json_from_html(html_url, save_output=False):
     def extract_json_from_html(html_url):
      try:
