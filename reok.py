@@ -4,42 +4,16 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import to_rgba
 import seaborn as sns
 import requests
 import streamlit as st
 from bs4 import BeautifulSoup
-from pprint import pprint
-import matplotlib.image as mpimg
-import matplotlib.patches as patches
-from io import BytesIO
-import matplotlib as mpl
-from matplotlib.gridspec import GridSpec
-from matplotlib.markers import MarkerStyle
-from mplsoccer import Pitch, VerticalPitch, FontManager, Sbopen, add_image
-from matplotlib.font_manager import FontProperties
-from matplotlib import rcParams
-from matplotlib.patheffects import withStroke, Normal
-from matplotlib.colors import LinearSegmentedColormap
-from mplsoccer.utils import FontManager
-import matplotlib.patheffects as path_effects
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from matplotlib.cbook import get_sample_data
-from sklearn.cluster import KMeans
-import warnings
-from highlight_text import ax_text, fig_text
-from PIL import Image
-from urllib.request import urlopen
-import os
-import time
-from unidecode import unidecode
-from scipy.spatial import ConvexHull
 
-# Print the modified DataFrame
+# إعدادات pandas
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 
-# Specify some custom colors to use
+# ألوان مخصصة
 green = '#69f900'
 red = '#ff4b44'
 blue = '#00a0de'
@@ -70,24 +44,25 @@ def display_match_options(match_files):
     match_path = match_files[options.index(choice)]
     return github_base_url + match_path, match_info[match_path]
 
-def extract_json_from_html(html_url, save_output=False):
+def extract_json_from_html(html_url):
     try:
         response = requests.get(html_url, timeout=10)
         response.raise_for_status()
-        html = response.text
-        regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
-        matches = re.findall(regex_pattern, html)
-        if not matches:
-            raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}!")
-        data_txt = matches[0].strip()
-        if data_txt.endswith(';'):
-            data_txt = data_txt[:-1]
-        data_txt = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', data_txt)
+        html_content = response.text
+        soup = BeautifulSoup(html_content, 'html.parser')
+        script_tags = soup.find_all('script')
         
-        if save_output:
-            st.write("تم تخزين البيانات مؤقتًا في الذاكرة بدلاً من حفظها على القرص.")
-        
-        return json.loads(data_txt)  # تعيد dict مباشرة
+        for script in script_tags:
+            if script.string and 'matchCentreData' in script.string:
+                regex_pattern = r'require\.config\.params\["args"\]\s*=\s*({[\s\S]*?});'
+                matches = re.findall(regex_pattern, script.string)
+                if matches:
+                    json_str = matches[0].strip()
+                    if json_str.endswith(';'):
+                        json_str = json_str[:-1]
+                    json_str = re.sub(r'(matchId|matchCentreData|matchCentreEventTypeJson|formationIdNameMappings)(?=\s*:)', r'"\1"', json_str)
+                    return json.loads(json_str)
+        raise ValueError(f"لم يتم العثور على بيانات JSON في {html_url}!")
     except requests.exceptions.RequestException as e:
         st.error(f"فشل في جلب البيانات من {html_url}: {str(e)}")
         return None
@@ -99,12 +74,11 @@ def extract_json_from_html(html_url, save_output=False):
         return None
 
 def extract_data_from_dict(data):
-    event_types_json = data["matchCentreEventTypeJson"]
-    formation_mappings = data["formationIdNameMappings"]
     events_dict = data["matchCentreData"]["events"]
-    teams_dict = {data["matchCentreData"]['home']['teamId']: data["matchCentreData"]['home']['name'],
-                  data["matchCentreData"]['away']['teamId']: data["matchCentreData"]['away']['name']}
-    players_dict = data["matchCentreData"]["playerIdNameDictionary"]
+    teams_dict = {
+        data["matchCentreData"]['home']['teamId']: data["matchCentreData"]['home']['name'],
+        data["matchCentreData"]['away']['teamId']: data["matchCentreData"]['away']['name']
+    }
     players_home_df = pd.DataFrame(data["matchCentreData"]['home']['players'])
     players_home_df["teamId"] = data["matchCentreData"]['home']['teamId']
     players_away_df = pd.DataFrame(data["matchCentreData"]['away']['players'])
@@ -120,8 +94,6 @@ def cumulative_match_mins(events_df):
         if period > 1:
             t_delta = match_events[match_events['period'] == period - 1]['cumulative_mins'].max() - \
                       match_events[match_events['period'] == period]['cumulative_mins'].min()
-        elif period == 1 or period == 5:
-            t_delta = 0
         else:
             t_delta = 0
         match_events.loc[match_events['period'] == period, 'cumulative_mins'] += t_delta
@@ -130,10 +102,6 @@ def cumulative_match_mins(events_df):
 
 def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=60, min_carry_duration=1, max_carry_duration=10):
     events_out = pd.DataFrame()
-    min_carry_length = 3.0
-    max_carry_length = 60.0
-    min_carry_duration = 1.0
-    max_carry_duration = 10.0
     match_events = events_df.reset_index()
     match_carries = pd.DataFrame()
 
@@ -226,7 +194,7 @@ match_html_path, fotmob_matchId = display_match_options(match_files)
 if st.button("تحليل المباراة"):
     with st.spinner("جارٍ تحليل البيانات..."):
         try:
-            data = extract_json_from_html(match_html_path, save_output=True)  # لا حاجة لـ json.loads هنا
+            data = extract_json_from_html(match_html_path)
             if data is None:
                 st.stop()
             events_dict, players_df, teams_dict = extract_data_from_dict(data)
@@ -238,7 +206,6 @@ if st.button("تحليل المباراة"):
             df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
             df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
             df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
-
             df['period'] = df['period'].replace({'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3, 
                                                 'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 
                                                 'PreMatch': 16})
@@ -246,13 +213,12 @@ if st.button("تحليل المباراة"):
             df = cumulative_match_mins(df)
             df = insert_ball_carries(df)
 
-            # معالجة التمريرات والشبكة
+            # تحليل التمريرات
             passes_df = get_passes_df(df)
-            player_node_df = passes_df.groupby(['playerId', 'name']).agg({'x': 'mean', 'y': 'mean'}).reset_index()
+            player_node_df = passes_df.groupby(['playerId']).agg({'x': 'mean', 'y': 'mean'}).reset_index()
             player_node_df['node_size'] = passes_df['playerId'].value_counts().reindex(player_node_df.playerId, fill_value=0).reset_index(drop=True) * 10
             player_pass_count = passes_df.groupby(['playerId']).size().reset_index(name='pass_count')
             player_node_df = player_node_df.merge(player_pass_count, on='playerId', how='left')
-            player_pass_count = passes_df.groupby(['playerId']).size().reset_index(name='pass_count')
             passes_df['passer'] = passes_df['playerId']
             passes_df['recipient'] = passes_df['playerId'].shift(-1)
             passes_df = passes_df.dropna(subset=['recipient'])
