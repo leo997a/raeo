@@ -28,12 +28,12 @@ import os
 
 green = '#69f900'
 red = '#BD2D3B'
-blue = '#9CCBDD'
+blue = '#1e287f'
 violet = '#a369ff'
 bg_color= '#E0E0E0'
 line_color= '#000000'
 col1 = '#BD2D3B'
-col2 = '#9CCBDD'
+col2 = '#1e287f'
 
 st.sidebar.title('Match Selection')
     
