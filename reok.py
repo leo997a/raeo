@@ -2918,7 +2918,7 @@ if league and htn and atn and st.session_state.confirmed:
                 else:
                     mins_played = max_min - sub_on_min
         
-            # Adjust for red cards
+            # Adjust for بطاقات حمراء
             df_red = df_player[(df_player['type'] == 'Card') & (df_player['qualifiers'].str.contains('SecondYellow|Red', na=False))]
             if len(df_red) == 1:
                 red_min = df_red['minute'].max()
@@ -3222,7 +3222,7 @@ if league and htn and atn and st.session_state.confirmed:
                 'Touches at Final Third': len(fth_touches),
                 'Touches at Penalty Box': len(pen_touches),
                 'Yellow Cards': len(ycard),
-                'Red Cards': len(rcard) 
+                'بطاقات حمراء': len(rcard) 
             }
         
             return shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict
@@ -4229,7 +4229,7 @@ if league and htn and atn and st.session_state.confirmed:
                 for i, (label, hvalue_display, avalue_display, hvalue_num, avalue_num) in enumerate([
                     ('Offsides', len(hoffs), len(aoffs), len(hoffs), len(aoffs)),
                     ('Yellow Cards', len(hyc), len(ayc), len(hyc), len(ayc)),
-                    ('Red Cards', len(hrc), len(arc), len(hrc), len(arc)),
+                    ('بطاقات حمراء', len(hrc), len(arc), len(hrc), len(arc)),
                     ('Take-Ons (Successful)', f'{len(hto)} ({len(hto_s)})', f'{len(ato)} ({len(ato_s)})', len(hto), len(ato)),
                     ('Dribble Past', len(hdrbp), len(adrbp), len(hdrbp), len(adrbp)),
                     ('Dispossessed', len(hdisp), len(adisp), len(hdisp), len(adisp)),
