@@ -27,13 +27,13 @@ import streamlit as st
 import os
 
 green = '#69f900'
-red = '#ff4b44'
-blue = '#00a0de'
+red = '#FD9F99'
+blue = '#9CCBDD'
 violet = '#a369ff'
-bg_color= '#f5f5f5'
+bg_color= '#E0E0E0'
 line_color= '#000000'
-col1 = '#ff4b44'
-col2 = '#00a0de'
+col1 = '#FD9F99'
+col2 = '#9CCBDD'
 
 st.sidebar.title('Match Selection')
     
