@@ -2927,7 +2927,7 @@ if league and htn and atn and st.session_state.confirmed:
             return int(mins_played)
         
         def generate_player_dahsboard(pname, ftmb_tid):
-            fig, axs = plt.subplots(1, 3, figsize=(27, 15), facecolor='#f5f5f5')
+            fig, axs = plt.subplots(1, 3, figsize=(27, 15), facecolor='#BBBBBB')
             
             # Calculate minutes played
             mins_played = playing_time(pname)
@@ -2951,7 +2951,7 @@ if league and htn and atn and st.session_state.confirmed:
             st.pyplot(fig)
             
         def generate_gk_dahsboard(pname, ftmb_tid):
-            fig, axs = plt.subplots(1, 2, figsize=(16, 15), facecolor='#f5f5f5')
+            fig, axs = plt.subplots(1, 2, figsize=(16, 15), facecolor='#BBBBBB')
             
             # Calculate minutes played
             mins_played = playing_time(pname)
