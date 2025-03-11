@@ -532,7 +532,7 @@ if league and htn and atn and st.session_state.confirmed:
     st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
     st.text(f'{league}')
     
-    tab1, tab2, tab3, tab4 = st.tabs(['Team Analysis', 'Player Analysis', 'Match Statistics', 'Top Players'])
+    tab1, tab2, tab3, tab4 = st.tabs(['تحليل الفريق', 'Player Analysis', 'Match Statistics', 'Top Players'])
     
     with tab1:
         an_tp = st.selectbox('Team Analysis Type:', ['Passing Network', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
