@@ -651,21 +651,25 @@ if league and htn and atn and st.session_state.confirmed:
                 v_comp = round((1 - ((fwd_line_h-def_line_h)/105))*100, 2)
                 
                 if phase_tag == 'Full Time':
-                    ax.text(34, 112, 'الوقت بالكامل : 0-90 minutes', color=col, fontsize=15, ha='center', va='center')
-                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                elif phase_tag == 'First Half':
-                    ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=15, ha='center', va='center')
-                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                elif phase_tag == 'Second Half':
-                    ax.text(34, 112, 'Second Half: 45-90 minutes', color=col, fontsize=15, ha='center', va='center')
-                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                # elif phase_tag == 'Before Sub':
-                #     ax.text(34, 112, f'Before Subs: 0-{int(phase_time_to)} minutes', color=col, fontsize=15, ha='center', va='center')
-                #     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                # elif phase_tag == 'After Sub':
-                #     ax.text(34, 112, f'After Subs: {int(phase_time_from)}-90 minutes', color=col, fontsize=15, ha='center', va='center')
-                #     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                ax.text(34, -5, f"On The Ball\nVertical Compactness (shaded area): {v_comp}%", fontsize=12, ha='center', va='center')
+    arabic_text = 'الوقت بالكامل : 0-90 minutes'
+    correct_text = reshape_arabic_text(arabic_text)
+    ax.text(34, 112, correct_text, color=col, fontsize=15, ha='center', va='center')
+    pass_text = f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%'
+    ax.text(34, 108, pass_text, color=col, fontsize=12, ha='center', va='center')
+elif phase_tag == 'First Half':
+    ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=15, ha='center', va='center')
+    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+elif phase_tag == 'Second Half':
+    ax.text(34, 112, 'Second Half: 45-90 minutes', color=col, fontsize=15, ha='center', va='center')
+    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+# elif phase_tag == 'Before Sub':
+#     ax.text(34, 112, f'Before Subs: 0-{int(phase_time_to)} minutes', color=col, fontsize=15, ha='center', va='center')
+#     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+# elif phase_tag == 'After Sub':
+#     ax.text(34, 112, f'After Subs: {int(phase_time_from)}-90 minutes', color=col, fontsize=15, ha='center', va='center')
+#     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+ax.text(34, -5, f"On The Ball\nVertical Compactness (shaded area): {v_comp}%", fontsize=12, ha='center', va='center')
+
                 
                 return pass_btn
                     
