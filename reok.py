@@ -1,3 +1,18 @@
+import streamlit as st
+import os
+
+# إضافة CSS لدعم RTL
+st.markdown("""
+    <style>
+    body {
+        direction: rtl;
+        text-align: right;
+    }
+    .stSelectbox > div > div > div {
+        text-align: right;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 # Import Packages
 import json
 import re
