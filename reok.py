@@ -13,7 +13,7 @@ from mplsoccer import Pitch, VerticalPitch, add_image
 from matplotlib import rcParams
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib.colors import LinearSegmentedColormap
-import matplotlib.patheffects as path_effects
+import matplotlib.patheffects as path_effects  # إضافة هذا الاستيراد
 from highlight_text import ax_text, fig_text
 from PIL import Image
 from urllib.request import urlopen
@@ -30,14 +30,12 @@ mpl.rcParams['font.family'] = 'sans-serif'
 mpl.rcParams['font.sans-serif'] = ['Arial', 'Tahoma']
 mpl.rcParams['axes.unicode_minus'] = False
 
-# دالة لتحويل النصوص العربية (تصحيح هنا)
+# دالة لتحويل النص العربي
 def reshape_arabic_text(text):
-    if isinstance(text, str) and any('\u0600' <= c <= '\u06FF' for c in text):  # تحقق إذا كان النص عربي
-        reshaped_text = arabic_reshaper.reshape(text)
-        return get_display(reshaped_text)
-    return text
+    reshaped_text = arabic_reshaper.reshape(text)
+    return get_display(reshaped_text)
 
-# تطبيق الدالة على جميع النصوص في streamlit وmatplotlib
+# إضافة CSS لدعم RTL في streamlit
 st.markdown("""
     <style>
     body {
@@ -47,9 +45,6 @@ st.markdown("""
     .stSelectbox > div > div > div {
         text-align: right;
     }
-    .stText > div > div {
-        direction: rtl;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -57,12 +52,12 @@ green = '#69f900'
 red = '#BD2D3B'
 blue = '#1e287f'
 violet = '#a369ff'
-bg_color = '#E0E0E0'
-line_color = '#000000'
+bg_color= '#E0E0E0'
+line_color= '#000000'
 col1 = '#BD2D3B'
 col2 = '#1e287f'
 
-st.sidebar.title(reshape_arabic_text('اختيار المباراة'))
+st.sidebar.title('اختيار المباراة')
 st.sidebar.title('Match Selection')
     
 season = None
@@ -551,135 +546,144 @@ if league and htn and atn and st.session_state.confirmed:
         an_tp = st.selectbox('Team Analysis Type:', ['شبكة التمريرات', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
                              'Zone14 & Half-Space Passes', 'Final Third Entries', 'Box Entries', 'High-Turnovers', 'Chances Creating Zones', 'Crosses', 'Team Domination Zones', 'Pass Target Zones'], index=0, key='analysis_type')
         # if st.session_state.analysis_type:
-if an_tp == 'شبكة التمريرات':
-    st.header(reshape_arabic_text(an_tp))
-    def pass_network(ax, team_name, col, phase_tag):
-        if phase_tag == 'Full Time':
-            df_pass = df.copy()
-            df_pass = df_pass.reset_index(drop=True)
-        elif phase_tag == 'First Half':
-            df_pass = df[df['period'] == 'FirstHalf']
-            df_pass = df_pass.reset_index(drop=True)
-        elif phase_tag == 'Second Half':
-            df_pass = df[df['period'] == 'SecondHalf']
-            df_pass = df_pass.reset_index(drop=True)
-
-        total_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass')]
-        accrt_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
-        if len(total_pass) != 0:
-            accuracy = round((len(accrt_pass) / len(total_pass)) * 100, 2)
-        else:
-            accuracy = 0
-
-        df_pass['pass_receiver'] = df_pass.loc[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'].shift(-1) == team_name), 'name'].shift(-1)
-        df_pass['pass_receiver'] = df_pass['pass_receiver'].fillna('No')
-
-        off_acts_df = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
-        off_acts_df = off_acts_df[['name', 'x', 'y']].reset_index(drop=True)
-        avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
-        team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
-        avg_locs_df = avg_locs_df.merge(team_pdf, on='name', how='left')
-
-        df_pass = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
-        df_pass = df_pass[['type', 'name', 'pass_receiver']].reset_index(drop=True)
-
-        pass_count_df = df_pass.groupby(['name', 'pass_receiver']).size().reset_index(name='pass_count').sort_values(by='pass_count', ascending=False)
-        pass_count_df = pass_count_df.reset_index(drop=True)
-
-        pass_counts_df = pd.merge(pass_count_df, avg_locs_df, on='name', how='left')
-        pass_counts_df.rename(columns={'avg_x': 'pass_avg_x', 'avg_y': 'pass_avg_y'}, inplace=True)
-        pass_counts_df = pd.merge(pass_counts_df, avg_locs_df, left_on='pass_receiver', right_on='name', how='left', suffixes=('', '_receiver'))
-        pass_counts_df.drop(columns=['name_receiver'], inplace=True)
-        pass_counts_df.rename(columns={'avg_x': 'receiver_avg_x', 'avg_y': 'receiver_avg_y'}, inplace=True)
-        pass_counts_df = pass_counts_df.sort_values(by='pass_count', ascending=False).reset_index(drop=True)
-        pass_counts_df = pass_counts_df.dropna(subset=['shirtNo_receiver'])
-        pass_btn = pass_counts_df[['name', 'shirtNo', 'pass_receiver', 'shirtNo_receiver', 'pass_count']]
-        pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
-
-        MAX_LINE_WIDTH = 15
-        MIN_TRANSPARENCY = 0.05
-        MAX_TRANSPARENCY = 0.85
-        color = np.array(to_rgba(col))
-        color = np.tile(color, (len(pass_counts_df), 1))
-        c_transparency = pass_counts_df.pass_count / pass_counts_df.pass_count.max()
-        c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
-        color[:, 3] = c_transparency
-
-        pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, linewidth=2)
-        pitch.draw(ax=ax)
-
-        # رسم الخطوط بين اللاعبين
-        pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y,
-                    lw=pass_counts_df.width, color=color, zorder=1, ax=ax)
-
-        # رسم نقاط اللاعبين
-        for index, row in avg_locs_df.iterrows():
-            if row['isFirstEleven'] == True:
-                pitch.scatter(row['avg_x'], row['avg_y'], s=1000, marker='o', color=bg_color, edgecolor=line_color, linewidth=2, alpha=1, ax=ax)
-            else:
-                pitch.scatter(row['avg_x'], row['avg_y'], s=1000, marker='s', color=bg_color, edgecolor=line_color, linewidth=2, alpha=0.75, ax=ax)
-
-        # رسم أرقام القمصان
-        for index, row in avg_locs_df.iterrows():
-            player_initials = row["shirtNo"]
-            pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c=col, ha='center', va='center', size=18, ax=ax)
-
-        # رسم خط عمودي لمتوسط المواقع
-        avgph = round(avg_locs_df['avg_x'].median(), 2)
-        ax.axhline(y=avgph, color='gray', linestyle='--', alpha=0.75, linewidth=2)
-
-        # خطوط الدفاع والهجوم
-        center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
-        def_line_h = round(center_backs_height['avg_x'].median(), 2)
-        Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == 1]
-        Forwards_height = Forwards_height.sort_values(by='avg_x', ascending=False)
-        Forwards_height = Forwards_height.head(2)
-        fwd_line_h = round(Forwards_height['avg_x'].mean(), 2)
-        ymid = [0, 0, 68, 68]
-        xmid = [def_line_h, fwd_line_h, fwd_line_h, def_line_h]
-        ax.fill(ymid, xmid, col, alpha=0.15)
-
-        v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
-
-        # تحويل النصوص العربية
-        full_time_text = reshape_arabic_text(f"الوقت بالكامل: 0-90 دقائق")
-        first_half_text = reshape_arabic_text(f"الشوط الأول: 0-45 دقائق")
-        second_half_text = reshape_arabic_text(f"الشوط الثاني: 45-90 دقائق")
-        stats_text = reshape_arabic_text(f"إجمالي التمريرات: {len(total_pass)} | الدقيقة: {len(accrt_pass)} | الدقة: {accuracy}%")
-        vertical_compactness_text = reshape_arabic_text(f"على الكرة\nالضغط العمودي (المنطقة المظللة): {v_comp}%")
-
-        # إضافة النصوص إلى الرسم
-        if phase_tag == 'Full Time':
-            ax.text(34, 112, full_time_text, color=col, fontsize=15, ha='center', va='center')
-            ax.text(34, 108, stats_text, color=col, fontsize=12, ha='center', va='center')
-        elif phase_tag == 'First Half':
-            ax.text(34, 112, first_half_text, color=col, fontsize=15, ha='center', va='center')
-            ax.text(34, 108, stats_text, color=col, fontsize=12, ha='center', va='center')
-        elif phase_tag == 'Second Half':
-            ax.text(34, 112, second_half_text, color=col, fontsize=15, ha='center', va='center')
-            ax.text(34, 108, stats_text, color=col, fontsize=12, ha='center', va='center')
-
-        ax.text(34, -5, vertical_compactness_text, fontsize=12, ha='center', va='center')
-
-        return pass_btn
-
-    pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
-    if pn_time_phase == 'Full Time':
+        if an_tp == 'شبكة التمريرات':
+            # st.header(f'{st.session_state.analysis_type}')
+            st.header(f'{an_tp}')
+            def pass_network(ax, team_name, col, phase_tag):
+                if phase_tag=='Full Time':
+                    df_pass = df.copy()
+                    df_pass = df_pass.reset_index(drop=True)
+                elif phase_tag == 'First Half':
+                    df_pass = df[df['period']=='FirstHalf']
+                    df_pass = df_pass.reset_index(drop=True)
+                elif phase_tag == 'Second Half':
+                    df_pass = df[df['period']=='SecondHalf']
+                    df_pass = df_pass.reset_index(drop=True)
+                # phase_time_from = df_pass.loc[0, 'minute']
+                # phase_time_to = df_pass['minute'].max()
+            
+                total_pass = df_pass[(df_pass['teamName']==team_name) & (df_pass['type']=='Pass')]
+                accrt_pass = df_pass[(df_pass['teamName']==team_name) & (df_pass['type']=='Pass') & (df_pass['outcomeType']=='Successful')]
+                if len(total_pass) != 0:
+                    accuracy = round((len(accrt_pass)/len(total_pass))*100 ,2)
+                else:
+                    accuracy = 0
+                
+                df_pass['pass_receiver'] = df_pass.loc[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'].shift(-1)==team_name), 'name'].shift(-1)
+                df_pass['pass_receiver'] = df_pass['pass_receiver'].fillna('No')
+            
+                off_acts_df = df_pass[(df_pass['teamName']==team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
+                off_acts_df = off_acts_df[['name', 'x', 'y']].reset_index(drop=True)
+                avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
+                team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
+                avg_locs_df = avg_locs_df.merge(team_pdf, on='name', how='left')
+                
+                df_pass = df_pass[(df_pass['type']=='Pass') & (df_pass['outcomeType']=='Successful') & (df_pass['teamName']==team_name) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
+                df_pass = df_pass[['type', 'name', 'pass_receiver']].reset_index(drop=True)
+                
+                pass_count_df = df_pass.groupby(['name', 'pass_receiver']).size().reset_index(name='pass_count').sort_values(by='pass_count', ascending=False)
+                pass_count_df = pass_count_df.reset_index(drop=True)  
+                
+                pass_counts_df = pd.merge(pass_count_df, avg_locs_df, on='name', how='left')
+                pass_counts_df.rename(columns={'avg_x': 'pass_avg_x', 'avg_y': 'pass_avg_y'}, inplace=True)
+                pass_counts_df = pd.merge(pass_counts_df, avg_locs_df, left_on='pass_receiver', right_on='name', how='left', suffixes=('', '_receiver'))
+                pass_counts_df.drop(columns=['name_receiver'], inplace=True)
+                pass_counts_df.rename(columns={'avg_x': 'receiver_avg_x', 'avg_y': 'receiver_avg_y'}, inplace=True)
+                pass_counts_df = pass_counts_df.sort_values(by='pass_count', ascending=False).reset_index(drop=True)
+                pass_counts_df = pass_counts_df.dropna(subset=['shirtNo_receiver'])
+                pass_btn = pass_counts_df[['name', 'shirtNo', 'pass_receiver', 'shirtNo_receiver', 'pass_count']]
+                pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
+                
+                MAX_LINE_WIDTH = 15
+                # MAX_MARKER_SIZE = 3000
+                pass_counts_df['width'] = (pass_counts_df.pass_count / pass_counts_df.pass_count.max() *MAX_LINE_WIDTH)
+                # average_locs_and_count_df['marker_size'] = (average_locs_and_count_df['count']/ average_locs_and_count_df['count'].max() * MAX_MARKER_SIZE) # You can plot variable size of each player's node 
+                                                                                                                                                              # according to their passing volume, in the plot using this
+                MIN_TRANSPARENCY = 0.05
+                MAX_TRANSPARENCY = 0.85
+                color = np.array(to_rgba(col))
+                color = np.tile(color, (len(pass_counts_df), 1))
+                c_transparency = pass_counts_df.pass_count / pass_counts_df.pass_count.max()
+                c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
+                color[:, 3] = c_transparency
+                    
+                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, linewidth=2)
+                pitch.draw(ax=ax)
+                # ax.set_xlim(-0.5, 105.5)
+                # ax.set_ylim(-0.5, 68.5)
+                    
+                # Plotting those lines between players
+                pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y,
+                          lw=pass_counts_df.width, color=color, zorder=1, ax=ax)
+                    
+                # Plotting the player nodes
+                for index, row in avg_locs_df.iterrows():
+                  if row['isFirstEleven'] == True:
+                    pitch.scatter(row['avg_x'], row['avg_y'], s=1000, marker='o', color=bg_color, edgecolor=line_color, linewidth=2, alpha=1, ax=ax)
+                  else:
+                    pitch.scatter(row['avg_x'], row['avg_y'], s=1000, marker='s', color=bg_color, edgecolor=line_color, linewidth=2, alpha=0.75, ax=ax)
+                    
+                # Plotting the shirt no. of each player
+                for index, row in avg_locs_df.iterrows():
+                    player_initials = row["shirtNo"]
+                    pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c=col, ha='center', va='center', size=18, ax=ax)
+                    
+                # Plotting a vertical line to show the median vertical position of all passes
+                avgph = round(avg_locs_df['avg_x'].median(), 2)
+                # avgph_show = round((avgph*1.05),2)
+                ax.axhline(y=avgph, color='gray', linestyle='--', alpha=0.75, linewidth=2)
+                    
+                # Defense line Height
+                center_backs_height = avg_locs_df[avg_locs_df['position']=='DC']
+                def_line_h = round(center_backs_height['avg_x'].median(), 2)
+                # ax.axhline(y=def_line_h, color='gray', linestyle='dotted', alpha=0.5, linewidth=2)
+                # Forward line Height
+                Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven']==1]
+                Forwards_height = Forwards_height.sort_values(by='avg_x', ascending=False)
+                Forwards_height = Forwards_height.head(2)
+                fwd_line_h = round(Forwards_height['avg_x'].mean(), 2)
+                # ax.axhline(y=fwd_line_h, color='gray', linestyle='dotted', alpha=0.5, linewidth=2)
+                # coloring the middle zone in the pitch
+                ymid = [0, 0, 68, 68]
+                xmid = [def_line_h, fwd_line_h, fwd_line_h, def_line_h]
+                ax.fill(ymid, xmid, col, alpha=0.15)
+            
+                v_comp = round((1 - ((fwd_line_h-def_line_h)/105))*100, 2)
+                
+                if phase_tag == 'Full Time':
+                    ax.text(34, 112, 'الوقت بالكامل : 0-90 minutes', color=col, fontsize=15, ha='center', va='center')
+                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+                elif phase_tag == 'First Half':
+                    ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=15, ha='center', va='center')
+                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+                elif phase_tag == 'Second Half':
+                    ax.text(34, 112, 'Second Half: 45-90 minutes', color=col, fontsize=15, ha='center', va='center')
+                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+                # elif phase_tag == 'Before Sub':
+                #     ax.text(34, 112, f'Before Subs: 0-{int(phase_time_to)} minutes', color=col, fontsize=15, ha='center', va='center')
+                #     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+                # elif phase_tag == 'After Sub':
+                #     ax.text(34, 112, f'After Subs: {int(phase_time_from)}-90 minutes', color=col, fontsize=15, ha='center', va='center')
+                #     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+                ax.text(34, -5, f"On The Ball\nVertical Compactness (shaded area): {v_comp}%", fontsize=12, ha='center', va='center')
+                
+                return pass_btn
+                    
+            pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
+            
             if pn_time_phase=='Full Time':
                 fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
                 home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
                 away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-                pass
-            elif pn_time_phase=='First Half':
+            if pn_time_phase=='First Half':
                 fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
                 home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
                 away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-                pass
-            elif pn_time_phase=='Second Half':
+            if pn_time_phase=='Second Half':
                 fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
                 home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
                 away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
-                pass
+                
             fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
             fig.text(0.5, 1.01, 'Passing Network', fontsize=20, ha='center', va='center')
             fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
@@ -706,7 +710,7 @@ if an_tp == 'شبكة التمريرات':
                 st.dataframe(away_pass_btn, hide_index=True)
             
         if an_tp == 'Defensive Actions Heatmap':
-    st.header(reshape_arabic_text('خريطة حرارية للأفعال الدفاعية'))
+            # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
             
             def def_acts_hm(ax, team_name, col, phase_tag):
