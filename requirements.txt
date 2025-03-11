@@ -11,3 +11,5 @@ scipy>=1.7.0
 streamlit>=1.41.0
 beautifulsoup4
 scikit-learn
+arabic-reshaper
+python-bidi
