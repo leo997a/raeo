@@ -13,6 +13,7 @@ from mplsoccer import Pitch, VerticalPitch, add_image
 from matplotlib import rcParams
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.patheffects as path_effects  # إضافة هذا الاستيراد
 from highlight_text import ax_text, fig_text
 from PIL import Image
 from urllib.request import urlopen
@@ -20,8 +21,8 @@ from unidecode import unidecode
 from scipy.spatial import ConvexHull
 import streamlit as st
 import os
-import arabic_reshaper  # إضافة مكتبة لإعادة تشكيل النصوص العربية
-from bidi.algorithm import get_display  # إضافة مكتبة لدعم RTL
+import arabic_reshaper
+from bidi.algorithm import get_display
 
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
@@ -57,7 +58,6 @@ col1 = '#BD2D3B'
 col2 = '#1e287f'
 
 st.sidebar.title('اختيار المباراة')
-# باقي الكود...
 st.sidebar.title('Match Selection')
     
 season = None
