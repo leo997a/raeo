@@ -542,7 +542,7 @@ if league and htn and atn and st.session_state.confirmed:
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
             def pass_network(ax, team_name, col, phase_tag):
-                if phase_tag=='الوقت بالكامل':
+                if phase_tag=='full time':
                     df_pass = df.copy()
                     df_pass = df_pass.reset_index(drop=True)
                 elif phase_tag == 'First Half':
@@ -643,7 +643,7 @@ if league and htn and atn and st.session_state.confirmed:
                 v_comp = round((1 - ((fwd_line_h-def_line_h)/105))*100, 2)
                 
                 if phase_tag == 'Full Time':
-                    ax.text(34, 112, 'Full Time: 0-90 minutes', color=col, fontsize=15, ha='center', va='center')
+                    ax.text(34, 112, 'الوقت بالكامل : 0-90 minutes', color=col, fontsize=15, ha='center', va='center')
                     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
                 elif phase_tag == 'First Half':
                     ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=15, ha='center', va='center')
