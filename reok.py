@@ -553,8 +553,6 @@ if league and htn and atn and st.session_state.confirmed:
         # if st.session_state.analysis_type:
 if an_tp == 'شبكة التمريرات':
     st.header(reshape_arabic_text(an_tp))
-if an_tp == 'شبكة التمريرات':
-    st.header(reshape_arabic_text(an_tp))
     def pass_network(ax, team_name, col, phase_tag):
         if phase_tag == 'Full Time':
             df_pass = df.copy()
@@ -664,8 +662,9 @@ if an_tp == 'شبكة التمريرات':
         ax.text(34, -5, vertical_compactness_text, fontsize=12, ha='center', va='center')
 
         return pass_btn
-                    
-            pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
+
+    pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
+   
             
             if pn_time_phase=='Full Time':
                 fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
