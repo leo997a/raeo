@@ -542,7 +542,7 @@ if league and htn and atn and st.session_state.confirmed:
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
             def pass_network(ax, team_name, col, phase_tag):
-                if phase_tag=='full time':
+                if phase_tag=='Full Time':
                     df_pass = df.copy()
                     df_pass = df_pass.reset_index(drop=True)
                 elif phase_tag == 'First Half':
