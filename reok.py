@@ -20,14 +20,19 @@ from unidecode import unidecode
 from scipy.spatial import ConvexHull
 import streamlit as st
 import os
+import arabic_reshaper  # إضافة مكتبة لإعادة تشكيل النصوص العربية
+from bidi.algorithm import get_display  # إضافة مكتبة لدعم RTL
 
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
 mpl.rcParams['font.family'] = 'sans-serif'
 mpl.rcParams['font.sans-serif'] = ['Arial', 'Tahoma']
 mpl.rcParams['axes.unicode_minus'] = False
-plt.rcParams['text.latex.unicode'] = True
-plt.rcParams['axes.formatter.use_mathtext'] = True
+
+# دالة لتحويل النص العربي
+def reshape_arabic_text(text):
+    reshaped_text = arabic_reshaper.reshape(text)
+    return get_display(reshaped_text)
 
 # إضافة CSS لدعم RTL في streamlit
 st.markdown("""
@@ -52,6 +57,7 @@ col1 = '#BD2D3B'
 col2 = '#1e287f'
 
 st.sidebar.title('اختيار المباراة')
+# باقي الكود...
 st.sidebar.title('Match Selection')
     
 season = None
