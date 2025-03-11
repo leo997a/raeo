@@ -664,21 +664,22 @@ if an_tp == 'شبكة التمريرات':
         return pass_btn
 
     pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
-   
-            
+    if pn_time_phase == 'Full Time':
             if pn_time_phase=='Full Time':
                 fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
                 home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
                 away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-            if pn_time_phase=='First Half':
+                pass
+            elif pn_time_phase=='First Half':
                 fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
                 home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
                 away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-            if pn_time_phase=='Second Half':
+                pass
+            elif pn_time_phase=='Second Half':
                 fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
                 home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
                 away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
-                
+                pass
             fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
             fig.text(0.5, 1.01, 'Passing Network', fontsize=20, ha='center', va='center')
             fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
