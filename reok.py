@@ -24,14 +24,14 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 
-# تهيئة matplotlib لدعم العربية بشكل عام
-mpl.rcParams['text.usetex'] = False  # تعطيل LaTeX
+# تهيئة matplotlib لدعم العربية
+mpl.rcParams['text.usetex'] = False
 mpl.rcParams['font.family'] = 'sans-serif'
-mpl.rcParams['font.sans-serif'] = ['Arial', 'Tahoma']  # خطوط تدعم العربية
+mpl.rcParams['font.sans-serif'] = ['Arial', 'Tahoma']
 mpl.rcParams['axes.unicode_minus'] = False
 
-# دالة عامة لتحويل النصوص العربية
-def (text):
+# دالة لتحويل النصوص العربية (تصحيح هنا)
+def reshape_arabic_text(text):
     if isinstance(text, str) and any('\u0600' <= c <= '\u06FF' for c in text):  # تحقق إذا كان النص عربي
         reshaped_text = arabic_reshaper.reshape(text)
         return get_display(reshaped_text)
@@ -53,7 +53,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# تعريف المتغيرات
 green = '#69f900'
 red = '#BD2D3B'
 blue = '#1e287f'
@@ -63,7 +62,6 @@ line_color = '#000000'
 col1 = '#BD2D3B'
 col2 = '#1e287f'
 
-# استخدام النصوص العربية مع الدالة
 st.sidebar.title(reshape_arabic_text('اختيار المباراة'))
 st.sidebar.title('Match Selection')
     
