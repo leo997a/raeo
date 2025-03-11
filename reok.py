@@ -1,18 +1,3 @@
-import streamlit as st
-import os
-
-# إضافة CSS لدعم RTL
-st.markdown("""
-    <style>
-    body {
-        direction: rtl;
-        text-align: right;
-    }
-    .stSelectbox > div > div > div {
-        text-align: right;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 # Import Packages
 import json
 import re
@@ -25,14 +10,9 @@ import seaborn as sns
 import requests
 import matplotlib.patches as patches
 from mplsoccer import Pitch, VerticalPitch, add_image
-# from matplotlib.font_manager import FontProperties
 from matplotlib import rcParams
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-# from matplotlib.patheffects import withStroke, Normal
 from matplotlib.colors import LinearSegmentedColormap
-# from mplsoccer.utils import FontManager
-import matplotlib.patheffects as path_effects
-# from sklearn.cluster import KMeans
 from highlight_text import ax_text, fig_text
 from PIL import Image
 from urllib.request import urlopen
@@ -40,6 +20,27 @@ from unidecode import unidecode
 from scipy.spatial import ConvexHull
 import streamlit as st
 import os
+
+# تهيئة matplotlib لدعم العربية
+mpl.rcParams['text.usetex'] = False
+mpl.rcParams['font.family'] = 'sans-serif'
+mpl.rcParams['font.sans-serif'] = ['Arial', 'Tahoma']
+mpl.rcParams['axes.unicode_minus'] = False
+plt.rcParams['text.latex.unicode'] = True
+plt.rcParams['axes.formatter.use_mathtext'] = True
+
+# إضافة CSS لدعم RTL في streamlit
+st.markdown("""
+    <style>
+    body {
+        direction: rtl;
+        text-align: right;
+    }
+    .stSelectbox > div > div > div {
+        text-align: right;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 green = '#69f900'
 red = '#BD2D3B'
@@ -50,6 +51,7 @@ line_color= '#000000'
 col1 = '#BD2D3B'
 col2 = '#1e287f'
 
+st.sidebar.title('اختيار المباراة')
 st.sidebar.title('Match Selection')
     
 season = None
