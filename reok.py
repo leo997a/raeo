@@ -16,13 +16,13 @@ from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.patheffects as path_effects  # إضافة هذا الاستيراد
 from highlight_text import ax_text, fig_text
 from PIL import Image
+import arabic_reshaper
+from bidi.algorithm import get_display
 from urllib.request import urlopen
 from unidecode import unidecode
 from scipy.spatial import ConvexHull
 import streamlit as st
 import os
-import arabic_reshaper
-from bidi.algorithm import get_display
 
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
