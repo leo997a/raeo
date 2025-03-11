@@ -535,10 +535,10 @@ if league and htn and atn and st.session_state.confirmed:
     tab1, tab2, tab3, tab4 = st.tabs(['تحليل الفريق', 'Player Analysis', 'Match Statistics', 'Top Players'])
     
     with tab1:
-        an_tp = st.selectbox('Team Analysis Type:', ['Passing Network', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
+        an_tp = st.selectbox('Team Analysis Type:', ['شبكة التمريرات', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
                              'Zone14 & Half-Space Passes', 'Final Third Entries', 'Box Entries', 'High-Turnovers', 'Chances Creating Zones', 'Crosses', 'Team Domination Zones', 'Pass Target Zones'], index=0, key='analysis_type')
         # if st.session_state.analysis_type:
-        if an_tp == 'Passing Network':
+        if an_tp == 'شبكة التمريرات':
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
             def pass_network(ax, team_name, col, phase_tag):
