@@ -13,7 +13,7 @@ from mplsoccer import Pitch, VerticalPitch, add_image
 from matplotlib import rcParams
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib.colors import LinearSegmentedColormap
-import matplotlib.patheffects as path_effects  # إضافة هذا الاستيراد
+import matplotlib.patheffects as path_effects
 from highlight_text import ax_text, fig_text
 from PIL import Image
 from urllib.request import urlopen
@@ -24,18 +24,20 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 
-# تهيئة matplotlib لدعم العربية
-mpl.rcParams['text.usetex'] = False
+# تهيئة matplotlib لدعم العربية بشكل عام
+mpl.rcParams['text.usetex'] = False  # تعطيل LaTeX
 mpl.rcParams['font.family'] = 'sans-serif'
-mpl.rcParams['font.sans-serif'] = ['Arial', 'Tahoma']
+mpl.rcParams['font.sans-serif'] = ['Arial', 'Tahoma']  # خطوط تدعم العربية
 mpl.rcParams['axes.unicode_minus'] = False
 
-# دالة لتحويل النص العربي
+# دالة عامة لتحويل النصوص العربية
 def reshape_arabic_text(text):
-    reshaped_text = arabic_reshaper.reshape(text)
-    return get_display(reshaped_text)
+    if isinstance(text, str) and any('\u0600' <= c <= '\u06FF' for c in text):  # تحقق إذا كان النص عربي
+        reshaped_text = arabic_reshaper.reshape(text)
+        return get_display(reshaped_text)
+    return text
 
-# إضافة CSS لدعم RTL في streamlit
+# تطبيق الدالة على جميع النصوص في streamlit وmatplotlib
 st.markdown("""
     <style>
     body {
@@ -45,19 +47,24 @@ st.markdown("""
     .stSelectbox > div > div > div {
         text-align: right;
     }
+    .stText > div > div {
+        direction: rtl;
+    }
     </style>
     """, unsafe_allow_html=True)
 
+# تعريف المتغيرات
 green = '#69f900'
 red = '#BD2D3B'
 blue = '#1e287f'
 violet = '#a369ff'
-bg_color= '#E0E0E0'
-line_color= '#000000'
+bg_color = '#E0E0E0'
+line_color = '#000000'
 col1 = '#BD2D3B'
 col2 = '#1e287f'
 
-st.sidebar.title('اختيار المباراة')
+# استخدام النصوص العربية مع الدالة
+st.sidebar.title(reshape_arabic_text('اختيار المباراة'))
 st.sidebar.title('Match Selection')
     
 season = None
@@ -651,7 +658,7 @@ if league and htn and atn and st.session_state.confirmed:
                 v_comp = round((1 - ((fwd_line_h-def_line_h)/105))*100, 2)
                 
                 if phase_tag == 'Full Time':
-                    ax.text(34, 112, 'الوقت بالكامل : 0-90 minutes', color=col, fontsize=15, ha='center', va='center')
+                    ax.text(34, 112, 'الوقت بالكامل reshape_arabic_text: 0-90 minutes', color=col, fontsize=15, ha='center', va='center')
                     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
                 elif phase_tag == 'First Half':
                     ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=15, ha='center', va='center')
