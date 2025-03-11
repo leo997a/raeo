@@ -53,7 +53,7 @@ red = '#BD2D3B'
 blue = '#1e287f'
 violet = '#a369ff'
 bg_color= '#000013'
-line_color= '#000000'
+line_color= '#FFFFFF'
 col1 = '#BD2D3B'
 col2 = '#1e287f'
 
