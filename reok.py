@@ -31,7 +31,7 @@ mpl.rcParams['font.sans-serif'] = ['Arial', 'Tahoma']  # خطوط تدعم ال�
 mpl.rcParams['axes.unicode_minus'] = False
 
 # دالة عامة لتحويل النصوص العربية
-def reshape_arabic_text(text):
+def (text):
     if isinstance(text, str) and any('\u0600' <= c <= '\u06FF' for c in text):  # تحقق إذا كان النص عربي
         reshaped_text = arabic_reshaper.reshape(text)
         return get_display(reshaped_text)
@@ -554,7 +554,7 @@ if league and htn and atn and st.session_state.confirmed:
                              'Zone14 & Half-Space Passes', 'Final Third Entries', 'Box Entries', 'High-Turnovers', 'Chances Creating Zones', 'Crosses', 'Team Domination Zones', 'Pass Target Zones'], index=0, key='analysis_type')
         # if st.session_state.analysis_type:
         if an_tp == 'شبكة التمريرات':
-            # st.header(f'{st.session_state.analysis_type}')
+    st.header(reshape_arabic_text(an_tp))
             st.header(f'{an_tp}')
             def pass_network(ax, team_name, col, phase_tag):
                 if phase_tag=='Full Time':
@@ -659,7 +659,7 @@ if league and htn and atn and st.session_state.confirmed:
                 
                 if phase_tag == 'Full Time':
                     ax.text(34, 112, 'الوقت بالكامل reshape_arabic_text: 0-90 minutes', color=col, fontsize=15, ha='center', va='center')
-                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
+                    ax.text(34, 108, stats_text = reshape_arabic_text(f"إجمالي التمريرات: {len(total_pass)} | الدقيقة: {len(accrt_pass)} | الدقة: {accuracy}%")', color=col, fontsize=12, ha='center', va='center')
                 elif phase_tag == 'First Half':
                     ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=15, ha='center', va='center')
                     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
