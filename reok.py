@@ -706,7 +706,7 @@ if an_tp == 'شبكة التمريرات':
                 st.dataframe(away_pass_btn, hide_index=True)
             
         if an_tp == 'Defensive Actions Heatmap':
-            # st.header(f'{st.session_state.analysis_type}')
+    st.header(reshape_arabic_text('خريطة حرارية للأفعال الدفاعية'))
             st.header(f'{an_tp}')
             
             def def_acts_hm(ax, team_name, col, phase_tag):
