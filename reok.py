@@ -48,7 +48,7 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
-
+# حذف هذه الأسطر (50-58)
 green = '#69f900'
 red = '#BD2D3B'
 blue = '#1e287f'
@@ -57,11 +57,7 @@ bg_color= '#1e1e2f'
 line_color= '#ffffff'
 col1 = '#d00000'
 col2 = '#003087'
-gradient_colors = ['#003087', '#d00000']  # Blue to red gradient for the pitch
-default_hcol = '#d00000'  # لون الفريق المضيف الافتراضي
-default_acol = '#003087'  # لون الفريق الضيف الافتراضي
-default_bg_color = '#1e1e2f'  # لون الخلفية الافتراضي
-default_gradient_colors = ['#003087', '#d00000']  # ألوان التدرج الافتراضية
+gradient_colors = ['#003087', '#d00000']
 
 # إضافة أدوات اختيار الألوان في الشريط الجانبي
 st.sidebar.title('اختيار الألوان')
