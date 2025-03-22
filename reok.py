@@ -727,29 +727,29 @@ fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون ال
 fig.text(0.5, 0.03, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
             fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-    himage = Image.open(himage)
-    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+himage = Image.open(himage)
+ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
 
-    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-    aimage = Image.open(aimage)
-    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+aimage = Image.open(aimage)
+ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-    st.pyplot(fig)
+st.pyplot(fig)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
-        if home_pass_btn is not None:
-            st.dataframe(home_pass_btn, hide_index=True)
-        else:
-            st.write("لا توجد بيانات متاحة.")
-    with col2:
-        st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
-        if away_pass_btn is not None:
-            st.dataframe(away_pass_btn, hide_index=True)
-        else:
-            st.write("لا توجد بيانات متاحة.")
+col1, col2 = st.columns(2)
+with col1:
+    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
+    if home_pass_btn is not None:
+        st.dataframe(home_pass_btn, hide_index=True)
+    else:
+        st.write("لا توجد بيانات متاحة.")
+with col2:
+    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
+    if away_pass_btn is not None:
+        st.dataframe(away_pass_btn, hide_index=True)
+    else:
+        st.write("لا توجد بيانات متاحة.")
 if an_tp == 'Defensive Actions Heatmap':
     st.header(f'{an_tp}')
             
