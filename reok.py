@@ -1060,9 +1060,9 @@ def progressive_carry(ax, team_name, col, phase_tag):
             
     if phase_tag == 'Full Time':
                     ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'First Half':
+    elif phase_tag == 'First Half':
                     ax.text(34, 116, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'Second Half':
+    elif phase_tag == 'Second Half':
                     ax.text(34, 116, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
                 ax.text(34, 112, f'Progressive Carries: {len(df_proc)}', color=col, fontsize=13, ha='center', va='center')
                 ax.text(34, 108, f'Most by: {most_name}({most_count})', color=col, fontsize=13, ha='center', va='center')
