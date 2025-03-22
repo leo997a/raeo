@@ -677,18 +677,18 @@ with tab1:
         
         pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
         
-        if pn_time_phase == 'Full Time':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-        elif pn_time_phase == 'First Half':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-        elif pn_time_phase == 'Second Half':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+if pn_time_phase == 'Full Time':
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
+elif pn_time_phase == 'First Half':
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
+    away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
+elif pn_time_phase == 'Second Half':
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
+    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
         # إضافة العنوان والشعارات
         fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}],
