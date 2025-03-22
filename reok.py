@@ -895,17 +895,17 @@ def def_acts_hm(ax, team_name, col, phase_tag):
         l_name = 'None'
         l_count = 0   
             
-                if len(midd_prop) != 0:
-                    name_counts = midd_prop['shortName'].value_counts()
-                    name_counts_df = name_counts.reset_index()
-                    name_counts_df.columns = ['name', 'count']
-                    name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-                    name_counts_df = name_counts_df.reset_index()
-                    m_name = name_counts_df['name'][0]
-                    m_count = name_counts_df['count'][0]
-                else:
-                    m_name = 'None'
-                    m_count = 0   
+    if len(midd_prop) != 0:
+        name_counts = midd_prop['shortName'].value_counts()
+        name_counts_df = name_counts.reset_index()
+        name_counts_df.columns = ['name', 'count']
+        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
+        name_counts_df = name_counts_df.reset_index()
+        m_name = name_counts_df['name'][0]
+        m_count = name_counts_df['count'][0]
+    else:
+            m_name = 'None'
+            m_count = 0   
             
                 if len(rigt_prop) != 0:
                     name_counts = rigt_prop['shortName'].value_counts()
