@@ -706,8 +706,7 @@ if an_tp == reshape_arabic_text('شبكة التمريرات'):
         home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
         away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
-
-        # إضافة العنوان والشعارات
+    # إضافة العنوان والشعارات
     title = f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>'
     reshaped_title = reshape_arabic_text(title.replace('<', '').replace('>', ''))
     fig_text(0.5, 1.05, f'<{reshaped_title}>', 
@@ -721,16 +720,15 @@ if an_tp == reshape_arabic_text('شبكة التمريرات'):
     fig.text(0.5, 0.03, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
              fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
+        himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+        himage = Image.open(himage)
+        ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
 
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+        aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+        aimage = Image.open(aimage)
+        ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-
-            st.pyplot(fig)
+    st.pyplot(fig)
 
     col1, col2 = st.columns(2)
     with col1:
