@@ -233,7 +233,7 @@ if season:
 
 if league and htn and atn and st.session_state.confirmed:
     @st.cache_data
-    def get_event_data(season, league, stage, hteam, ateam):
+def get_event_data(season, league, stage, hteam, ateam):
     try:
         # تكوين رابط الملف
         match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{stage}/{hteam}_vs_{ateam}.html"
