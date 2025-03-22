@@ -867,19 +867,19 @@ def def_acts_hm(ax, team_name, col, phase_tag):
     pitch.draw(ax=ax)
 
             
-                left_prop = df_prop[df_prop['y']>136/3]
-                midd_prop = df_prop[(df_prop['y']<=136/3) & (df_prop['y']>=68/3)]
-                rigt_prop = df_prop[df_prop['y']<68/3]
+        left_prop = df_prop[df_prop['y']>136/3]
+        midd_prop = df_prop[(df_prop['y']<=136/3) & (df_prop['y']>=68/3)]
+        rigt_prop = df_prop[df_prop['y']<68/3]
             
-                if len(df_prop) != 0:
-                    name_counts = df_prop['shortName'].value_counts()
-                    name_counts_df = name_counts.reset_index()
-                    name_counts_df.columns = ['name', 'count']
-                    name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-                    name_counts_df_show = name_counts_df.reset_index(drop=True)
-                    most_name = name_counts_df_show['name'][0]
-                    most_count = name_counts_df_show['count'][0]
-                else:
+        if len(df_prop) != 0:
+            name_counts = df_prop['shortName'].value_counts()
+            name_counts_df = name_counts.reset_index()
+            name_counts_df.columns = ['name', 'count']
+            name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
+            name_counts_df_show = name_counts_df.reset_index(drop=True)
+            most_name = name_counts_df_show['name'][0]
+            most_count = name_counts_df_show['count'][0]
+        else:
                     most_name = 'None'
                     most_count = 0  
                 
