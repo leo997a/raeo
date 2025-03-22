@@ -617,8 +617,7 @@ def pass_network(ax, team_name, col, phase_tag):
     pitch.draw(ax=ax)
 
     # رسم الخطوط بين اللاعبين
-    pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y,
-                lw=pass_counts_df.width, color=color, zorder=1, ax=ax)
+    pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y, lw=1, color=color, zorder=1, ax=ax)
 
     # رسم دوائر اللاعبين
     for index, row in avg_locs_df.iterrows():
