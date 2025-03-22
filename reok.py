@@ -52,10 +52,11 @@ green = '#69f900'
 red = '#BD2D3B'
 blue = '#1e287f'
 violet = '#a369ff'
-bg_color= '#FAFAFA'
-line_color= '#0D1117'
-col1 = '#BD2D3B'
-col2 = '#1e287f'
+bg_color= '#1e1e2f'
+line_color= '#ffffff'
+col1 = '#d00000'
+col2 = '#003087'
+gradient_colors = ['#003087', '#d00000']  # Blue to red gradient for the pitch
 
 st.sidebar.title('اختيار المباراة')
 st.sidebar.title('Match Selection')
@@ -549,165 +550,164 @@ if league and htn and atn and st.session_state.confirmed:
         if an_tp == 'شبكة التمريرات':
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
-            def pass_network(ax, team_name, col, phase_tag):
-                if phase_tag=='Full Time':
-                    df_pass = df.copy()
-                    df_pass = df_pass.reset_index(drop=True)
-                elif phase_tag == 'First Half':
-                    df_pass = df[df['period']=='FirstHalf']
-                    df_pass = df_pass.reset_index(drop=True)
-                elif phase_tag == 'Second Half':
-                    df_pass = df[df['period']=='SecondHalf']
-                    df_pass = df_pass.reset_index(drop=True)
-                # phase_time_from = df_pass.loc[0, 'minute']
-                # phase_time_to = df_pass['minute'].max()
-            
-                total_pass = df_pass[(df_pass['teamName']==team_name) & (df_pass['type']=='Pass')]
-                accrt_pass = df_pass[(df_pass['teamName']==team_name) & (df_pass['type']=='Pass') & (df_pass['outcomeType']=='Successful')]
-                if len(total_pass) != 0:
-                    accuracy = round((len(accrt_pass)/len(total_pass))*100 ,2)
-                else:
-                    accuracy = 0
-                
-                df_pass['pass_receiver'] = df_pass.loc[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'].shift(-1)==team_name), 'name'].shift(-1)
-                df_pass['pass_receiver'] = df_pass['pass_receiver'].fillna('No')
-            
-                off_acts_df = df_pass[(df_pass['teamName']==team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
-                off_acts_df = off_acts_df[['name', 'x', 'y']].reset_index(drop=True)
-                avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
-                team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
-                avg_locs_df = avg_locs_df.merge(team_pdf, on='name', how='left')
-                
-                df_pass = df_pass[(df_pass['type']=='Pass') & (df_pass['outcomeType']=='Successful') & (df_pass['teamName']==team_name) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
-                df_pass = df_pass[['type', 'name', 'pass_receiver']].reset_index(drop=True)
-                
-                pass_count_df = df_pass.groupby(['name', 'pass_receiver']).size().reset_index(name='pass_count').sort_values(by='pass_count', ascending=False)
-                pass_count_df = pass_count_df.reset_index(drop=True)  
-                
-                pass_counts_df = pd.merge(pass_count_df, avg_locs_df, on='name', how='left')
-                pass_counts_df.rename(columns={'avg_x': 'pass_avg_x', 'avg_y': 'pass_avg_y'}, inplace=True)
-                pass_counts_df = pd.merge(pass_counts_df, avg_locs_df, left_on='pass_receiver', right_on='name', how='left', suffixes=('', '_receiver'))
-                pass_counts_df.drop(columns=['name_receiver'], inplace=True)
-                pass_counts_df.rename(columns={'avg_x': 'receiver_avg_x', 'avg_y': 'receiver_avg_y'}, inplace=True)
-                pass_counts_df = pass_counts_df.sort_values(by='pass_count', ascending=False).reset_index(drop=True)
-                pass_counts_df = pass_counts_df.dropna(subset=['shirtNo_receiver'])
-                pass_btn = pass_counts_df[['name', 'shirtNo', 'pass_receiver', 'shirtNo_receiver', 'pass_count']]
-                pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
-                
-                MAX_LINE_WIDTH = 15
-                # MAX_MARKER_SIZE = 3000
-                pass_counts_df['width'] = (pass_counts_df.pass_count / pass_counts_df.pass_count.max() *MAX_LINE_WIDTH)
-                # average_locs_and_count_df['marker_size'] = (average_locs_and_count_df['count']/ average_locs_and_count_df['count'].max() * MAX_MARKER_SIZE) # You can plot variable size of each player's node 
-                                                                                                                                                              # according to their passing volume, in the plot using this
-                MIN_TRANSPARENCY = 0.05
-                MAX_TRANSPARENCY = 0.85
-                color = np.array(to_rgba(col))
-                color = np.tile(color, (len(pass_counts_df), 1))
-                c_transparency = pass_counts_df.pass_count / pass_counts_df.pass_count.max()
-                c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
-                color[:, 3] = c_transparency
-                    
-                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, linewidth=2)
-                pitch.draw(ax=ax)
-                # ax.set_xlim(-0.5, 105.5)
-                # ax.set_ylim(-0.5, 68.5)
-                    
-                # Plotting those lines between players
-                pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y,
-                          lw=pass_counts_df.width, color=color, zorder=1, ax=ax)
-                    
-                # Plotting the player nodes
-                for index, row in avg_locs_df.iterrows():
-                  if row['isFirstEleven'] == True:
-                    pitch.scatter(row['avg_x'], row['avg_y'], s=1000, marker='o', color=bg_color, edgecolor=line_color, linewidth=2, alpha=1, ax=ax)
-                  else:
-                    pitch.scatter(row['avg_x'], row['avg_y'], s=1000, marker='s', color=bg_color, edgecolor=line_color, linewidth=2, alpha=0.75, ax=ax)
-                    
-                # Plotting the shirt no. of each player
-                for index, row in avg_locs_df.iterrows():
-                    player_initials = row["shirtNo"]
-                    pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c=col, ha='center', va='center', size=18, ax=ax)
-                    
-                # Plotting a vertical line to show the median vertical position of all passes
-                avgph = round(avg_locs_df['avg_x'].median(), 2)
-                # avgph_show = round((avgph*1.05),2)
-                ax.axhline(y=avgph, color='gray', linestyle='--', alpha=0.75, linewidth=2)
-                    
-                # Defense line Height
-                center_backs_height = avg_locs_df[avg_locs_df['position']=='DC']
-                def_line_h = round(center_backs_height['avg_x'].median(), 2)
-                # ax.axhline(y=def_line_h, color='gray', linestyle='dotted', alpha=0.5, linewidth=2)
-                # Forward line Height
-                Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven']==1]
-                Forwards_height = Forwards_height.sort_values(by='avg_x', ascending=False)
-                Forwards_height = Forwards_height.head(2)
-                fwd_line_h = round(Forwards_height['avg_x'].mean(), 2)
-                # ax.axhline(y=fwd_line_h, color='gray', linestyle='dotted', alpha=0.5, linewidth=2)
-                # coloring the middle zone in the pitch
-                ymid = [0, 0, 68, 68]
-                xmid = [def_line_h, fwd_line_h, fwd_line_h, def_line_h]
-                ax.fill(ymid, xmid, col, alpha=0.15)
-            
-                v_comp = round((1 - ((fwd_line_h-def_line_h)/105))*100, 2)
-                
-                if phase_tag == 'Full Time':
-                    ax.text(34, 112, 'الوقت بالكامل : 0-90 minutes', color=col, fontsize=15, ha='center', va='center')
-                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                elif phase_tag == 'First Half':
-                    ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=15, ha='center', va='center')
-                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                elif phase_tag == 'Second Half':
-                    ax.text(34, 112, 'Second Half: 45-90 minutes', color=col, fontsize=15, ha='center', va='center')
-                    ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                # elif phase_tag == 'Before Sub':
-                #     ax.text(34, 112, f'Before Subs: 0-{int(phase_time_to)} minutes', color=col, fontsize=15, ha='center', va='center')
-                #     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                # elif phase_tag == 'After Sub':
-                #     ax.text(34, 112, f'After Subs: {int(phase_time_from)}-90 minutes', color=col, fontsize=15, ha='center', va='center')
-                #     ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color=col, fontsize=12, ha='center', va='center')
-                ax.text(34, -5, f"On The Ball\nVertical Compactness (shaded area): {v_comp}%", fontsize=12, ha='center', va='center')
-                
-                return pass_btn
-                    
-            pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
-            
-            if pn_time_phase=='Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-            if pn_time_phase=='First Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-                away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-            if pn_time_phase=='Second Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
-                
-            fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, 'Passing Network', fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
-            
-            fig.text(0.5, 0.05, '*Circles = Starter Players, Box = Substituted On Players, Numbers inside = Jersey Numbers of the Players', fontsize=10, fontstyle='italic', ha='center', va='center')
-            fig.text(0.5, 0.03, '*Width & Brightness of the Lines represent the amount of Successful Open-Play Passes between the Players', fontsize=10, fontstyle='italic', ha='center', va='center')
-            
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-            
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-            
-            st.pyplot(fig)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Passing Pairs:')
-                st.dataframe(home_pass_btn, hide_index=True)
-            with col2:
-                st.write(f'{ateamName} Passing Pairs:')
-                st.dataframe(away_pass_btn, hide_index=True)
+def pass_network(ax, team_name, col, phase_tag):
+    # Data processing remains the same as in your original code
+    if phase_tag == 'Full Time':
+        df_pass = df.copy()
+        df_pass = df_pass.reset_index(drop=True)
+    elif phase_tag == 'First Half':
+        df_pass = df[df['period'] == 'FirstHalf']
+        df_pass = df_pass.reset_index(drop=True)
+    elif phase_tag == 'Second Half':
+        df_pass = df[df['period'] == 'SecondHalf']
+        df_pass = df_pass.reset_index(drop=True)
+
+    total_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass')]
+    accrt_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
+    if len(total_pass) != 0:
+        accuracy = round((len(accrt_pass) / len(total_pass)) * 100, 2)
+    else:
+        accuracy = 0
+
+    df_pass['pass_receiver'] = df_pass.loc[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'].shift(-1) == team_name), 'name'].shift(-1)
+    df_pass['pass_receiver'] = df_pass['pass_receiver'].fillna('No')
+
+    off_acts_df = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
+    off_acts_df = off_acts_df[['name', 'x', 'y']].reset_index(drop=True)
+    avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
+    team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
+    avg_locs_df = avg_locs_df.merge(team_pdf, on='name', how='left')
+
+    df_pass = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
+    df_pass = df_pass[['type', 'name', 'pass_receiver']].reset_index(drop=True)
+
+    pass_count_df = df_pass.groupby(['name', 'pass_receiver']).size().reset_index(name='pass_count').sort_values(by='pass_count', ascending=False)
+    pass_count_df = pass_count_df.reset_index(drop=True)
+
+    pass_counts_df = pd.merge(pass_count_df, avg_locs_df, on='name', how='left')
+    pass_counts_df.rename(columns={'avg_x': 'pass_avg_x', 'avg_y': 'pass_avg_y'}, inplace=True)
+    pass_counts_df = pd.merge(pass_counts_df, avg_locs_df, left_on='pass_receiver', right_on='name', how='left', suffixes=('', '_receiver'))
+    pass_counts_df.drop(columns=['name_receiver'], inplace=True)
+    pass_counts_df.rename(columns={'avg_x': 'receiver_avg_x', 'avg_y': 'receiver_avg_y'}, inplace=True)
+    pass_counts_df = pass_counts_df.sort_values(by='pass_count', ascending=False).reset_index(drop=True)
+    pass_counts_df = pass_counts_df.dropna(subset=['shirtNo_receiver'])
+    pass_btn = pass_counts_df[['name', 'shirtNo', 'pass_receiver', 'shirtNo_receiver', 'pass_count']]
+    pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
+
+    # Modern design adjustments
+    MAX_LINE_WIDTH = 10  # Thinner lines for a sleeker look
+    MIN_TRANSPARENCY = 0.1
+    MAX_TRANSPARENCY = 0.9
+    color = np.array(to_rgba(col))
+    color = np.tile(color, (len(pass_counts_df), 1))
+    c_transparency = pass_counts_df.pass_count / pass_counts_df.pass_count.max()
+    c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
+    color[:, 3] = c_transparency
+
+    # Create a gradient pitch
+    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, linewidth=1.5, line_color=line_color)
+    pitch.draw(ax=ax)
+
+    # Apply gradient background to the pitch
+    gradient = LinearSegmentedColormap.from_list("pitch_gradient", gradient_colors, N=100)
+    x = np.linspace(0, 1, 100)
+    y = np.linspace(0, 1, 100)
+    X, Y = np.meshgrid(x, y)
+    Z = Y  # Gradient from top to bottom
+    ax.imshow(Z, extent=[0, 68, 0, 105], cmap=gradient, alpha=0.8, aspect='auto', zorder=0)
+    pitch.draw(ax=ax)  # Redraw pitch lines over the gradient
+
+    # Plot lines between players with modern styling
+    pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y,
+                lw=pass_counts_df.width, color=color, zorder=1, ax=ax)
+
+    # Plot player nodes with modern styling
+    for index, row in avg_locs_df.iterrows():
+        if row['isFirstEleven'] == True:
+            pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='o', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.9, ax=ax)
+        else:
+            pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='s', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.7, ax=ax)
+
+    # Plot shirt numbers with modern font
+    for index, row in avg_locs_df.iterrows():
+        player_initials = row["shirtNo"]
+        pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c='white', ha='center', va='center', size=14, weight='bold', ax=ax)
+
+    # Vertical compactness line
+    avgph = round(avg_locs_df['avg_x'].median(), 2)
+    ax.axhline(y=avgph, color='white', linestyle='--', alpha=0.5, linewidth=1.5)
+
+    # Defense and forward line heights
+    center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
+    def_line_h = round(center_backs_height['avg_x'].median(), 2)
+    Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == 1].sort_values(by='avg_x', ascending=False).head(2)
+    fwd_line_h = round(Forwards_height['avg_x'].mean(), 2)
+    ymid = [0, 0, 68, 68]
+    xmid = [def_line_h, fwd_line_h, fwd_line_h, def_line_h]
+    ax.fill(ymid, xmid, col, alpha=0.2)
+
+    v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
+
+    # Add text with modern styling
+    if phase_tag == 'Full Time':
+        ax.text(34, 112, 'الوقت بالكامل : 0-90 minutes', color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
+    elif phase_tag == 'First Half':
+        ax.text(34, 112, 'First Half: 0-45 minutes', color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
+    elif phase_tag == 'Second Half':
+        ax.text(34, 112, 'Second Half: 45-90 minutes', color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
+
+    ax.text(34, -5, f"On The Ball\nVertical Compactness (shaded area): {v_comp}%", color='white', fontsize=12, ha='center', va='center', weight='bold')
+
+    return pass_btn
+
+# Plotting section with modern design
+pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
+
+if pn_time_phase == 'Full Time':
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
+elif pn_time_phase == 'First Half':
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
+    away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
+elif pn_time_phase == 'Second Half':
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
+    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+
+# Add title and logos with modern styling
+fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}],
+         fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+fig.text(0.5, 1.01, 'Passing Network', fontsize=18, ha='center', va='center', color='white', weight='bold')
+fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+
+fig.text(0.5, 0.05, '*Circles = Starter Players, Box = Substituted On Players, Numbers inside = Jersey Numbers of the Players',
+         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+fig.text(0.5, 0.03, '*Width & Brightness of the Lines represent the amount of Successful Open-Play Passes between the Players',
+         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+
+# Add team logos
+himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+himage = Image.open(himage)
+ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+aimage = Image.open(aimage)
+ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+
+st.pyplot(fig)
+
+col1, col2 = st.columns(2)
+with col1:
+    st.write(f'{hteamName} Passing Pairs:')
+    st.dataframe(home_pass_btn, hide_index=True)
+with col2:
+    st.write(f'{ateamName} Passing Pairs:')
+    st.dataframe(away_pass_btn, hide_index=True)
             
         if an_tp == 'Defensive Actions Heatmap':
             # st.header(f'{st.session_state.analysis_type}')
@@ -757,22 +757,22 @@ if league and htn and atn and st.session_state.confirmed:
                 c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
                 color[:, 3] = c_transparency
                     
-                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=2, linewidth=2)
+                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=, line_color=line_color, line_zorder=2, linewidth=2)
                 pitch.draw(ax=ax)
                 # ax.set_xlim(-0.5, 105.5)
                 # ax.set_ylim(-0.5, 68.5)
                 
                 # plotting the heatmap of the team defensive actions
                 color = np.array(to_rgba(col))
-                flamingo_cmap = LinearSegmentedColormap.from_list("Flamingo - 100 colors", [bg_color, col], N=250)
+                flamingo_cmap = LinearSegmentedColormap.from_list("Flamingo - 100 colors", [, col], N=250)
                 pitch.kdeplot(total_def_acts.x, total_def_acts.y, ax=ax, fill=True, levels=2500, thresh=0.02, cut=4, cmap=flamingo_cmap)
                     
                 # Plotting the player nodes
                 for index, row in avg_locs_df.iterrows():
                   if row['isFirstEleven'] == True:
-                    pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='o', color=bg_color, edgecolor=line_color, linewidth=2, zorder=3, alpha=1, ax=ax)
+                    pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='o', color=, edgecolor=line_color, linewidth=2, zorder=3, alpha=1, ax=ax)
                   else:
-                    pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='s', color=bg_color, edgecolor=line_color, linewidth=2, zorder=3, alpha=0.75, ax=ax)
+                    pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='s', color=, edgecolor=line_color, linewidth=2, zorder=3, alpha=0.75, ax=ax)
                     
                 # Plotting the shirt no. of each player
                 for index, row in avg_locs_df.iterrows():
@@ -797,7 +797,7 @@ if league and htn and atn and st.session_state.confirmed:
                 # coloring the middle zone in the pitch
                 # ymid = [0, 0, 68, 68]
                 # xmid = [def_line_h, fwd_line_h, fwd_line_h, def_line_h]
-                # ax.fill(ymid, xmid, col, edgecolor=bg_color, alpha=0.5, hatch='/////')
+                # ax.fill(ymid, xmid, col, edgecolor=, alpha=0.5, hatch='/////')
             
                 v_comp = round((1 - ((fwd_line_h-def_line_h)/105))*100, 2)
                 
@@ -826,16 +826,16 @@ if league and htn and atn and st.session_state.confirmed:
             dah_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='dah_time_pill')
             
             if dah_time_phase == 'Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
                 away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
                 
             if dah_time_phase == 'First Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
                 away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
             if dah_time_phase == 'Second Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
                 away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
                 
@@ -878,7 +878,7 @@ if league and htn and atn and st.session_state.confirmed:
                     df_sh = df[df['period'] == 'SecondHalf']
                     df_prop = df_sh[(df_sh['teamName']==team_name) & (df_sh['outcomeType']=='Successful') & (df_sh['prog_pass']>9.11) & (~df_sh['qualifiers'].str.contains('Corner|Freekick')) & (df_sh['x']>=35)]
                 
-                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=, line_color=line_color, line_zorder=3, linewidth=2)
                 pitch.draw(ax=ax)
             
                 left_prop = df_prop[df_prop['y']>136/3]
@@ -934,7 +934,7 @@ if league and htn and atn and st.session_state.confirmed:
                     r_count = 0   
             
                 pitch.lines(df_prop.x, df_prop.y, df_prop.endX, df_prop.endY, comet=True, lw=4, color=col, ax=ax)
-                pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=bg_color, ec=col, lw=1.5, ax=ax)
+                pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=, ec=col, lw=1.5, ax=ax)
             
                 if phase_tag == 'Full Time':
                     ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
@@ -960,17 +960,17 @@ if league and htn and atn and st.session_state.confirmed:
             
             pp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pp_time_pill')
             if pp_time_phase == 'Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_prop = progressive_pass(axs[0], hteamName, hcol, 'Full Time')
                 away_prop = progressive_pass(axs[1], ateamName, acol, 'Full Time')
                 
             if pp_time_phase == 'First Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
                 away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
                 
             if pp_time_phase == 'Second Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_prop = progressive_pass(axs[0], hteamName, hcol, 'Second Half')
                 away_prop = progressive_pass(axs[1], ateamName, acol, 'Second Half')
                 
@@ -1012,7 +1012,7 @@ if league and htn and atn and st.session_state.confirmed:
                     df_sh = df[df['period'] == 'SecondHalf']
                     df_proc = df_sh[(df_sh['teamName']==team_name) & (df_sh['prog_carry']>9.11) & (df_sh['endX']>=35)]
                 
-                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=, line_color=line_color, line_zorder=3, linewidth=2)
                 pitch.draw(ax=ax)
             
                 left_proc = df_proc[df_proc['y']>136/3]
@@ -1096,17 +1096,17 @@ if league and htn and atn and st.session_state.confirmed:
             
             pc_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pc_time_pill')
             if pc_time_phase == 'Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_proc = progressive_carry(axs[0], hteamName, hcol, 'Full Time')
                 away_proc = progressive_carry(axs[1], ateamName, acol, 'Full Time')
                 
             if pc_time_phase == 'First Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_proc = progressive_carry(axs[0], hteamName, hcol, 'First Half')
                 away_proc = progressive_carry(axs[1], ateamName, acol, 'First Half')
                 
             if pc_time_phase == 'Second Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_proc = progressive_carry(axs[0], hteamName, hcol, 'Second Half')
                 away_proc = progressive_carry(axs[1], ateamName, acol, 'Second Half')
             
@@ -1169,11 +1169,11 @@ if league and htn and atn and st.session_state.confirmed:
             
                 ogdf = df[(df['type']=='Goal') & (df['qualifiers'].str.contains('OwnGoal')) & (df['teamName']!=team_name)]
             
-                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=, line_color=line_color, line_zorder=3, linewidth=2)
                 pitch.draw(ax=ax)
                 xps = [0, 0, 68, 68]
                 yps = [0, 35, 35, 0]
-                ax.fill(xps, yps, color=bg_color, edgecolor=line_color, lw=3, ls='--', alpha=1, zorder=5)
+                ax.fill(xps, yps, color=, edgecolor=line_color, lw=3, ls='--', alpha=1, zorder=5)
                 ax.vlines(34, ymin=0, ymax=35, color=line_color, ls='--', lw=3, zorder=5)
             
                 # normal shots scatter of away team
@@ -1243,12 +1243,12 @@ if league and htn and atn and st.session_state.confirmed:
             
             sm_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='sm_time_pill')
             if sm_time_phase == 'Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'Full Time')
                 away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'Full Time')
                 
             if sm_time_phase == 'First Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'First Half')
                 away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'First Half')
                 
