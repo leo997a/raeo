@@ -998,8 +998,8 @@ def progressive_carry(ax, team_name, col, phase_tag):
             df_sh = df[df['period'] == 'SecondHalf']
             df_proc = df_sh[(df_sh['teamName']==team_name) & (df_sh['prog_carry']>9.11) & (df_sh['endX']>=35)]
                 
-                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=, line_color=line_color, line_zorder=3, linewidth=2)
-    pitch.draw(ax=ax)
+    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+    pitch.draw(ax=ax
             
     left_proc = df_proc[df_proc['y']>136/3]
     midd_proc = df_proc[(df_proc['y']<=136/3) & (df_proc['y']>=68/3)]
