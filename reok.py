@@ -12,7 +12,7 @@ import matplotlib.patches as patches
 from mplsoccer import Pitch, VerticalPitch, add_image
 from matplotlib import rcParams
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-import matplotlib.patheffects as path_effects  # إضافة هذا الاستيراد
+import matplotlib.patheffects as path_effects
 from highlight_text import ax_text, fig_text
 from PIL import Image
 from urllib.request import urlopen
@@ -31,9 +31,9 @@ mpl.rcParams['axes.unicode_minus'] = False
 
 # دالة لتحويل النص العربي
 def reshape_arabic_text(text):
-    print(f"النص قبل التحويل: {text}")  # طباعة النص قبل التحويل
+    print(f"النص قبل التحويل: {text}")
     reshaped_text = arabic_reshaper.reshape(text)
-    print(f"النص بعد التحويل: {reshaped_text}")  # طباعة النص بعد التحويل
+    print(f"النص بعد التحويل: {reshaped_text}")
     return get_display(reshaped_text)
 
 # إضافة CSS لدعم RTL في streamlit
@@ -48,16 +48,12 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
-# حذف هذه الأسطر (50-58)
-green = '#69f900'
-red = '#BD2D3B'
-blue = '#1e287f'
-violet = '#a369ff'
-bg_color= '#1e1e2f'
-line_color= '#ffffff'
-col1 = '#d00000'
-col2 = '#003087'
-gradient_colors = ['#003087', '#d00000']
+
+# تعريف القيم الافتراضية للألوان أولاً
+default_hcol = '#d00000'  # لون الفريق المضيف الافتراضي
+default_acol = '#003087'  # لون الفريق الضيف الافتراضي
+default_bg_color = '#1e1e2f'  # لون الخلفية الافتراضي
+default_gradient_colors = ['#003087', '#d00000']  # ألوان التدرج الافتراضية
 
 # إضافة أدوات اختيار الألوان في الشريط الجانبي
 st.sidebar.title('اختيار الألوان')
@@ -68,7 +64,9 @@ gradient_start = st.sidebar.color_picker('بداية التدرج', default_grad
 gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradient_colors[1], key='gradient_end_picker')
 gradient_colors = [gradient_start, gradient_end]  # تحديث قائمة ألوان التدرج
 line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker')  # اختياري
+
 st.sidebar.title('Match Selection')
+# ... (باقي الكود)
     
 season = None
 league = None
