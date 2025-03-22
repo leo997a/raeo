@@ -61,11 +61,20 @@ st.markdown("""
         text-align: right !important;
     }
     /* تحسين القوائم المنسدلة */
-    .custom-select, .custom-select option {
+    select, .stSelectbox, .stSelectbox div, .stSelectbox label {
+        direction: rtl !important;
+        text-align: right !important;
+    }
+    /* تحسين st.radio */
+    .stRadio, .stRadio div, .stRadio label, .stRadio input {
         direction: rtl !important;
         text-align: right !important;
     }
     /* تحسين علامات التبويب */
+    .stTabs, .stTabs div, .stTabs button {
+        direction: rtl !important;
+        text-align: right !important;
+    }
     .custom-tabs {
         display: flex;
         flex-direction: row-reverse;
@@ -935,14 +944,14 @@ def def_acts_hm(ax, team_name, col, phase_tag):
     v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
 
     if phase_tag == 'Full Time':
-        ax.text(34, 112, 'الوقت الكامل: 0-90 دقيقة', color=col, fontsize=15, ha='center', va='center')
-        ax.text(34, 108, f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}', color=col, fontsize=12, ha='center', va='center')
+        ax.text(34, 115, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
     elif phase_tag == 'First Half':
-        ax.text(34, 112, 'الشوط الأول: 0-45 دقيقة', color=col, fontsize=15, ha='center', va='center')
-        ax.text(34, 108, f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}', color=col, fontsize=12, ha='center', va='center')
+        ax.text(34, 115, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
     elif phase_tag == 'Second Half':
-        ax.text(34, 112, 'الشوط الثاني: 45-90 دقيقة', color=col, fontsize=15, ha='center', va='center')
-        ax.text(34, 108, f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}', color=col, fontsize=12, ha='center', va='center')
+        ax.text(34, 115, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
 
     ax.text(34, -5, f"الأفعال الدفاعية\nالتماسك العمودي: {v_comp}%", color=violet, fontsize=12, ha='center', va='center')
     if team_name == hteamName:
