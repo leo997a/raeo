@@ -806,46 +806,48 @@ def def_acts_hm(ax, team_name, col, phase_tag):
         ax.text(73, avgph, f'متوسط ارتفاع الأفعال الدفاعية: {avgph:.2f}م', color='gray', rotation=-90, ha='right', va='center')
     return df_def_show
                     
-            dah_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='dah_time_pill')
-            
-            if dah_time_phase == 'Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-                home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
-                away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
-                
-            if dah_time_phase == 'First Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-                home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
-                away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
-            if dah_time_phase == 'Second Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-                home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
-                away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
-                
-            fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, 'Defensive Actions Heatmap', fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
-            
-            fig.text(0.5, 0.05, '*Circles = Starter Players, Box = Substituted On Players, Numbers inside = Jersey Numbers of the Players', fontsize=10, fontstyle='italic', ha='center', va='center')
-            fig.text(0.5, 0.03, '*Size of the Circles/Boxes represent the amount of the Total Defensive Actions of the Outfield Players', fontsize=10, fontstyle='italic', ha='center', va='center')
-            
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-            
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-            
-            st.pyplot(fig)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Players Defensive Actions:')
-                st.dataframe(home_df_def, hide_index=True)
-            with col2:
-                st.write(f'{ateamName} Players Defensive Actions:')
-                st.dataframe(away_df_def, hide_index=True)
+   if an_tp == 'Defensive Actions Heatmap':
+    st.header(f'{an_tp}')
+    
+    dah_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='dah_time_pill')
+    
+    if dah_time_phase == 'Full Time':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
+        away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
+    elif dah_time_phase == 'First Half':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
+        away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
+    elif dah_time_phase == 'Second Half':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
+        away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
+
+    fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, 'الخريطة الحرارية للأفعال الدفاعية', fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
+
+    fig.text(0.5, 0.05, '*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان', fontsize=10, fontstyle='italic', ha='center', va='center')
+    fig.text(0.5, 0.03, '*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية للاعبي الميدان', fontsize=10, fontstyle='italic', ha='center', va='center')
+
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+
+    st.pyplot(fig)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f'الأفعال الدفاعية للاعبي فريق {hteamName}:')
+        st.dataframe(home_df_def, hide_index=True)
+    with col2:
+        st.write(f'الأفعال الدفاعية للاعبي فريق {ateamName}:')
+        st.dataframe(away_df_def, hide_index=True)
             
         if an_tp == 'Progressive Passes':
             # st.header(f'{st.session_state.analysis_type}')
