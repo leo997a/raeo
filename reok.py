@@ -24,6 +24,12 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 
+# تحميل خط عربي (Noto Sans Arabic)
+font_path = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/NotoSansArabic/NotoSansArabic-Regular.ttf"
+font_file = fm.FontProperties(fname=font_path)
+plt.rcParams['font.family'] = 'Noto Sans Arabic'
+plt.rcParams['axes.unicode_minus'] = False  # للتعامل مع الرموز بشكل صحيح
+
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
 mpl.rcParams['font.family'] = 'sans-serif'
