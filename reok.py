@@ -1,41 +1,12 @@
 import json
 import re
 import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import to_rgba, LinearSegmentedColormap
-import seaborn as sns
 import requests
-import matplotlib.patches as patches
-from mplsoccer import Pitch, VerticalPitch, add_image
-from matplotlib import rcParams
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-import matplotlib.patheffects as path_effects
-from highlight_text import ax_text, fig_text
-from PIL import Image
-from urllib.request import urlopen
-from unidecode import unidecode
-from scipy.spatial import ConvexHull
 import streamlit as st
-import os
-import arabic_reshaper
-from bidi.algorithm import get_display
-
-# إعدادات matplotlib لدعم العربية
-mpl.rcParams['text.usetex'] = False
-mpl.rcParams['font.family'] = 'sans-serif'
-mpl.rcParams['font.sans-serif'] = ['Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', 'Tahoma']
-mpl.rcParams['axes.unicode_minus'] = False
-
-# دالة لتحويل النص العربي
-def reshape_arabic_text(text):
-    reshaped_text = arabic_reshaper.reshape(str(text))
-    return get_display(reshaped_text)
-
-# تعريف الدالة reset_confirmed قبل استخدامها
-def reset_confirmed():
-    st.session_state['confirmed'] = False
+import plotly.graph_objects as go
+from urllib.request import urlopen
+from PIL import Image
 
 # إضافة CSS محسّن لدعم RTL في Streamlit مع استثناءات للرسومات
 st.markdown("""
@@ -95,6 +66,10 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# تعريف الدالة reset_confirmed قبل استخدامها
+def reset_confirmed():
+    st.session_state['confirmed'] = False
+
 # تعريف القيم الافتراضية للألوان
 default_hcol = '#d00000'
 default_acol = '#003087'
@@ -102,16 +77,16 @@ default_bg_color = '#1e1e2f'
 default_gradient_colors = ['#003087', '#d00000']
 
 # إضافة أدوات اختيار الألوان في الشريط الجانبي
-st.sidebar.title(reshape_arabic_text('اختيار الألوان'))
-hcol = st.sidebar.color_picker(reshape_arabic_text('لون الفريق المضيف'), default_hcol, key='hcol_picker')
-acol = st.sidebar.color_picker(reshape_arabic_text('لون الفريق الضيف'), default_acol, key='acol_picker')
-bg_color = st.sidebar.color_picker(reshape_arabic_text('لون الخلفية'), default_bg_color, key='bg_color_picker')
-gradient_start = st.sidebar.color_picker(reshape_arabic_text('بداية التدرج'), default_gradient_colors[0], key='gradient_start_picker')
-gradient_end = st.sidebar.color_picker(reshape_arabic_text('نهاية التدرج'), default_gradient_colors[1], key='gradient_end_picker')
+st.sidebar.title('اختيار الألوان')
+hcol = st.sidebar.color_picker('لون الفريق المضيف', default_hcol, key='hcol_picker')
+acol = st.sidebar.color_picker('لون الفريق الضيف', default_acol, key='acol_picker')
+bg_color = st.sidebar.color_picker('لون الخلفية', default_bg_color, key='bg_color_picker')
+gradient_start = st.sidebar.color_picker('بداية التدرج', default_gradient_colors[0], key='gradient_start_picker')
+gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradient_colors[1], key='gradient_end_picker')
 gradient_colors = [gradient_start, gradient_end]
-line_color = st.sidebar.color_picker(reshape_arabic_text('لون الخطوط'), '#ffffff', key='line_color_picker')
+line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker')
 
-st.sidebar.title(reshape_arabic_text('اختيار المباراة'))
+st.sidebar.title('اختيار المباراة')
 
 season = None
 league = None
@@ -122,92 +97,92 @@ atn = None
 if 'confirmed' not in st.session_state:
     st.session_state.confirmed = False
 
-season = st.sidebar.selectbox(reshape_arabic_text('اختر الموسم:'), [reshape_arabic_text('2024_25')], key='season', index=0, on_change=reset_confirmed)
+season = st.sidebar.selectbox('اختر الموسم:', ['2024_25'], key='season', index=0, on_change=reset_confirmed)
 if season:
     league_options = [
-        reshape_arabic_text('الدوري الإسباني'),
-        reshape_arabic_text('الدوري الإنجليزي الممتاز'),
-        reshape_arabic_text('الدوري الإيطالي'),
-        reshape_arabic_text('دوري أبطال أوروبا')
+        'الدوري الإسباني',
+        'الدوري الإنجليزي الممتاز',
+        'الدوري الإيطالي',
+        'دوري أبطال أوروبا'
     ]
-    league = st.sidebar.selectbox(reshape_arabic_text('اختر الدوري:'), league_options, key='league', index=None, on_change=reset_confirmed)
+    league = st.sidebar.selectbox('اختر الدوري:', league_options, key='league', index=None, on_change=reset_confirmed)
 
-    if league == reshape_arabic_text('الدوري الإسباني'):
+    if league == 'الدوري الإسباني':
         team_list = [
-            reshape_arabic_text('Athletic Club'), reshape_arabic_text('Atletico Madrid'), reshape_arabic_text('Barcelona'),
-            reshape_arabic_text('Celta Vigo'), reshape_arabic_text('Deportivo Alaves'), reshape_arabic_text('Espanyol'),
-            reshape_arabic_text('Getafe'), reshape_arabic_text('Girona'), reshape_arabic_text('Las Palmas'),
-            reshape_arabic_text('Leganes'), reshape_arabic_text('Mallorca'), reshape_arabic_text('Osasuna'),
-            reshape_arabic_text('Rayo Vallecano'), reshape_arabic_text('Real Betis'), reshape_arabic_text('Real Madrid'),
-            reshape_arabic_text('Real Sociedad'), reshape_arabic_text('Real Valladolid'), reshape_arabic_text('Sevilla'),
-            reshape_arabic_text('Valencia'), reshape_arabic_text('Villarreal')
+            'Athletic Club', 'Atletico Madrid', 'Barcelona',
+            'Celta Vigo', 'Deportivo Alaves', 'Espanyol',
+            'Getafe', 'Girona', 'Las Palmas',
+            'Leganes', 'Mallorca', 'Osasuna',
+            'Rayo Vallecano', 'Real Betis', 'Real Madrid',
+            'Real Sociedad', 'Real Valladolid', 'Sevilla',
+            'Valencia', 'Villarreal'
         ]
-    elif league == reshape_arabic_text('الدوري الإنجليزي الممتاز'):
+    elif league == 'الدوري الإنجليزي الممتاز':
         team_list = [
-            reshape_arabic_text('Arsenal'), reshape_arabic_text('Aston Villa'), reshape_arabic_text('Bournemouth'),
-            reshape_arabic_text('Brentford'), reshape_arabic_text('Brighton'), reshape_arabic_text('Chelsea'),
-            reshape_arabic_text('Crystal Palace'), reshape_arabic_text('Everton'), reshape_arabic_text('Fulham'),
-            reshape_arabic_text('Ipswich'), reshape_arabic_text('Leicester'), reshape_arabic_text('Liverpool'),
-            reshape_arabic_text('Manchester City'), reshape_arabic_text('Manchester United'), reshape_arabic_text('Newcastle'),
-            reshape_arabic_text('Nottingham Forest'), reshape_arabic_text('Southampton'), reshape_arabic_text('Tottenham'),
-            reshape_arabic_text('West Ham'), reshape_arabic_text('Wolves')
+            'Arsenal', 'Aston Villa', 'Bournemouth',
+            'Brentford', 'Brighton', 'Chelsea',
+            'Crystal Palace', 'Everton', 'Fulham',
+            'Ipswich', 'Leicester', 'Liverpool',
+            'Manchester City', 'Manchester United', 'Newcastle',
+            'Nottingham Forest', 'Southampton', 'Tottenham',
+            'West Ham', 'Wolves'
         ]
-    elif league == reshape_arabic_text('الدوري الإيطالي'):
+    elif league == 'الدوري الإيطالي':
         team_list = [
-            reshape_arabic_text('AC Milan'), reshape_arabic_text('Atalanta'), reshape_arabic_text('Bologna'),
-            reshape_arabic_text('Cagliari'), reshape_arabic_text('Como'), reshape_arabic_text('Empoli'),
-            reshape_arabic_text('Fiorentina'), reshape_arabic_text('Genoa'), reshape_arabic_text('Inter'),
-            reshape_arabic_text('Juventus'), reshape_arabic_text('Lazio'), reshape_arabic_text('Lecce'),
-            reshape_arabic_text('Monza'), reshape_arabic_text('Napoli'), reshape_arabic_text('Parma Calcio'),
-            reshape_arabic_text('Roma'), reshape_arabic_text('Torino'), reshape_arabic_text('Udinese'),
-            reshape_arabic_text('Venezia'), reshape_arabic_text('Verona')
+            'AC Milan', 'Atalanta', 'Bologna',
+            'Cagliari', 'Como', 'Empoli',
+            'Fiorentina', 'Genoa', 'Inter',
+            'Juventus', 'Lazio', 'Lecce',
+            'Monza', 'Napoli', 'Parma Calcio',
+            'Roma', 'Torino', 'Udinese',
+            'Venezia', 'Verona'
         ]
-    elif league == reshape_arabic_text('دوري أبطال أوروبا'):
+    elif league == 'دوري أبطال أوروبا':
         team_list = [
-            reshape_arabic_text('AC Milan'), reshape_arabic_text('Arsenal'), reshape_arabic_text('Aston Villa'),
-            reshape_arabic_text('Atalanta'), reshape_arabic_text('Atletico Madrid'), reshape_arabic_text('BSC Young Boys'),
-            reshape_arabic_text('Barcelona'), reshape_arabic_text('Bayer Leverkusen'), reshape_arabic_text('Bayern Munich'),
-            reshape_arabic_text('Benfica'), reshape_arabic_text('Bologna'), reshape_arabic_text('Borussia Dortmund'),
-            reshape_arabic_text('Brest'), reshape_arabic_text('Celtic'), reshape_arabic_text('Club Brugge'),
-            reshape_arabic_text('Dinamo Zagreb'), reshape_arabic_text('FK Crvena Zvezda'), reshape_arabic_text('Feyenoord'),
-            reshape_arabic_text('Girona'), reshape_arabic_text('Inter'), reshape_arabic_text('Juventus'),
-            reshape_arabic_text('Lille'), reshape_arabic_text('Liverpool'), reshape_arabic_text('Manchester City'),
-            reshape_arabic_text('Monaco'), reshape_arabic_text('PSV Eindhoven'), reshape_arabic_text('Paris Saint-Germain'),
-            reshape_arabic_text('RB Leipzig'), reshape_arabic_text('Real Madrid'), reshape_arabic_text('Salzburg'),
-            reshape_arabic_text('Shakhtar Donetsk'), reshape_arabic_text('Slovan Bratislava'), reshape_arabic_text('Sparta Prague'),
-            reshape_arabic_text('Sporting CP'), reshape_arabic_text('Sturm Graz'), reshape_arabic_text('VfB Stuttgart')
+            'AC Milan', 'Arsenal', 'Aston Villa',
+            'Atalanta', 'Atletico Madrid', 'BSC Young Boys',
+            'Barcelona', 'Bayer Leverkusen', 'Bayern Munich',
+            'Benfica', 'Bologna', 'Borussia Dortmund',
+            'Brest', 'Celtic', 'Club Brugge',
+            'Dinamo Zagreb', 'FK Crvena Zvezda', 'Feyenoord',
+            'Girona', 'Inter', 'Juventus',
+            'Lille', 'Liverpool', 'Manchester City',
+            'Monaco', 'PSV Eindhoven', 'Paris Saint-Germain',
+            'RB Leipzig', 'Real Madrid', 'Salzburg',
+            'Shakhtar Donetsk', 'Slovan Bratislava', 'Sparta Prague',
+            'Sporting CP', 'Sturm Graz', 'VfB Stuttgart'
         ]
 
-    if league and league != reshape_arabic_text('دوري أبطال أوروبا'):
-        htn = st.sidebar.selectbox(reshape_arabic_text('اختر الفريق المضيف'), team_list, key='home_team', index=None, on_change=reset_confirmed)
+    if league and league != 'دوري أبطال أوروبا':
+        htn = st.sidebar.selectbox('اختر الفريق المضيف', team_list, key='home_team', index=None, on_change=reset_confirmed)
         
         if htn:
             atn_options = [team for team in team_list if team != htn]
-            atn = st.sidebar.selectbox(reshape_arabic_text('اختر الفريق الضيف'), atn_options, key='away_team', index=None, on_change=reset_confirmed)
+            atn = st.sidebar.selectbox('اختر الفريق الضيف', atn_options, key='away_team', index=None, on_change=reset_confirmed)
             
-    elif league == reshape_arabic_text('دوري أبطال أوروبا'):
+    elif league == 'دوري أبطال أوروبا':
         stage_options = [
-            reshape_arabic_text('مرحلة الدوري'),
-            reshape_arabic_text('الملحق التأهيلي'),
-            reshape_arabic_text('دور الـ 16'),
-            reshape_arabic_text('ربع النهائي'),
-            reshape_arabic_text('نصف النهائي'),
-            reshape_arabic_text('النهائي')
+            'مرحلة الدوري',
+            'الملحق التأهيلي',
+            'دور الـ 16',
+            'ربع النهائي',
+            'نصف النهائي',
+            'النهائي'
         ]
-        stage = st.sidebar.selectbox(reshape_arabic_text('اختر المرحلة'), stage_options, key='stage_selection', index=None, on_change=reset_confirmed)
+        stage = st.sidebar.selectbox('اختر المرحلة', stage_options, key='stage_selection', index=None, on_change=reset_confirmed)
         if stage:
-            htn = st.sidebar.selectbox(reshape_arabic_text('اختر الفريق المضيف'), team_list, key='home_team', index=None, on_change=reset_confirmed)
+            htn = st.sidebar.selectbox('اختر الفريق المضيف', team_list, key='home_team', index=None, on_change=reset_confirmed)
             
             if htn:
                 atn_options = [team for team in team_list if team != htn]
-                atn = st.sidebar.selectbox(reshape_arabic_text('اختر الفريق الضيف'), atn_options, key='away_team', index=None, on_change=reset_confirmed)
+                atn = st.sidebar.selectbox('اختر الفريق الضيف', atn_options, key='away_team', index=None, on_change=reset_confirmed)
 
-    if league and league != reshape_arabic_text('دوري أبطال أوروبا') and league != reshape_arabic_text('الدوري الإيطالي') and htn and atn:
+    if league and league != 'دوري أبطال أوروبا' and league != 'الدوري الإيطالي' and htn and atn:
         league_en = {
-            reshape_arabic_text('الدوري الإسباني'): 'La Liga',
-            reshape_arabic_text('الدوري الإنجليزي الممتاز'): 'Premier League',
-            reshape_arabic_text('الدوري الإيطالي'): 'Serie A',
-            reshape_arabic_text('دوري أبطال أوروبا'): 'UEFA Champions League'
+            'الدوري الإسباني': 'La Liga',
+            'الدوري الإنجليزي الممتاز': 'Premier League',
+            'الدوري الإيطالي': 'Serie A',
+            'دوري أبطال أوروبا': 'UEFA Champions League'
         }.get(league, league)
         league = league_en.replace(' ', '_')
         match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{htn}_vs_{atn}.html"
@@ -215,12 +190,12 @@ if season:
         try:
             response = requests.get(match_html_path)
             response.raise_for_status()
-            match_input = st.sidebar.button(reshape_arabic_text('تأكيد الاختيارات'), on_click=lambda: st.session_state.update({'confirmed': True}))
+            match_input = st.sidebar.button('تأكيد الاختيارات', on_click=lambda: st.session_state.update({'confirmed': True}))
         except:
             st.session_state['confirmed'] = False
-            st.sidebar.write(reshape_arabic_text('لم يتم العثور على المباراة'))
+            st.sidebar.write('لم يتم العثور على المباراة')
             
-    elif league and league == reshape_arabic_text('الدوري الإيطالي') and htn and atn:
+    elif league and league == 'الدوري الإيطالي' and htn and atn:
         league_en = 'Serie A'
         league = league_en.replace(' ', '_')
         match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{htn}_vs_{atn}.html"
@@ -228,21 +203,21 @@ if season:
         try:
             response = requests.get(match_html_path)
             response.raise_for_status()
-            match_input = st.sidebar.button(reshape_arabic_text('تأكيد الاختيارات'), on_click=lambda: st.session_state.update({'confirmed': True}))
+            match_input = st.sidebar.button('تأكيد الاختيارات', on_click=lambda: st.session_state.update({'confirmed': True}))
         except:
             st.session_state['confirmed'] = False
-            st.sidebar.write(reshape_arabic_text('مباريات الدوري الإيطالي متاحة حتى الأسبوع 12\nسيتم رفع باقي البيانات قريبًا\nشكرًا لصبرك'))
+            st.sidebar.write('مباريات الدوري الإيطالي متاحة حتى الأسبوع 12\nسيتم رفع باقي البيانات قريبًا\nشكرًا لصبرك')
             
-    elif league and league == reshape_arabic_text('دوري أبطال أوروبا') and stage and htn and atn:
+    elif league and league == 'دوري أبطال أوروبا' and stage and htn and atn:
         league_en = 'UEFA Champions League'
         stage_en = stage
         stage_mapping = {
-            reshape_arabic_text('مرحلة الدوري'): 'League Phase',
-            reshape_arabic_text('الملحق التأهيلي'): 'Knockout Playoff',
-            reshape_arabic_text('دور الـ 16'): 'Round of 16',
-            reshape_arabic_text('ربع النهائي'): 'Quarter Final',
-            reshape_arabic_text('نصف النهائي'): 'Semi Final',
-            reshape_arabic_text('النهائي'): 'Final'
+            'مرحلة الدوري': 'League Phase',
+            'الملحق التأهيلي': 'Knockout Playoff',
+            'دور الـ 16': 'Round of 16',
+            'ربع النهائي': 'Quarter Final',
+            'نصف النهائي': 'Semi Final',
+            'النهائي': 'Final'
         }
         stage_en = stage_mapping[stage]
         league = league_en.replace(' ', '_')
@@ -251,10 +226,10 @@ if season:
         try:
             response = requests.get(match_html_path)
             response.raise_for_status()
-            match_input = st.sidebar.button(reshape_arabic_text('تأكيد الاختيارات'), on_click=lambda: st.session_state.update({'confirmed': True}))
+            match_input = st.sidebar.button('تأكيد الاختيارات', on_click=lambda: st.session_state.update({'confirmed': True}))
         except:
             st.session_state['confirmed'] = False
-            st.sidebar.write(reshape_arabic_text('لم يتم العثور على المباراة'))
+            st.sidebar.write('لم يتم العثور على المباراة')
 
 if league and htn and atn and st.session_state.confirmed:
     @st.cache_data
@@ -302,19 +277,19 @@ if league and htn and atn and st.session_state.confirmed:
     aftmb_tid = df_teamNameId[df_teamNameId['teamName'] == ateamName].teamId.to_list()[0]
 
     league_display_mapping = {
-        'La Liga': reshape_arabic_text('الدوري الإسباني'),
-        'Premier League': reshape_arabic_text('الدوري الإنجليزي الممتاز'),
-        'Serie A': reshape_arabic_text('الدوري الإيطالي'),
-        'UEFA Champions League': reshape_arabic_text('دوري أبطال أوروبا')
+        'La Liga': 'الدوري الإسباني',
+        'Premier League': 'الدوري الإنجليزي الممتاز',
+        'Serie A': 'الدوري الإيطالي',
+        'UEFA Champions League': 'دوري أبطال أوروبا'
     }
     league_display = league_display_mapping.get(league, league)
 
-    st.header(reshape_arabic_text(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}'))
+    st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
     st.text(league_display)
 
     tab1, tab2 = st.tabs([
-        reshape_arabic_text("تحليل المباراة"),
-        reshape_arabic_text("تبويب آخر")
+        "تحليل المباراة",
+        "تبويب آخر"
     ])
 
     options = [
@@ -334,15 +309,14 @@ if league and htn and atn and st.session_state.confirmed:
         'Team Domination Zones',
         'Pass Target Zones'
     ]
-    options_display = [reshape_arabic_text(opt) for opt in options]
     st.session_state['analysis_type'] = st.selectbox(
-        reshape_arabic_text('نوع التحليل:'),
-        options_display,
+        'نوع التحليل:',
+        options,
         index=0,
         key='analysis_type_selectbox'
     )
 
-    def pass_network(ax, team_name, col, phase_tag):
+    def pass_network(team_name, col, phase_tag):
         if phase_tag == 'Full Time':
             df_pass = df.copy()
             df_pass = df_pass.reset_index(drop=True)
@@ -357,8 +331,7 @@ if league and htn and atn and st.session_state.confirmed:
         accrt_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
         
         if len(total_pass) == 0:
-            ax.text(34, 50, reshape_arabic_text('لا توجد بيانات تمريرات متاحة'), color='white', fontsize=14, ha='center', va='center')
-            return None
+            return None, "لا توجد بيانات تمريرات متاحة"
 
         accuracy = round((len(accrt_pass) / len(total_pass)) * 100, 2)
 
@@ -395,139 +368,126 @@ if league and htn and atn and st.session_state.confirmed:
         pass_counts_df['line_width'] = (pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()) * (MAX_LINE_WIDTH - MIN_LINE_WIDTH) + MIN_LINE_WIDTH
         c_transparency = pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()
         c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
-        color = np.array(to_rgba(col))
-        color = np.tile(color, (len(pass_counts_df), 1))
-        color[:, 3] = c_transparency
 
-        pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, linewidth=1.5, line_color=line_color)
-        pitch.draw(ax=ax)
+        # إنشاء الرسم باستخدام Plotly
+        fig = go.Figure()
 
-        gradient = LinearSegmentedColormap.from_list("pitch_gradient", gradient_colors, N=100)
-        x = np.linspace(0, 1, 100)
-        y = np.linspace(0, 1, 100)
-        X, Y = np.meshgrid(x, y)
-        Z = Y
-        ax.imshow(Z, extent=[0, 68, 0, 105], cmap=gradient, alpha=0.8, aspect='auto', zorder=0)
-        pitch.draw(ax=ax)
+        # رسم الملعب (UEFA dimensions: 105m x 68m)
+        fig.add_shape(type="rect", x0=0, y0=0, x1=68, y1=105, line=dict(color=line_color, width=2), fillcolor="rgba(0, 255, 0, 0.1)")
+        fig.add_shape(type="rect", x0=0, y0=0, x1=68, y1=52.5, line=dict(color=line_color, width=1))  # خط المنتصف
+        fig.add_shape(type="rect", x0=0, y0=0, x1=16.5, y1=40.3, line=dict(color=line_color, width=1))  # منطقة الجزاء (الفريق السفلي)
+        fig.add_shape(type="rect", x0=0, y0=64.7, x1=16.5, y1=105, line=dict(color=line_color, width=1))  # منطقة الجزاء (الفريق العلوي)
+        fig.add_shape(type="rect", x0=0, y0=13.8, x1=5.5, y1=91.2, line=dict(color=line_color, width=1))  # منطقة المرمى (الفريق السفلي)
+        fig.add_shape(type="rect", x0=0, y0=75.2, x1=5.5, y1=91.2, line=dict(color=line_color, width=1))  # منطقة المرمى (الفريق العلوي)
+        fig.add_shape(type="circle", x0=34-9.15, y0=52.5-9.15, x1=34+9.15, y1=52.5+9.15, line=dict(color=line_color, width=1))  # دائرة المنتصف
 
+        # إضافة الخطوط بين اللاعبين
         for idx in range(len(pass_counts_df)):
-            pitch.lines(
-                pass_counts_df['pass_avg_x'].iloc[idx],
-                pass_counts_df['pass_avg_y'].iloc[idx],
-                pass_counts_df['receiver_avg_x'].iloc[idx],
-                pass_counts_df['receiver_avg_y'].iloc[idx],
-                lw=pass_counts_df['line_width'].iloc[idx],
-                color=color[idx],
-                zorder=1,
-                ax=ax
-            )
+            fig.add_trace(go.Scatter(
+                x=[pass_counts_df['pass_avg_y'].iloc[idx], pass_counts_df['receiver_avg_y'].iloc[idx]],
+                y=[pass_counts_df['pass_avg_x'].iloc[idx], pass_counts_df['receiver_avg_x'].iloc[idx]],
+                mode='lines',
+                line=dict(color=col, width=pass_counts_df['line_width'].iloc[idx], opacity=c_transparency[idx]),
+                showlegend=False
+            ))
 
+        # إضافة مواقع اللاعبين
         for index, row in avg_locs_df.iterrows():
-            if row['isFirstEleven'] == True:
-                pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='o', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.9, ax=ax)
-            else:
-                pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='s', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.7, ax=ax)
+            marker_symbol = 'circle' if row['isFirstEleven'] else 'square'
+            fig.add_trace(go.Scatter(
+                x=[row['avg_y']],
+                y=[row['avg_x']],
+                mode='markers+text',
+                marker=dict(size=20, color=col, line=dict(color=line_color, width=2), symbol=marker_symbol, opacity=0.9 if row['isFirstEleven'] else 0.7),
+                text=[str(int(row['shirtNo']))],
+                textposition='middle center',
+                textfont=dict(size=12, color='white'),
+                showlegend=False
+            ))
 
-        for index, row in avg_locs_df.iterrows():
-            player_initials = row["shirtNo"]
-            pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c='white', ha='center', va='center', size=14, weight='bold', ax=ax)
-
+        # حساب التماسك العمودي
         avgph = round(avg_locs_df['avg_x'].median(), 2)
-        ax.axhline(y=avgph, color='white', linestyle='--', alpha=0.5, linewidth=1.5)
+        fig.add_shape(type="line", x0=0, y0=avgph, x1=68, y1=avgph, line=dict(color="white", width=1.5, dash="dash"))
 
         center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
         def_line_h = round(center_backs_height['avg_x'].median(), 2)
         Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == 1].sort_values(by='avg_x', ascending=False).head(2)
         fwd_line_h = round(Forwards_height['avg_x'].mean(), 2)
-        ymid = [0, 0, 68, 68]
-        xmid = [def_line_h, fwd_line_h, fwd_line_h, def_line_h]
-        ax.fill(ymid, xmid, col, alpha=0.2)
+        fig.add_shape(type="rect", x0=0, y0=def_line_h, x1=68, y1=fwd_line_h, fillcolor=col, opacity=0.2, line=dict(width=0))
 
         v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
 
+        # إضافة النصوص
         if phase_tag == 'Full Time':
-            ax.text(34, 115, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-            ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+            title_text = f'الوقت بالكامل: 0-90 دقيقة<br>إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'
         elif phase_tag == 'First Half':
-            ax.text(34, 115, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-            ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+            title_text = f'الشوط الأول: 0-45 دقيقة<br>إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'
         elif phase_tag == 'Second Half':
-            ax.text(34, 115, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-            ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+            title_text = f'الشوط الثاني: 45-90 دقيقة<br>إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'
 
-        ax.text(34, -5, reshape_arabic_text(f"على الكرة\nالتماسك العمودي (المنطقة المظللة): {v_comp}%"), color='white', fontsize=12, ha='center', va='center', weight='bold')
+        fig.update_layout(
+            title=dict(text=title_text, x=0.5, y=0.95, xanchor='center', yanchor='top', font=dict(size=14, color='white')),
+            xaxis=dict(range=[-5, 73], showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(range=[-5, 110], showgrid=False, zeroline=False, showticklabels=False),
+            plot_bgcolor=bg_color,
+            paper_bgcolor=bg_color,
+            showlegend=False,
+            margin=dict(l=0, r=0, t=50, b=50),
+            annotations=[
+                dict(
+                    x=34, y=-5,
+                    text=f"على الكرة<br>التماسك العمودي (المنطقة المظللة): {v_comp}%",
+                    showarrow=False,
+                    font=dict(size=12, color='white'),
+                    align='center'
+                )
+            ]
+        )
 
-        return pass_btn
+        return pass_btn, fig
 
     with tab1:
-        if st.session_state['analysis_type'] == reshape_arabic_text('شبكة التمريرات'):
-            st.header(reshape_arabic_text('شبكة التمريرات'))
+        if st.session_state['analysis_type'] == 'شبكة التمريرات':
+            st.header('شبكة التمريرات')
             
             pn_time_phase = st.radio(
-                reshape_arabic_text("اختر فترة المباراة:"),
-                [reshape_arabic_text("الوقت الكامل"), reshape_arabic_text("الشوط الأول"), reshape_arabic_text("الشوط الثاني")],
+                "اختر فترة المباراة:",
+                ["الوقت الكامل", "الشوط الأول", "الشوط الثاني"],
                 index=0,
                 key='pn_time_pill'
             )
 
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_pass_btn = None
-            away_pass_btn = None
+            home_pass_btn, home_fig = None, None
+            away_pass_btn, away_fig = None, None
 
-            if pn_time_phase == reshape_arabic_text('الوقت الكامل'):
-                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-            elif pn_time_phase == reshape_arabic_text('الشوط الأول'):
-                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-                away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-            elif pn_time_phase == reshape_arabic_text('الشوط الثاني'):
-                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+            if pn_time_phase == 'الوقت الكامل':
+                home_pass_btn, home_fig = pass_network(hteamName, hcol, 'Full Time')
+                away_pass_btn, away_fig = pass_network(ateamName, acol, 'Full Time')
+            elif pn_time_phase == 'الشوط الأول':
+                home_pass_btn, home_fig = pass_network(hteamName, hcol, 'First Half')
+                away_pass_btn, away_fig = pass_network(ateamName, acol, 'First Half')
+            elif pn_time_phase == 'الشوط الثاني':
+                home_pass_btn, home_fig = pass_network(hteamName, hcol, 'Second Half')
+                away_pass_btn, away_fig = pass_network(ateamName, acol, 'Second Half')
 
-            if home_pass_btn is not None and away_pass_btn is not None:
-                # معالجة العنوان
-                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
-                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
-                title = f"<{home_part}> - <{away_part}>"
-                fig_text(0.5, 1.05, title, 
-                         highlight_textprops=[{'color': hcol}, {'color': acol}],
-                         fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
-                fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
-                fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
-
-                fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
-                         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-                fig.text(0.5, 0.00, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
-                         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-
-                himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-                himage = Image.open(himage)
-                ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-
-                aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-                aimage = Image.open(aimage)
-                ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-
-                plt.subplots_adjust(top=0.85, bottom=0.15)
-                st.pyplot(fig)
-
+            if home_pass_btn is not None and away_pass_btn is not None and home_fig is not None and away_fig is not None:
+                # عرض الرسومات باستخدام Plotly
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
-                    home_pass_btn_display = home_pass_btn.copy()
-                    for col in home_pass_btn_display.columns:
-                        if home_pass_btn_display[col].dtype == "object":
-                            home_pass_btn_display[col] = home_pass_btn_display[col].apply(lambda x: reshape_arabic_text(str(x)))
-                    st.dataframe(home_pass_btn_display, hide_index=True)
+                    st.plotly_chart(home_fig, use_container_width=True)
                 with col2:
-                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
-                    away_pass_btn_display = away_pass_btn.copy()
-                    for col in away_pass_btn_display.columns:
-                        if away_pass_btn_display[col].dtype == "object":
-                            away_pass_btn_display[col] = away_pass_btn_display[col].apply(lambda x: reshape_arabic_text(str(x)))
-                    st.dataframe(away_pass_btn_display, hide_index=True)
+                    st.plotly_chart(away_fig, use_container_width=True)
+
+                # عرض الجداول
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(f'أزواج التمرير لفريق {hteamName}:')
+                    st.dataframe(home_pass_btn, hide_index=True)
+                with col2:
+                    st.write(f'أزواج التمرير لفريق {ateamName}:')
+                    st.dataframe(away_pass_btn, hide_index=True)
             else:
-                st.write(reshape_arabic_text("لا توجد بيانات متاحة لعرض شبكة التمريرات."))
+                st.write("لا توجد بيانات متاحة لعرض شبكة التمريرات.")
 if an_tp == 'Defensive Actions Heatmap':
     st.header(f'{an_tp}')
             
