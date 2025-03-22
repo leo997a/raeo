@@ -585,7 +585,6 @@ def pass_network(ax, team_name, team_name_original, col, phase_tag):
 
     total_pass = df_pass[(df_pass['teamName'] == team_name_original) & (df_pass['type'] == 'Pass')]
     accrt_pass = df_pass[(df_pass['teamName'] == team_name_original) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
-    if len(total_pass) != 0:
     
     # إضافة سجل للتحقق من عدد التمريرات
     print(f"عدد التمريرات الكلي لفريق {team_name}: {len(total_pass)}")
