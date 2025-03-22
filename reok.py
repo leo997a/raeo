@@ -553,8 +553,15 @@ hgoal_count = hgoal_count + len(awaydf[(awaydf['teamName'] == ateamName_original
 agoal_count = agoal_count + len(homedf[(homedf['teamName'] == hteamName_original) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
     
 df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
-hftmb_tid = df_teamNameId[df_teamNameId['teamName']==hteamName].teamId.to_list()[0]
-aftmb_tid = df_teamNameId[df_teamNameId['teamName']==ateamName].teamId.to_list()[0]
+h_team_match = df_teamNameId[df_teamNameId['teamName'] == hteamName_original].teamId.to_list()
+a_team_match = df_teamNameId[df_teamNameId['teamName'] == ateamName_original].teamId.to_list()
+    
+if h_team_match and a_team_match:
+    hftmb_tid = h_team_match[0]
+    aftmb_tid = a_team_match[0]
+else:
+    st.error(reshape_arabic_text(f"لم يتم العثور على معرف الفريق لـ {hteamName} أو {ateamName}. يرجى التحقق من أسماء الفرق."))
+    st.stop()
     
 st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
 st.text(f'{league}')
