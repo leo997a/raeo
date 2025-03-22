@@ -755,7 +755,7 @@ with tab1:
         ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
         # ضبط المساحات العلوية والسفلية للرسم
-        plt.subplots_adjust(top=0.85, bottom=0.15)
+        plt.subplots_adjust(top=0.90, bottom=0.20)
 
         st.pyplot(fig)
 
