@@ -698,7 +698,11 @@ with tab1:
 if an_tp == reshape_arabic_text('شبكة التمريرات'):
     st.header(reshape_arabic_text('شبكة التمريرات'))
     
-    pn_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='pn_time_pill')
+pn_time_phase = st.radio(" ", [
+    reshape_arabic_text('الوقت الكامل'), 
+    reshape_arabic_text('الشوط الأول'), 
+    reshape_arabic_text('الشوط الثاني')
+], index=0, key='pn_time_pill')
 
     fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
     home_pass_btn = None
