@@ -985,16 +985,16 @@ def def_acts_hm(ax, team_name, col, phase_tag):
                 st.write(f'{ateamName} Progressive Passers:')
                 st.dataframe(away_prop, hide_index=True)
             
-        if an_tp == 'Progressive Carries':
+    if an_tp == 'Progressive Carries':
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
-            def progressive_carry(ax, team_name, col, phase_tag):
-                if phase_tag == 'Full Time':
+    def progressive_carry(ax, team_name, col, phase_tag):
+    if phase_tag == 'Full Time':
                     df_proc = df[(df['teamName']==team_name) & (df['prog_carry']>9.144) & (df['endX']>=35)]
-                elif phase_tag == 'First Half':
+    elif phase_tag == 'First Half':
                     df_fh = df[df['period'] == 'FirstHalf']
                     df_proc = df_fh[(df_fh['teamName']==team_name) & (df_fh['prog_carry']>9.11) & (df_fh['endX']>=35)]
-                elif phase_tag == 'Second Half':
+    elif phase_tag == 'Second Half':
                     df_sh = df[df['period'] == 'SecondHalf']
                     df_proc = df_sh[(df_sh['teamName']==team_name) & (df_sh['prog_carry']>9.11) & (df_sh['endX']>=35)]
                 
@@ -1005,7 +1005,7 @@ def def_acts_hm(ax, team_name, col, phase_tag):
                 midd_proc = df_proc[(df_proc['y']<=136/3) & (df_proc['y']>=68/3)]
                 rigt_proc = df_proc[df_proc['y']<68/3]
             
-                if len(df_proc) != 0:
+    if len(df_proc) != 0:
                     name_counts = df_proc['shortName'].value_counts()
                     name_counts_df = name_counts.reset_index()
                     name_counts_df.columns = ['name', 'count']
@@ -1013,11 +1013,11 @@ def def_acts_hm(ax, team_name, col, phase_tag):
                     name_counts_df_show = name_counts_df.reset_index(drop=True)
                     most_name = name_counts_df_show['name'][0]
                     most_count = name_counts_df_show['count'][0]
-                else:
+    else:
                     most_name = 'None'
                     most_count = 0  
                 
-                if len(left_proc) != 0:
+    if len(left_proc) != 0:
                     name_counts = left_proc['shortName'].value_counts()
                     name_counts_df = name_counts.reset_index()
                     name_counts_df.columns = ['name', 'count']
@@ -1025,11 +1025,11 @@ def def_acts_hm(ax, team_name, col, phase_tag):
                     name_counts_df = name_counts_df.reset_index()
                     l_name = name_counts_df['name'][0]
                     l_count = name_counts_df['count'][0]
-                else:
+    else:
                     l_name = 'None'
                     l_count = 0   
             
-                if len(midd_proc) != 0:
+    if len(midd_proc) != 0:
                     name_counts = midd_proc['shortName'].value_counts()
                     name_counts_df = name_counts.reset_index()
                     name_counts_df.columns = ['name', 'count']
@@ -1037,11 +1037,11 @@ def def_acts_hm(ax, team_name, col, phase_tag):
                     name_counts_df = name_counts_df.reset_index()
                     m_name = name_counts_df['name'][0]
                     m_count = name_counts_df['count'][0]
-                else:
+    else:
                     m_name = 'None'
                     m_count = 0   
             
-                if len(rigt_proc) != 0:
+    if len(rigt_proc) != 0:
                     name_counts = rigt_proc['shortName'].value_counts()
                     name_counts_df = name_counts.reset_index()
                     name_counts_df.columns = ['name', 'count']
@@ -1049,11 +1049,11 @@ def def_acts_hm(ax, team_name, col, phase_tag):
                     name_counts_df = name_counts_df.reset_index()
                     r_name = name_counts_df['name'][0]
                     r_count = name_counts_df['count'][0]
-                else:
+    else:
                     r_name = 'None'
                     r_count = 0   
             
-                for index, row in df_proc.iterrows():
+    for index, row in df_proc.iterrows():
                     arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color=col, zorder=4, mutation_scale=20, 
                                                     alpha=0.9, linewidth=2, linestyle='--')
                     ax.add_patch(arrow)
