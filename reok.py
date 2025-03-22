@@ -920,7 +920,7 @@ def def_acts_hm(ax, team_name, col, phase_tag):
         r_count = 0   
             
     pitch.lines(df_prop.x, df_prop.y, df_prop.endX, df_prop.endY, comet=True, lw=4, color=col, ax=ax)
-    pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=, ec=col, lw=1.5, ax=ax)
+    pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=bg_color, ec=col, lw=1.5, ax=ax)
             
     if phase_tag == 'Full Time':
         ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
