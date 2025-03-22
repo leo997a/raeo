@@ -806,7 +806,7 @@ def def_acts_hm(ax, team_name, col, phase_tag):
         ax.text(73, avgph, f'متوسط ارتفاع الأفعال الدفاعية: {avgph:.2f}م', color='gray', rotation=-90, ha='right', va='center')
     return df_def_show
                     
-   if an_tp == 'Defensive Actions Heatmap':
+    if an_tp == 'Defensive Actions Heatmap':
     st.header(f'{an_tp}')
     
     dah_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='dah_time_pill')
