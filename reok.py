@@ -988,7 +988,7 @@ def def_acts_hm(ax, team_name, col, phase_tag):
     if an_tp == 'Progressive Carries':
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
-    def progressive_carry(ax, team_name, col, phase_tag):
+def progressive_carry(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
             df_proc = df[(df['teamName']==team_name) & (df['prog_carry']>9.144) & (df['endX']>=35)]
     elif phase_tag == 'First Half':
