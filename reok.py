@@ -1078,7 +1078,7 @@ def progressive_carry(ax, team_name, col, phase_tag):
                     ax.text(34, -7, f'Most by:\n{m_name}({m_count})', color=col, ha='center', va='top')
                     ax.text(68/6, -7, f'Most by:\n{r_name}({r_count})', color=col, ha='center', va='top')
                  
-                return name_counts_df_show
+        return name_counts_df_show
             
             pc_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pc_time_pill')
             if pc_time_phase == 'Full Time':
