@@ -642,9 +642,7 @@ an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), options_disp
 
 # تحديث st.session_state
 st.session_state['analysis_type'] = an_tp
-    # تحديث an_tp بناءً على التغيير في القائمة المنسدلة
-    # ملاحظة: نظرًا لأن Streamlit لا يدعم التفاعل المباشر مع JavaScript، قد نحتاج إلى إعادة تحميل الصفحة أو استخدام مكون مخصص
-    # كحل مؤقت، يمكننا استخدام st.experimental_rerun() لتحديث القيمة
+
     if st.button("تحديث الاختيار"):
         st.session_state['analysis_type'] = st.session_state.get('analysis_type', options[0])
         st.experimental_rerun()
