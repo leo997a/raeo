@@ -96,7 +96,6 @@ default_bg_color = '#1e1e2f'  # لون الخلفية الافتراضي
 default_gradient_colors = ['#003087', '#d00000']  # ألوان التدرج الافتراضية
 
 # إضافة أدوات اختيار الألوان في الشريط الجانبي
-# إضافة أدوات اختيار الألوان في الشريط الجانبي
 st.sidebar.title(reshape_arabic_text('اختيار الألوان'))
 hcol = st.sidebar.color_picker(reshape_arabic_text('لون الفريق المضيف'), default_hcol, key='hcol_picker')
 acol = st.sidebar.color_picker(reshape_arabic_text('لون الفريق الضيف'), default_acol, key='acol_picker')
@@ -108,7 +107,7 @@ line_color = st.sidebar.color_picker(reshape_arabic_text('لون الخطوط'),
 
 st.sidebar.title(reshape_arabic_text('اختيار المباراة'))
 season = st.sidebar.selectbox(reshape_arabic_text('اختر الموسم:'), [reshape_arabic_text('2024_25')], key='season', index=0, on_change=reset_confirmed)
-if season:
+    if season:
     league_options = [
         reshape_arabic_text('الدوري الإسباني'),
         reshape_arabic_text('الدوري الإنجليزي الممتاز'),
