@@ -233,32 +233,61 @@ if season:
 
 if league and htn and atn and st.session_state.confirmed:
     @st.cache_data
-    def get_event_data(season, league, stage, htn, atn):
-        if league == 'UEFA_Champions_League':
-            match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{stage}/{htn}_vs_{atn}.html"
-        else:
-            match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{htn}_vs_{atn}.html"
-        match_html_path = match_html_path.replace(' ', '%20')
+    def get_event_data(season, league, stage, hteam, ateam):
+    try:
+        # تكوين رابط الملف
+        match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{stage}/{hteam}_vs_{ateam}.html"
+        match_html_path = match_html_path.replace(" ", "%20")
+        
+        # جلب الملف
         response = requests.get(match_html_path)
-        response.raise_for_status()
+        response.raise_for_status()  # التحقق من نجاح الطلب
+        
         match_html = response.text
-        match_json = re.search(r'var matchCentreData = ({.*});', match_html).group(1)
-        match_data = json.loads(match_json)
-        events = match_data['events']
-        df = pd.DataFrame(events)
-        teams_dict = match_data['header']['teams']
-        players_dict = match_data['playerStats']
+        
+        # البحث عن البيانات
+        match_json = re.search(r'var matchCentreData = ({.*});', match_html)
+        if match_json is None:
+            st.error(f"لم يتم العثور على 'matchCentreData' في الملف: {match_html_path}")
+            return None, None, None
+        
+        events = match_data["events"]
+        teams = match_data["teamsData"]
         players_list = []
-        for player_id, player_info in players_dict.items():
-            player_info['playerId'] = player_id
-            players_list.append(player_info)
+        for p in match_data["playerIdNameDictionary"].items():
+            players_list.append({"playerId": p[0], "name": p[1]})
+        
+        df = pd.DataFrame(events)
+        teams_dict = teams
         players_df = pd.DataFrame(players_list)
+        
         return df, teams_dict, players_df
+        except requests.exceptions.HTTPError as e:
+        st.error(f"خطأ في جلب البيانات من الرابط: {e}")
+        return None, None, None
+    except json.JSONDecodeError as e:
+        st.error(f"خطأ في تحليل JSON: {e}")
+        return None, None, None
+    except Exception as e:
+        st.error(f"حدث خطأ غير متوقع: {e}")
+        return None, None, None
+
+# استخدام الدالة في الكود الرئيسي
+season = "2024_25"
+league = "UEFA_Champions_League"
+stage = "دور الـ 16"  # تأكد من مطابقة اسم المجلد في GitHub
+htn = "Barcelona"
+atn = "Benfica"
 
     df, teams_dict, players_df = get_event_data(season, league, stage, htn, atn)
+    
+    if df is not None and teams_dict is not None and players_df is not None:
 
     hteamID = list(teams_dict.keys())[0]
     ateamID = list(teams_dict.keys())[1]
+        # استمر في معالجة البيانات
+    else:
+    st.write("تعذر تحميل البيانات. تحقق من الرابط أو الملف.")
     hteamName = teams_dict[hteamID]
     ateamName = teams_dict[ateamID]
 
