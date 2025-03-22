@@ -58,8 +58,20 @@ line_color= '#ffffff'
 col1 = '#d00000'
 col2 = '#003087'
 gradient_colors = ['#003087', '#d00000']  # Blue to red gradient for the pitch
+default_hcol = '#d00000'  # لون الفريق المضيف الافتراضي
+default_acol = '#003087'  # لون الفريق الضيف الافتراضي
+default_bg_color = '#1e1e2f'  # لون الخلفية الافتراضي
+default_gradient_colors = ['#003087', '#d00000']  # ألوان التدرج الافتراضية
 
-st.sidebar.title('اختيار المباراة')
+# إضافة أدوات اختيار الألوان في الشريط الجانبي
+st.sidebar.title('اختيار الألوان')
+hcol = st.sidebar.color_picker('لون الفريق المضيف', default_hcol, key='hcol_picker')
+acol = st.sidebar.color_picker('لون الفريق الضيف', default_acol, key='acol_picker')
+bg_color = st.sidebar.color_picker('لون الخلفية', default_bg_color, key='bg_color_picker')
+gradient_start = st.sidebar.color_picker('بداية التدرج', default_gradient_colors[0], key='gradient_start_picker')
+gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradient_colors[1], key='gradient_end_picker')
+gradient_colors = [gradient_start, gradient_end]  # تحديث قائمة ألوان التدرج
+line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker')  # اختياري
 st.sidebar.title('Match Selection')
     
 season = None
@@ -527,8 +539,8 @@ if league and htn and atn and st.session_state.confirmed:
     awaydf = df[(df['teamName']==ateamName)]
     hxT = homedf['xT'].sum().round(2)
     axT = awaydf['xT'].sum().round(2)
-    hcol = col1
-    acol = col2
+    # الألوان مأخوذة مباشرة من اختيارات المستخدم في الشريط الجانبي
+    # لا حاجة لتعيين hcol و acol هنا لأنهما مُعرفتان في الشريط الجانبي
     
     hgoal_count = len(homedf[(homedf['teamName']==hteamName) & (homedf['type']=='Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))])
     agoal_count = len(awaydf[(awaydf['teamName']==ateamName) & (awaydf['type']=='Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))])
