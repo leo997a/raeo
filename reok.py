@@ -1111,15 +1111,15 @@ def progressive_carry(ax, team_name, col, phase_tag):
         aimage = Image.open(aimage)
         ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
             
-            st.pyplot(fig)
+        st.pyplot(fig)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Progressive Carriers:')
-                st.dataframe(home_proc, hide_index=True)
-            with col2:
-                st.write(f'{ateamName} Progressive Carriers:')
-                st.dataframe(away_proc, hide_index=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f'{hteamName} Progressive Carriers:')
+            st.dataframe(home_proc, hide_index=True)
+        with col2:
+            st.write(f'{ateamName} Progressive Carriers:')
+            st.dataframe(away_proc, hide_index=True)
             
     if an_tp == 'Shotmap':
             # st.header(f'{st.session_state.analysis_type}')
