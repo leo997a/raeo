@@ -990,13 +990,13 @@ def def_acts_hm(ax, team_name, col, phase_tag):
             st.header(f'{an_tp}')
     def progressive_carry(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
-                    df_proc = df[(df['teamName']==team_name) & (df['prog_carry']>9.144) & (df['endX']>=35)]
+                df_proc = df[(df['teamName']==team_name) & (df['prog_carry']>9.144) & (df['endX']>=35)]
     elif phase_tag == 'First Half':
-                    df_fh = df[df['period'] == 'FirstHalf']
-                    df_proc = df_fh[(df_fh['teamName']==team_name) & (df_fh['prog_carry']>9.11) & (df_fh['endX']>=35)]
+                df_fh = df[df['period'] == 'FirstHalf']
+                df_proc = df_fh[(df_fh['teamName']==team_name) & (df_fh['prog_carry']>9.11) & (df_fh['endX']>=35)]
     elif phase_tag == 'Second Half':
-                    df_sh = df[df['period'] == 'SecondHalf']
-                    df_proc = df_sh[(df_sh['teamName']==team_name) & (df_sh['prog_carry']>9.11) & (df_sh['endX']>=35)]
+                df_sh = df[df['period'] == 'SecondHalf']
+                df_proc = df_sh[(df_sh['teamName']==team_name) & (df_sh['prog_carry']>9.11) & (df_sh['endX']>=35)]
                 
                 pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=, line_color=line_color, line_zorder=3, linewidth=2)
                 pitch.draw(ax=ax)
