@@ -1058,7 +1058,7 @@ def progressive_carry(ax, team_name, col, phase_tag):
                                                     alpha=0.9, linewidth=2, linestyle='--')
                     ax.add_patch(arrow)
             
-                if phase_tag == 'Full Time':
+    if phase_tag == 'Full Time':
                     ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
                 elif phase_tag == 'First Half':
                     ax.text(34, 116, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
