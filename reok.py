@@ -37,6 +37,7 @@ def reshape_arabic_text(text):
     return get_display(reshaped_text)
 
 # إضافة CSS لدعم RTL في streamlit
+# إضافة CSS محسّن لدعم RTL في Streamlit
 st.markdown("""
     <style>
     body {
@@ -51,24 +52,41 @@ st.markdown("""
         direction: rtl !important;
         text-align: right !important;
     }
-    .stSelectbox > div > div > div {
+    .custom-tabs {
+        display: flex;
+        flex-direction: row-reverse;
+        border-bottom: 2px solid #ddd;
+        margin-bottom: 20px;
+    }
+    .custom-tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        color: #555;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+    .custom-tab:hover {
+        color: #000;
+        border-bottom: 3px solid #007bff;
+    }
+    .custom-tab.active {
+        color: #007bff;
+        border-bottom: 3px solid #007bff;
+    }
+    .custom-select {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        direction: rtl;
         text-align: right;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #fff;
+        cursor: pointer;
     }
-    .stRadio > div {
-        flex-direction: row-reverse;
-    }
-    .stRadio > div > label {
-        margin-left: 10px;
-        margin-right: 0;
-    }
-    .stTabs > div > div {
-        flex-direction: row-reverse;
-    }
-    .stTabs > div > div > button {
-        margin-left: 10px;
-        margin-right: 0;
-    }
-    .stColumn > div {
+    .custom-select option {
         direction: rtl;
         text-align: right;
     }
