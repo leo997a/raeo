@@ -871,29 +871,29 @@ def def_acts_hm(ax, team_name, col, phase_tag):
     midd_prop = df_prop[(df_prop['y']<=136/3) & (df_prop['y']>=68/3)]
     rigt_prop = df_prop[df_prop['y']<68/3]
             
-        if len(df_prop) != 0:
-            name_counts = df_prop['shortName'].value_counts()
-            name_counts_df = name_counts.reset_index()
-            name_counts_df.columns = ['name', 'count']
-            name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-            name_counts_df_show = name_counts_df.reset_index(drop=True)
-            most_name = name_counts_df_show['name'][0]
-            most_count = name_counts_df_show['count'][0]
-        else:
-                    most_name = 'None'
-                    most_count = 0  
+    if len(df_prop) != 0:
+        name_counts = df_prop['shortName'].value_counts()
+        name_counts_df = name_counts.reset_index()
+        name_counts_df.columns = ['name', 'count']
+        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
+        name_counts_df_show = name_counts_df.reset_index(drop=True)
+        most_name = name_counts_df_show['name'][0]
+        most_count = name_counts_df_show['count'][0]
+    else:
+                most_name = 'None'
+                most_count = 0  
                 
-                if len(left_prop) != 0:
-                    name_counts = left_prop['shortName'].value_counts()
-                    name_counts_df = name_counts.reset_index()
-                    name_counts_df.columns = ['name', 'count']
-                    name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-                    name_counts_df = name_counts_df.reset_index()
-                    l_name = name_counts_df['name'][0]
-                    l_count = name_counts_df['count'][0]
-                else:
-                    l_name = 'None'
-                    l_count = 0   
+    if len(left_prop) != 0:
+        name_counts = left_prop['shortName'].value_counts()
+        name_counts_df = name_counts.reset_index()
+        name_counts_df.columns = ['name', 'count']
+        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
+        name_counts_df = name_counts_df.reset_index()
+        l_name = name_counts_df['name'][0]
+        l_count = name_counts_df['count'][0]
+    else:
+        l_name = 'None'
+        l_count = 0   
             
                 if len(midd_prop) != 0:
                     name_counts = midd_prop['shortName'].value_counts()
