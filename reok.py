@@ -1082,19 +1082,19 @@ def progressive_carry(ax, team_name, col, phase_tag):
             
     pc_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pc_time_pill')
     if pc_time_phase == 'Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-                home_proc = progressive_carry(axs[0], hteamName, hcol, 'Full Time')
-                away_proc = progressive_carry(axs[1], ateamName, acol, 'Full Time')
+        fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+        home_proc = progressive_carry(axs[0], hteamName, hcol, 'Full Time')
+        away_proc = progressive_carry(axs[1], ateamName, acol, 'Full Time')
                 
     if pc_time_phase == 'First Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-                home_proc = progressive_carry(axs[0], hteamName, hcol, 'First Half')
-                away_proc = progressive_carry(axs[1], ateamName, acol, 'First Half')
+        fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+        home_proc = progressive_carry(axs[0], hteamName, hcol, 'First Half')
+        away_proc = progressive_carry(axs[1], ateamName, acol, 'First Half')
                 
     if pc_time_phase == 'Second Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-                home_proc = progressive_carry(axs[0], hteamName, hcol, 'Second Half')
-                away_proc = progressive_carry(axs[1], ateamName, acol, 'Second Half')
+        fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+        home_proc = progressive_carry(axs[0], hteamName, hcol, 'Second Half')
+        away_proc = progressive_carry(axs[1], ateamName, acol, 'Second Half')
             
             fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
             fig.text(0.5, 1.01, 'Progressive Carries', fontsize=20, ha='center', va='center')
