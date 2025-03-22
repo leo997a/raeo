@@ -616,61 +616,41 @@ if league and htn and atn and st.session_state.confirmed:
         else:
             return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
     
-    hteamID = list(teams_dict.keys())[0]  # selected home team
-    ateamID = list(teams_dict.keys())[1]  # selected away team
-    hteamName= teams_dict[hteamID]
-    ateamName= teams_dict[ateamID]
-    
-    homedf = df[(df['teamName']==hteamName)]
-    awaydf = df[(df['teamName']==ateamName)]
+    hteamID = list(teams_dict.keys())[0]
+    ateamID = list(teams_dict.keys())[1]
+    hteamName = teams_dict[hteamID]
+    ateamName = teams_dict[ateamID]
+
+    homedf = df[(df['teamName'] == hteamName)]
+    awaydf = df[(df['teamName'] == ateamName)]
     hxT = homedf['xT'].sum().round(2)
     axT = awaydf['xT'].sum().round(2)
-    
-    hgoal_count = len(homedf[(homedf['teamName']==hteamName) & (homedf['type']=='Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))])
-    agoal_count = len(awaydf[(awaydf['teamName']==ateamName) & (awaydf['type']=='Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))])
-    hgoal_count = hgoal_count + len(awaydf[(awaydf['teamName']==ateamName) & (awaydf['type']=='Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
-    agoal_count = agoal_count + len(homedf[(homedf['teamName']==hteamName) & (homedf['type']=='Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
-    
+
+    hgoal_count = len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))])
+    agoal_count = len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))])
+    hgoal_count = hgoal_count + len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
+    agoal_count = agoal_count + len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
+
     df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
-    hftmb_tid = df_teamNameId[df_teamNameId['teamName']==hteamName].teamId.to_list()[0]
-    aftmb_tid = df_teamNameId[df_teamNameId['teamName']==ateamName].teamId.to_list()[0]
-    
+    hftmb_tid = df_teamNameId[df_teamNameId['teamName'] == hteamName].teamId.to_list()[0]
+    aftmb_tid = df_teamNameId[df_teamNameId['teamName'] == ateamName].teamId.to_list()[0]
+
+    league_display_mapping = {
+        'La Liga': reshape_arabic_text('الدوري الإسباني'),
+        'Premier League': reshape_arabic_text('الدوري الإنجليزي الممتاز'),
+        'Serie A': reshape_arabic_text('الدوري الإيطالي'),
+        'UEFA Champions League': reshape_arabic_text('دوري أبطال أوروبا')
+    }
+    league_display = league_display_mapping.get(league_en, league_en)
+
     st.header(reshape_arabic_text(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}'))
-    st.text(reshape_arabic_text(f'{league}'))
-    
-    # إنشاء علامات تبويب مخصصة باستخدام HTML
-    tabs_html = f"""
-    <div class="custom-tabs" id="custom-tabs">
-        <div class="custom-tab active" onclick="showTab('tab1')">{reshape_arabic_text('تحليل المباراة')}</div>
-        <div class="custom-tab" onclick="showTab('tab2')">{reshape_arabic_text('تبويب آخر')}</div>
-    </div>
+    st.text(league_display)
 
-    <div id="tab1" class="tab-content">
-        <!-- سيتم ملء هذا المحتوى ديناميكيًا -->
-    </div>
-    <div id="tab2" class="tab-content" style="display: none;">
-        <h3>{reshape_arabic_text('هذا التبويب قيد التطوير')}</h3>
-    </div>
+    tab1, tab2 = st.tabs([
+        reshape_arabic_text("تحليل المباراة"),
+        reshape_arabic_text("تبويب آخر")
+    ])
 
-    <script>
-    function showTab(tabId) {{
-        // إخفاء جميع المحتويات
-        document.querySelectorAll('.tab-content').forEach(tab => {{
-            tab.style.display = 'none';
-        }});
-        // إزالة الفئة active من جميع علامات التبويب
-        document.querySelectorAll('.custom-tab').forEach(tab => {{
-            tab.classList.remove('active');
-        }});
-        // إظهار المحتوى المحدد وإضافة الفئة active إلى علامة التبويب المحددة
-        document.getElementById(tabId).style.display = 'block';
-        document.querySelector(`[onclick="showTab('${{tabId}}')"]`).classList.add('active');
-    }}
-    </script>
-    """
-    st.markdown(tabs_html, unsafe_allow_html=True)
-
-    # إنشاء قائمة منسدلة مخصصة باستخدام HTML
     options = [
         'شبكة التمريرات',
         'Defensive Actions Heatmap',
@@ -696,7 +676,6 @@ if league and htn and atn and st.session_state.confirmed:
         key='analysis_type_selectbox'
     )
 
-    # دالة pass_network المعدلة
     def pass_network(ax, team_name, col, phase_tag):
         if phase_tag == 'Full Time':
             df_pass = df.copy()
@@ -710,8 +689,7 @@ if league and htn and atn and st.session_state.confirmed:
 
         total_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass')]
         accrt_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
-    
-        # التحقق من وجود بيانات
+        
         if len(total_pass) == 0:
             ax.text(34, 50, reshape_arabic_text('لا توجد بيانات تمريرات متاحة'), color='white', fontsize=14, ha='center', va='center')
             return None
@@ -743,30 +721,21 @@ if league and htn and atn and st.session_state.confirmed:
         pass_btn = pass_counts_df[['name', 'shirtNo', 'pass_receiver', 'shirtNo_receiver', 'pass_count']]
         pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
 
-    # ... (باقي الكود كما هو)
-        # إعدادات التصميم العصري
-        MAX_LINE_WIDTH = 8  # الحد الأقصى لعرض الخطوط
-        MIN_LINE_WIDTH = 0.5  # الحد الأدنى لعرض الخطوط
-        MIN_TRANSPARENCY = 0.2  # الحد الأدنى للشفافية
-        MAX_TRANSPARENCY = 0.9  # الحد الأقصى للشفافية
+        MAX_LINE_WIDTH = 8
+        MIN_LINE_WIDTH = 0.5
+        MIN_TRANSPARENCY = 0.2
+        MAX_TRANSPARENCY = 0.9
 
-        # حساب عرض الخطوط بناءً على عدد التمريرات
         pass_counts_df['line_width'] = (pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()) * (MAX_LINE_WIDTH - MIN_LINE_WIDTH) + MIN_LINE_WIDTH
-
-        # حساب الشفافية بناءً على عدد التمريرات
         c_transparency = pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()
         c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
-
-        # إنشاء اللون مع الشفافية
         color = np.array(to_rgba(col))
         color = np.tile(color, (len(pass_counts_df), 1))
         color[:, 3] = c_transparency
 
-        # إنشاء ملعب بتصميم متدرج
         pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, linewidth=1.5, line_color=line_color)
         pitch.draw(ax=ax)
 
-        # تطبيق خلفية متدرجة
         gradient = LinearSegmentedColormap.from_list("pitch_gradient", gradient_colors, N=100)
         x = np.linspace(0, 1, 100)
         y = np.linspace(0, 1, 100)
@@ -775,36 +744,31 @@ if league and htn and atn and st.session_state.confirmed:
         ax.imshow(Z, extent=[0, 68, 0, 105], cmap=gradient, alpha=0.8, aspect='auto', zorder=0)
         pitch.draw(ax=ax)
 
-        # رسم الخطوط بين اللاعبين مع عرض متغير وشفافية متغيرة
         for idx in range(len(pass_counts_df)):
             pitch.lines(
                 pass_counts_df['pass_avg_x'].iloc[idx],
                 pass_counts_df['pass_avg_y'].iloc[idx],
                 pass_counts_df['receiver_avg_x'].iloc[idx],
                 pass_counts_df['receiver_avg_y'].iloc[idx],
-                lw=pass_counts_df['line_width'].iloc[idx],  # عرض الخط بناءً على عدد التمريرات
-                color=color[idx],  # اللون مع الشفافية
+                lw=pass_counts_df['line_width'].iloc[idx],
+                color=color[idx],
                 zorder=1,
                 ax=ax
             )
 
-        # رسم دوائر اللاعبين
         for index, row in avg_locs_df.iterrows():
             if row['isFirstEleven'] == True:
                 pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='o', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.9, ax=ax)
             else:
                 pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='s', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.7, ax=ax)
 
-        # كتابة أرقام القمصان
         for index, row in avg_locs_df.iterrows():
             player_initials = row["shirtNo"]
             pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c='white', ha='center', va='center', size=14, weight='bold', ax=ax)
 
-        # خط التماسك العمودي
         avgph = round(avg_locs_df['avg_x'].median(), 2)
         ax.axhline(y=avgph, color='white', linestyle='--', alpha=0.5, linewidth=1.5)
 
-        # ارتفاع خط الدفاع والهجوم
         center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
         def_line_h = round(center_backs_height['avg_x'].median(), 2)
         Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == 1].sort_values(by='avg_x', ascending=False).head(2)
@@ -815,7 +779,6 @@ if league and htn and atn and st.session_state.confirmed:
 
         v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
 
-        # إضافة النصوص مع معالجة العربية وضبط الإحداثيات
         if phase_tag == 'Full Time':
             ax.text(34, 115, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
             ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
@@ -830,79 +793,75 @@ if league and htn and atn and st.session_state.confirmed:
 
         return pass_btn
 
+    with tab1:
+        if st.session_state['analysis_type'] == reshape_arabic_text('شبكة التمريرات'):
+            st.header(reshape_arabic_text('شبكة التمريرات'))
+            
+            pn_time_phase = st.radio(
+                reshape_arabic_text("اختر فترة المباراة:"),
+                [reshape_arabic_text("الوقت الكامل"), reshape_arabic_text("الشوط الأول"), reshape_arabic_text("الشوط الثاني")],
+                index=0,
+                key='pn_time_pill'
+            )
 
-# الجزء الخارجي من الكود مع معالجة النصوص العربية وضبط الإحداثيات
-tab1, tab2 = st.tabs([reshape_arabic_text("تحليل المباراة"), reshape_arabic_text("تبويب آخر")])
+            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+            home_pass_btn = None
+            away_pass_btn = None
 
-with tab1:
-    if an_tp == reshape_arabic_text('شبكة التمريرات'):
-        st.header(reshape_arabic_text('شبكة التمريرات'))
-        
-        pn_time_phase = st.radio(
-            reshape_arabic_text("اختر فترة المباراة:"),
-            [reshape_arabic_text("الوقت الكامل"), reshape_arabic_text("الشوط الأول"), reshape_arabic_text("الشوط الثاني")],
-            index=0,
-            key='pn_time_pill'
-        )
+            if pn_time_phase == reshape_arabic_text('الوقت الكامل'):
+                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
+            elif pn_time_phase == reshape_arabic_text('الشوط الأول'):
+                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
+                away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
+            elif pn_time_phase == reshape_arabic_text('الشوط الثاني'):
+                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
+                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-        home_pass_btn = None
-        away_pass_btn = None
+            if home_pass_btn is not None and away_pass_btn is not None:
+                # معالجة العنوان
+                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+                title = f"<{home_part}> - <{away_part}>"
+                fig_text(0.5, 1.05, title, 
+                         highlight_textprops=[{'color': hcol}, {'color': acol}],
+                         fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+                fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
+                fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
 
-        if pn_time_phase == reshape_arabic_text('الوقت الكامل'):
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-        elif pn_time_phase == reshape_arabic_text('الشوط الأول'):
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-        elif pn_time_phase == reshape_arabic_text('الشوط الثاني'):
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+                fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
+                         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                fig.text(0.5, 0.00, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
+                         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-        if home_pass_btn is not None and away_pass_btn is not None:
-            # معالجة العنوان
-            home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
-            away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
-            title = f"<{home_part}> - <{away_part}>"
-            fig_text(0.5, 1.05, title, 
-                     highlight_textprops=[{'color': hcol}, {'color': acol}],
-                     fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
-            fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+                himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+                himage = Image.open(himage)
+                ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
 
-            fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
-                     fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-            fig.text(0.5, 0.00, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
-                     fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+                aimage = Image.open(aimage)
+                ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+                plt.subplots_adjust(top=0.85, bottom=0.15)
+                st.pyplot(fig)
 
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-
-            plt.subplots_adjust(top=0.85, bottom=0.15)
-            st.pyplot(fig)
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
-                home_pass_btn_display = home_pass_btn.copy()
-                for col in home_pass_btn_display.columns:
-                    if home_pass_btn_display[col].dtype == "object":
-                        home_pass_btn_display[col] = home_pass_btn_display[col].apply(lambda x: reshape_arabic_text(str(x)))
-                st.dataframe(home_pass_btn_display, hide_index=True)
-            with col2:
-                st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
-                away_pass_btn_display = away_pass_btn.copy()
-                for col in away_pass_btn_display.columns:
-                    if away_pass_btn_display[col].dtype == "object":
-                        away_pass_btn_display[col] = away_pass_btn_display[col].apply(lambda x: reshape_arabic_text(str(x)))
-                st.dataframe(away_pass_btn_display, hide_index=True)
-        else:
-            st.write(reshape_arabic_text("لا توجد بيانات متاحة لعرض شبكة التمريرات."))
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
+                    home_pass_btn_display = home_pass_btn.copy()
+                    for col in home_pass_btn_display.columns:
+                        if home_pass_btn_display[col].dtype == "object":
+                            home_pass_btn_display[col] = home_pass_btn_display[col].apply(lambda x: reshape_arabic_text(str(x)))
+                    st.dataframe(home_pass_btn_display, hide_index=True)
+                with col2:
+                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
+                    away_pass_btn_display = away_pass_btn.copy()
+                    for col in away_pass_btn_display.columns:
+                        if away_pass_btn_display[col].dtype == "object":
+                            away_pass_btn_display[col] = away_pass_btn_display[col].apply(lambda x: reshape_arabic_text(str(x)))
+                    st.dataframe(away_pass_btn_display, hide_index=True)
+            else:
+                st.write(reshape_arabic_text("لا توجد بيانات متاحة لعرض شبكة التمريرات."))
 if an_tp == 'Defensive Actions Heatmap':
     st.header(f'{an_tp}')
             
