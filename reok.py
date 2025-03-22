@@ -27,7 +27,7 @@ from bidi.algorithm import get_display
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
 mpl.rcParams['font.family'] = 'sans-serif'
-mpl.rcParams['font.sans-serif'] = ['Arial', 'Tahoma']
+mpl.rcParams['font.sans-serif'] = ['Amiri', 'Noto Sans Arabic', 'Arial', 'Tahoma']
 mpl.rcParams['axes.unicode_minus'] = False
 
 # دالة لتحويل النص العربي
