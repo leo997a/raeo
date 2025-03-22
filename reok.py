@@ -13,6 +13,7 @@ from mplsoccer import Pitch, VerticalPitch, add_image
 from matplotlib import rcParams
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import matplotlib.patheffects as path_effects  # إضافة هذا الاستيراد
+import matplotlib.font_manager as fm
 from highlight_text import ax_text, fig_text
 from PIL import Image
 from urllib.request import urlopen
