@@ -525,22 +525,33 @@ if league and htn and atn and st.session_state.confirmed:
         else:
             return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
     
-    hteamID = list(teams_dict.keys())[0]  # selected home team
-    ateamID = list(teams_dict.keys())[1]  # selected away team
-    hteamName= teams_dict[hteamID]
-    ateamName= teams_dict[ateamID]
+# قاموس لترجمة أسماء الفرق
+team_translations = {
+    "Barcelona": "برشلونة",
+    "Benfica": "بنفيكا",
+    "Atletico Madrid": "أتلتيكو مدريد",
+    "Real Madrid": "ريال مدريد",
+    "Manchester United": "مانشستر يونايتد",
+}
+
+hteamID = list(teams_dict.keys())[0]  # selected home team
+ateamID = list(teams_dict.keys())[1]  # selected away team
+hteamName_original = teams_dict[hteamID]  # الاسم الأصلي (بالإنجليزية)
+ateamName_original = teams_dict[ateamID]  # الاسم الأصلي (بالإنجليزية)
+hteamName = team_translations.get(hteamName_original, hteamName_original)  # الاسم المترجم
+ateamName = team_translations.get(ateamName_original, ateamName_original)  # الاسم المترجم
     
-    homedf = df[(df['teamName']==hteamName)]
-    awaydf = df[(df['teamName']==ateamName)]
-    hxT = homedf['xT'].sum().round(2)
-    axT = awaydf['xT'].sum().round(2)
-    hcol = col1
-    acol = col2
-    
-    hgoal_count = len(homedf[(homedf['teamName']==hteamName) & (homedf['type']=='Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))])
-    agoal_count = len(awaydf[(awaydf['teamName']==ateamName) & (awaydf['type']=='Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))])
-    hgoal_count = hgoal_count + len(awaydf[(awaydf['teamName']==ateamName) & (awaydf['type']=='Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
-    agoal_count = agoal_count + len(homedf[(homedf['teamName']==hteamName) & (homedf['type']=='Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
+homedf = df[(df['teamName'] == hteamName_original)]
+awaydf = df[(df['teamName'] == ateamName_original)]
+hxT = homedf['xT'].sum().round(2)
+axT = awaydf['xT'].sum().round(2)
+hcol = col1
+acol = col2
+
+hgoal_count = len(homedf[(homedf['teamName'] == hteamName_original) & (homedf['type'] == 'Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))])
+agoal_count = len(awaydf[(awaydf['teamName'] == ateamName_original) & (awaydf['type'] == 'Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))])
+hgoal_count = hgoal_count + len(awaydf[(awaydf['teamName'] == ateamName_original) & (awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
+agoal_count = agoal_count + len(homedf[(homedf['teamName'] == hteamName_original) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
     
     df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
     hftmb_tid = df_teamNameId[df_teamNameId['teamName']==hteamName].teamId.to_list()[0]
@@ -558,7 +569,7 @@ if league and htn and atn and st.session_state.confirmed:
         if an_tp == 'شبكة التمريرات':
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
-def pass_network(ax, team_name, col, phase_tag):
+def pass_network(ax, team_name, team_name_original, col, phase_tag):
     if phase_tag == 'Full Time':
         df_pass = df.copy()
         df_pass = df_pass.reset_index(drop=True)
@@ -572,8 +583,9 @@ def pass_network(ax, team_name, col, phase_tag):
     # إضافة سجل للتحقق من عدد الأحداث
     print(f"عدد الأحداث في df_pass لفريق {team_name} في {phase_tag}: {len(df_pass)}")
 
-    total_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass')]
-    accrt_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
+    total_pass = df_pass[(df_pass['teamName'] == team_name_original) & (df_pass['type'] == 'Pass')]
+    accrt_pass = df_pass[(df_pass['teamName'] == team_name_original) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
+    if len(total_pass) != 0:
     
     # إضافة سجل للتحقق من عدد التمريرات
     print(f"عدد التمريرات الكلي لفريق {team_name}: {len(total_pass)}")
@@ -591,7 +603,7 @@ def pass_network(ax, team_name, col, phase_tag):
     successful_passes = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name)]
     print(f"عدد التمريرات الناجحة بعد إضافة pass_receiver لفريق {team_name}: {len(successful_passes)}")
 
-    off_acts_df = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
+    off_acts_df = df_pass[(df_pass['teamName'] == team_name_original) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
     off_acts_df = off_acts_df[['name', 'x', 'y']].reset_index(drop=True)
     avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
     team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
@@ -600,7 +612,7 @@ def pass_network(ax, team_name, col, phase_tag):
     # إضافة سجل للتحقق من avg_locs_df
     print(f"عدد اللاعبين في avg_locs_df لفريق {team_name}: {len(avg_locs_df)}")
 
-    df_pass = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
+    df_pass = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name_original) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
     df_pass = df_pass[['type', 'name', 'pass_receiver']].reset_index(drop=True)
 
     # إضافة سجل للتحقق من عدد التمريرات بعد التصفية
@@ -733,18 +745,18 @@ if an_tp == reshape_arabic_text('شبكة التمريرات'):
     home_pass_btn = None
     away_pass_btn = None
 
-    if pn_time_phase == 'Full Time':
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-        home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-        away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-    elif pn_time_phase == 'First Half':
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-        home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-        away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-    elif pn_time_phase == 'Second Half':
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-        home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-        away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+if pn_time_phase == 'Full Time':
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    home_pass_btn = pass_network(axs[0], hteamName, hteamName_original, hcol, 'Full Time')
+    away_pass_btn = pass_network(axs[1], ateamName, ateamName_original, acol, 'Full Time')
+elif pn_time_phase == 'First Half':
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    home_pass_btn = pass_network(axs[0], hteamName, hteamName_original, hcol, 'First Half')
+    away_pass_btn = pass_network(axs[1], ateamName, ateamName_original, acol, 'First Half')
+elif pn_time_phase == 'Second Half':
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    home_pass_btn = pass_network(axs[0], hteamName, hteamName_original, hcol, 'Second Half')
+    away_pass_btn = pass_network(axs[1], ateamName, ateamName_original, acol, 'Second Half')
 
     # إضافة العنوان والشعارات
 # تقسيم النص إلى جزأين وتحويلهما بشكل منفصل
