@@ -666,11 +666,23 @@ def pass_network(ax, team_name, col, phase_tag):
 tab1, tab2 = st.tabs(["تحليل المباراة", "تبويب آخر"])
 
 with tab1:
-    an_tp = st.selectbox('نوع التحليل:', 
-                         ['شبكة التمريرات', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 
-                          'GK Saves', 'Match Momentum', 'Zone14 & Half-Space Passes', 'Final Third Entries', 'Box Entries', 
-                          'High-Turnovers', 'Chances Creating Zones', 'Crosses', 'Team Domination Zones', 'Pass Target Zones'], 
-                         index=0, key='analysis_type_tab1')
+an_tp = st.selectbox('نوع التحليل:', [
+    reshape_arabic_text('شبكة التمريرات'), 
+    'Defensive Actions Heatmap', 
+    'Progressive Passes', 
+    'Progressive Carries', 
+    'Shotmap', 
+    'GK Saves', 
+    'Match Momentum',
+    reshape_arabic_text('Zone14 & Half-Space Passes'), 
+    reshape_arabic_text('Final Third Entries'), 
+    reshape_arabic_text('Box Entries'), 
+    reshape_arabic_text('High-Turnovers'), 
+    reshape_arabic_text('Chances Creating Zones'), 
+    reshape_arabic_text('Crosses'), 
+    reshape_arabic_text('Team Domination Zones'), 
+    reshape_arabic_text('Pass Target Zones')
+], index=0, key='analysis_type_tab1')
 
     if an_tp == 'شبكة التمريرات':
         st.header(f'{an_tp}')
@@ -692,7 +704,8 @@ with tab1:
 
 
         # إضافة العنوان والشعارات
-        fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}],
+        fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', 
+                 highlight_textprops=[{'color': hcol}, {'color': acol}],
                  fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
         fig.text(0.5, 1.01, 'شبكة التمريرات', fontsize=18, ha='center', va='center', color='white', weight='bold')
         fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
