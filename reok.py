@@ -931,8 +931,8 @@ def def_acts_hm(ax, team_name, col, phase_tag):
         ax.text(34, 112, f'Open-Play Progressive Passes: {len(df_prop)}', color=col, fontsize=13, ha='center', va='center')
         ax.text(34, 108, f'Most by: {most_name}({most_count})', color=col, fontsize=13, ha='center', va='center')
             
-                ax.vlines(136/3, ymin=0, ymax=105, color='gray', ls='dashed', lw=2)
-                ax.vlines(68/3, ymin=0, ymax=105, color='gray', ls='dashed', lw=2)
+        ax.text(10, 10, f'التقدم بالكرة من الجهة اليسرى\n{prop_left} تقدم ({prop_left_per}%)', color=col, fontsize=12, ha='center', va='center')
+        ax.text(58, 10, f'التقدم بالكرة من الجهة اليمنى\n{prop_right} تقدم ({prop_right_per}%)', color=col, fontsize=12, ha='center', va='center')
             
                 ax.text(340/6, -5, f'From Left: {len(left_prop)}', color=col, ha='center', va='center')
                 ax.text(34, -5, f'From Mid: {len(midd_prop)}', color=col, ha='center', va='center')
