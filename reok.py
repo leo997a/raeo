@@ -707,11 +707,14 @@ if an_tp == reshape_arabic_text('شبكة التمريرات'):
         away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
     # إضافة العنوان والشعارات
-    title = f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>'
-    reshaped_title = reshape_arabic_text(title.replace('<', '').replace('>', ''))
-    fig_text(0.5, 1.05, f'<{reshaped_title}>', 
-             highlight_textprops=[{'color': hcol}, {'color': acol}],
-             fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+# تقسيم النص إلى جزأين وتحويلهما بشكل منفصل
+home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+title = f"<{home_part}> - <{away_part}>"
+
+fig_text(0.5, 1.05, title, 
+         highlight_textprops=[{'color': hcol}, {'color': acol}],
+         fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
     fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
     fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
 
