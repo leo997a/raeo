@@ -863,8 +863,9 @@ def def_acts_hm(ax, team_name, col, phase_tag):
                     df_sh = df[df['period'] == 'SecondHalf']
                     df_prop = df_sh[(df_sh['teamName']==team_name) & (df_sh['outcomeType']=='Successful') & (df_sh['prog_pass']>9.11) & (~df_sh['qualifiers'].str.contains('Corner|Freekick')) & (df_sh['x']>=35)]
                 
-                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=, line_color=line_color, line_zorder=3, linewidth=2)
-                pitch.draw(ax=ax)
+    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+    pitch.draw(ax=ax)
+
             
                 left_prop = df_prop[df_prop['y']>136/3]
                 midd_prop = df_prop[(df_prop['y']<=136/3) & (df_prop['y']>=68/3)]
