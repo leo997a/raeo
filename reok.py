@@ -934,15 +934,15 @@ def def_acts_hm(ax, team_name, col, phase_tag):
         ax.text(10, 10, f'التقدم بالكرة من الجهة اليسرى\n{prop_left} تقدم ({prop_left_per}%)', color=col, fontsize=12, ha='center', va='center')
         ax.text(58, 10, f'التقدم بالكرة من الجهة اليمنى\n{prop_right} تقدم ({prop_right_per}%)', color=col, fontsize=12, ha='center', va='center')
             
-                ax.text(340/6, -5, f'From Left: {len(left_prop)}', color=col, ha='center', va='center')
-                ax.text(34, -5, f'From Mid: {len(midd_prop)}', color=col, ha='center', va='center')
-                ax.text(68/6, -5, f'From Right: {len(rigt_prop)}', color=col, ha='center', va='center')
+        ax.text(340/6, -5, f'From Left: {len(left_prop)}', color=col, ha='center', va='center')
+        ax.text(34, -5, f'From Mid: {len(midd_prop)}', color=col, ha='center', va='center')
+        ax.text(68/6, -5, f'From Right: {len(rigt_prop)}', color=col, ha='center', va='center')
             
-                ax.text(340/6, -7, f'Most by:\n{l_name}({l_count})', color=col, ha='center', va='top')
-                ax.text(34, -7, f'Most by:\n{m_name}({m_count})', color=col, ha='center', va='top')
-                ax.text(68/6, -7, f'Most by:\n{r_name}({r_count})', color=col, ha='center', va='top')
+        ax.text(340/6, -7, f'Most by:\n{l_name}({l_count})', color=col, ha='center', va='top')
+        ax.text(34, -7, f'Most by:\n{m_name}({m_count})', color=col, ha='center', va='top')
+        ax.text(68/6, -7, f'Most by:\n{r_name}({r_count})', color=col, ha='center', va='top')
                  
-                return name_counts_df_show
+    return name_counts_df_show
             
             pp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pp_time_pill')
             if pp_time_phase == 'Full Time':
