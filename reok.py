@@ -944,21 +944,21 @@ def def_acts_hm(ax, team_name, col, phase_tag):
                  
     return name_counts_df_show
             
-            pp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pp_time_pill')
-            if pp_time_phase == 'Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-                home_prop = progressive_pass(axs[0], hteamName, hcol, 'Full Time')
-                away_prop = progressive_pass(axs[1], ateamName, acol, 'Full Time')
+        pp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pp_time_pill')
+    if pp_time_phase == 'Full Time':
+        fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
+        home_prop = progressive_pass(axs[0], hteamName, hcol, 'Full Time')
+        away_prop = progressive_pass(axs[1], ateamName, acol, 'Full Time')
                 
-            if pp_time_phase == 'First Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-                home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
-                away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
+    if pp_time_phase == 'First Half':
+        fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
+        home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
+        away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
                 
-            if pp_time_phase == 'Second Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-                home_prop = progressive_pass(axs[0], hteamName, hcol, 'Second Half')
-                away_prop = progressive_pass(axs[1], ateamName, acol, 'Second Half')
+    if pp_time_phase == 'Second Half':
+        fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
+        home_prop = progressive_pass(axs[0], hteamName, hcol, 'Second Half')
+        away_prop = progressive_pass(axs[1], ateamName, acol, 'Second Half')
                 
             fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
             fig.text(0.5, 1.01, 'Progressive Passes', fontsize=20, ha='center', va='center')
