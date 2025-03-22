@@ -642,14 +642,8 @@ if league and htn and atn and st.session_state.confirmed:
         'Team Domination Zones',
         'Pass Target Zones'
     ]
-
-    # تحويل الخيارات إلى نصوص عربية معالجة
     options_display = [reshape_arabic_text(opt) for opt in options]
-
-    # استخدام st.selectbox بدلاً من HTML مخصص
     an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), options_display, index=0)
-
-    # تحديث st.session_state
     st.session_state['analysis_type'] = an_tp
 
 
