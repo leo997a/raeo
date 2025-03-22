@@ -616,32 +616,32 @@ if league and htn and atn and st.session_state.confirmed:
     st.markdown(tabs_html, unsafe_allow_html=True)
 
     # إنشاء قائمة منسدلة مخصصة باستخدام HTML
-options = [
-    'شبكة التمريرات',
-    'Defensive Actions Heatmap',
-    'Progressive Passes',
-    'Progressive Carries',
-    'Shotmap',
-    'GK Saves',
-    'Match Momentum',
-    'Zone14 & Half-Space Passes',
-    'Final Third Entries',
-    'Box Entries',
-    'High-Turnovers',
-    'Chances Creating Zones',
-    'Crosses',
-    'Team Domination Zones',
-    'Pass Target Zones'
-]
+    options = [
+        'شبكة التمريرات',
+        'Defensive Actions Heatmap',
+        'Progressive Passes',
+        'Progressive Carries',
+        'Shotmap',
+        'GK Saves',
+        'Match Momentum',
+        'Zone14 & Half-Space Passes',
+        'Final Third Entries',
+        'Box Entries',
+        'High-Turnovers',
+        'Chances Creating Zones',
+        'Crosses',
+        'Team Domination Zones',
+        'Pass Target Zones'
+    ]
 
-# تحويل الخيارات إلى نصوص عربية معالجة
-options_display = [reshape_arabic_text(opt) for opt in options]
+    # تحويل الخيارات إلى نصوص عربية معالجة
+    options_display = [reshape_arabic_text(opt) for opt in options]
 
-# استخدام st.selectbox بدلاً من HTML مخصص
-an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), options_display, index=0)
+    # استخدام st.selectbox بدلاً من HTML مخصص
+    an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), options_display, index=0)
 
-# تحديث st.session_state
-st.session_state['analysis_type'] = an_tp
+    # تحديث st.session_state
+    st.session_state['analysis_type'] = an_tp
 
     if st.button("تحديث الاختيار"):
         st.session_state['analysis_type'] = st.session_state.get('analysis_type', options[0])
