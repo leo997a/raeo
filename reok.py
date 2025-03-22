@@ -867,9 +867,9 @@ def def_acts_hm(ax, team_name, col, phase_tag):
     pitch.draw(ax=ax)
 
             
-        left_prop = df_prop[df_prop['y']>136/3]
-        midd_prop = df_prop[(df_prop['y']<=136/3) & (df_prop['y']>=68/3)]
-        rigt_prop = df_prop[df_prop['y']<68/3]
+    left_prop = df_prop[df_prop['y']>136/3]
+    midd_prop = df_prop[(df_prop['y']<=136/3) & (df_prop['y']>=68/3)]
+    rigt_prop = df_prop[df_prop['y']<68/3]
             
         if len(df_prop) != 0:
             name_counts = df_prop['shortName'].value_counts()
