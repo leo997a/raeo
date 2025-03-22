@@ -13,3 +13,5 @@ beautifulsoup4
 scikit-learn
 arabic-reshaper
 python-bidi
+plotly
+Pillow
