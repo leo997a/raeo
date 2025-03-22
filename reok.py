@@ -951,9 +951,9 @@ def def_acts_hm(ax, team_name, col, phase_tag):
             shotmap(axs[1], ateamName, acol, 'Full Time')
         
     if pp_time_phase == 'First Half':
-    fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
-    home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
-    away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
+            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+            home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
+            away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
                 
     if pp_time_phase == 'Second Half':
     fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
