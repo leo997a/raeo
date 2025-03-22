@@ -32,7 +32,9 @@ mpl.rcParams['axes.unicode_minus'] = False
 
 # دالة لتحويل النص العربي
 def reshape_arabic_text(text):
+    print(f"النص قبل التحويل: {text}")  # طباعة النص قبل التحويل
     reshaped_text = arabic_reshaper.reshape(text)
+    print(f"النص بعد التحويل: {reshaped_text}")  # طباعة النص بعد التحويل
     return get_display(reshaped_text)
 
 # إضافة CSS لدعم RTL في streamlit
