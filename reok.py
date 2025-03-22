@@ -37,54 +37,54 @@ def reshape_arabic_text(text):
 # إضافة CSS محسّن لدعم RTL في Streamlit
 st.markdown("""
     <style>
-    /* ضبط الاتجاه العام للتطبيق */
+    @font-face {
+        font-family: 'Noto Sans Arabic';
+        src: url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap');
+    }
     body, .stApp {
         direction: rtl !important;
         text-align: right !important;
-        font-family: 'Amiri', 'Noto Sans Arabic', 'Arial', sans-serif !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
-
-    /* ضبط النصوص في جميع العناصر */
     h1, h2, h3, h4, h5, h6, p, div, span, label, button, input, select, option, table, th, td {
         direction: rtl !important;
         text-align: right !important;
-        font-family: 'Amiri', 'Noto Sans Arabic', 'Arial', sans-serif !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
-
-    /* ضبط القوائم المنسدلة (st.selectbox) */
     .stSelectbox, .stSelectbox div, .stSelectbox label, .stSelectbox select, .stSelectbox option {
         direction: rtl !important;
         text-align: right !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
-
-    /* ضبط أزرار الراديو (st.radio) */
     .stRadio, .stRadio div, .stRadio label, .stRadio input {
         direction: rtl !important;
         text-align: right !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
-
-    /* ضبط علامات التبويب (st.tabs) */
     .stTabs, .stTabs div, .stTabs button {
         direction: rtl !important;
         text-align: right !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
-
-    /* ضبط الجداول */
     .stDataFrame, .dataframe, table, th, td {
         direction: rtl !important;
         text-align: right !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
-
-    /* ضبط العناصر في الشريط الجانبي */
     .stSidebar, .stSidebar div, .stSidebar label, .stSidebar select, .stSidebar option {
         direction: rtl !important;
         text-align: right !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
-
-    /* ضبط أي عنصر نصي آخر */
     [data-testid="stMarkdownContainer"], [data-testid="stText"] {
         direction: rtl !important;
         text-align: right !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
+    }
+    .stButton, .stButton button {
+        direction: rtl !important;
+        text-align: right !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
     </style>
     """, unsafe_allow_html=True)
