@@ -96,102 +96,146 @@ default_bg_color = '#1e1e2f'  # لون الخلفية الافتراضي
 default_gradient_colors = ['#003087', '#d00000']  # ألوان التدرج الافتراضية
 
 # إضافة أدوات اختيار الألوان في الشريط الجانبي
-st.sidebar.title('اختيار الألوان')
-hcol = st.sidebar.color_picker('لون الفريق المضيف', default_hcol, key='hcol_picker')
-acol = st.sidebar.color_picker('لون الفريق الضيف', default_acol, key='acol_picker')
-bg_color = st.sidebar.color_picker('لون الخلفية', default_bg_color, key='bg_color_picker')
-gradient_start = st.sidebar.color_picker('بداية التدرج', default_gradient_colors[0], key='gradient_start_picker')
-gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradient_colors[1], key='gradient_end_picker')
+# إضافة أدوات اختيار الألوان في الشريط الجانبي
+st.sidebar.title(reshape_arabic_text('اختيار الألوان'))
+hcol = st.sidebar.color_picker(reshape_arabic_text('لون الفريق المضيف'), default_hcol, key='hcol_picker')
+acol = st.sidebar.color_picker(reshape_arabic_text('لون الفريق الضيف'), default_acol, key='acol_picker')
+bg_color = st.sidebar.color_picker(reshape_arabic_text('لون الخلفية'), default_bg_color, key='bg_color_picker')
+gradient_start = st.sidebar.color_picker(reshape_arabic_text('بداية التدرج'), default_gradient_colors[0], key='gradient_start_picker')
+gradient_end = st.sidebar.color_picker(reshape_arabic_text('نهاية التدرج'), default_gradient_colors[1], key='gradient_end_picker')
 gradient_colors = [gradient_start, gradient_end]  # تحديث قائمة ألوان التدرج
-line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker')  # اختياري
+line_color = st.sidebar.color_picker(reshape_arabic_text('لون الخطوط'), '#ffffff', key='line_color_picker')
 
-st.sidebar.title('Match Selection')
-
-season = None
-league = None
-stage = None
-htn = None
-atn = None
-
-# Set up session state for selected values
-if 'confirmed' not in st.session_state:
-    st.session_state.confirmed = False
-
-def reset_confirmed():
-    st.session_state['confirmed'] = False
-
-season = st.sidebar.selectbox('Select a season:', ['2024_25'], key='season', index=0, on_change=reset_confirmed)
+st.sidebar.title(reshape_arabic_text('اختيار المباراة'))
+season = st.sidebar.selectbox(reshape_arabic_text('اختر الموسم:'), [reshape_arabic_text('2024_25')], key='season', index=0, on_change=reset_confirmed)
 if season:
-    league = st.sidebar.selectbox('Select a League', ['La Liga', 'Premier League', 'Serie A', 'UEFA Champions League'], key='league', index=None, on_change=reset_confirmed)
+    league_options = [
+        reshape_arabic_text('الدوري الإسباني'),
+        reshape_arabic_text('الدوري الإنجليزي الممتاز'),
+        reshape_arabic_text('الدوري الإيطالي'),
+        reshape_arabic_text('دوري أبطال أوروبا')
+    ]
+    league = st.sidebar.selectbox(reshape_arabic_text('اختر الدوري:'), league_options, key='league', index=None, on_change=reset_confirmed)
 
-    if league == 'La Liga':
-        team_list = ['Athletic Club', 'Atletico Madrid', 'Barcelona', 'Celta Vigo', 'Deportivo Alaves', 'Espanyol', 'Getafe', 'Girona', 'Las Palmas', 'Leganes', 'Mallorca', 'Osasuna', 'Rayo Vallecano', 'Real Betis', 
-                     'Real Madrid', 'Real Sociedad', 'Real Valladolid', 'Sevilla', 'Valencia', 'Villarreal']
-    elif league == 'Premier League':
-        team_list = ['Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton', 'Chelsea', 'Crystal Palace', 'Everton', 'Fulham', 'Ipswich', 'Leicester', 'Liverpool', 'Manchester City', 'Manchester United', 'Newcastle',
-                     'Nottingham Forest', 'Southampton', 'Tottenham', 'West Ham', 'Wolves']
-    elif league == 'Serie A':
-        team_list = ['AC Milan', 'Atalanta', 'Bologna', 'Cagliari', 'Como', 'Empoli', 'Fiorentina', 'Genoa', 'Inter', 'Juventus', 'Lazio', 'Lecce', 'Monza', 'Napoli', 'Parma Calcio',
-                     'Roma', 'Torino', 'Udinese', 'Venezia', 'Verona']
-    elif league == 'UEFA Champions League':
-        team_list = ['AC Milan', 'Arsenal', 'Aston Villa', 'Atalanta', 'Atletico Madrid', 'BSC Young Boys', 'Barcelona', 'Bayer Leverkusen', 'Bayern Munich', 'Benfica', 'Bologna', 'Borussia Dortmund', 'Brest', 'Celtic',
-                     'Club Brugge', 'Dinamo Zagreb', 'FK Crvena Zvezda', 'Feyenoord', 'Girona', 'Inter', 'Juventus', 'Lille', 'Liverpool', 'Manchester City', 'Monaco', 'PSV Eindhoven', 'Paris Saint-Germain', 'RB Leipzig',
-                     'Real Madrid', 'Salzburg', 'Shakhtar Donetsk', 'Slovan Bratislava', 'Sparta Prague', 'Sporting CP', 'Sturm Graz', 'VfB Stuttgart']
+    if league == reshape_arabic_text('الدوري الإسباني'):
+        team_list = [
+            reshape_arabic_text('Athletic Club'), reshape_arabic_text('Atletico Madrid'), reshape_arabic_text('Barcelona'),
+            reshape_arabic_text('Celta Vigo'), reshape_arabic_text('Deportivo Alaves'), reshape_arabic_text('Espanyol'),
+            reshape_arabic_text('Getafe'), reshape_arabic_text('Girona'), reshape_arabic_text('Las Palmas'),
+            reshape_arabic_text('Leganes'), reshape_arabic_text('Mallorca'), reshape_arabic_text('Osasuna'),
+            reshape_arabic_text('Rayo Vallecano'), reshape_arabic_text('Real Betis'), reshape_arabic_text('Real Madrid'),
+            reshape_arabic_text('Real Sociedad'), reshape_arabic_text('Real Valladolid'), reshape_arabic_text('Sevilla'),
+            reshape_arabic_text('Valencia'), reshape_arabic_text('Villarreal')
+        ]
+    elif league == reshape_arabic_text('الدوري الإنجليزي الممتاز'):
+        team_list = [
+            reshape_arabic_text('Arsenal'), reshape_arabic_text('Aston Villa'), reshape_arabic_text('Bournemouth'),
+            reshape_arabic_text('Brentford'), reshape_arabic_text('Brighton'), reshape_arabic_text('Chelsea'),
+            reshape_arabic_text('Crystal Palace'), reshape_arabic_text('Everton'), reshape_arabic_text('Fulham'),
+            reshape_arabic_text('Ipswich'), reshape_arabic_text('Leicester'), reshape_arabic_text('Liverpool'),
+            reshape_arabic_text('Manchester City'), reshape_arabic_text('Manchester United'), reshape_arabic_text('Newcastle'),
+            reshape_arabic_text('Nottingham Forest'), reshape_arabic_text('Southampton'), reshape_arabic_text('Tottenham'),
+            reshape_arabic_text('West Ham'), reshape_arabic_text('Wolves')
+        ]
+    elif league == reshape_arabic_text('الدوري الإيطالي'):
+        team_list = [
+            reshape_arabic_text('AC Milan'), reshape_arabic_text('Atalanta'), reshape_arabic_text('Bologna'),
+            reshape_arabic_text('Cagliari'), reshape_arabic_text('Como'), reshape_arabic_text('Empoli'),
+            reshape_arabic_text('Fiorentina'), reshape_arabic_text('Genoa'), reshape_arabic_text('Inter'),
+            reshape_arabic_text('Juventus'), reshape_arabic_text('Lazio'), reshape_arabic_text('Lecce'),
+            reshape_arabic_text('Monza'), reshape_arabic_text('Napoli'), reshape_arabic_text('Parma Calcio'),
+            reshape_arabic_text('Roma'), reshape_arabic_text('Torino'), reshape_arabic_text('Udinese'),
+            reshape_arabic_text('Venezia'), reshape_arabic_text('Verona')
+        ]
+    elif league == reshape_arabic_text('دوري أبطال أوروبا'):
+        team_list = [
+            reshape_arabic_text('AC Milan'), reshape_arabic_text('Arsenal'), reshape_arabic_text('Aston Villa'),
+            reshape_arabic_text('Atalanta'), reshape_arabic_text('Atletico Madrid'), reshape_arabic_text('BSC Young Boys'),
+            reshape_arabic_text('Barcelona'), reshape_arabic_text('Bayer Leverkusen'), reshape_arabic_text('Bayern Munich'),
+            reshape_arabic_text('Benfica'), reshape_arabic_text('Bologna'), reshape_arabic_text('Borussia Dortmund'),
+            reshape_arabic_text('Brest'), reshape_arabic_text('Celtic'), reshape_arabic_text('Club Brugge'),
+            reshape_arabic_text('Dinamo Zagreb'), reshape_arabic_text('FK Crvena Zvezda'), reshape_arabic_text('Feyenoord'),
+            reshape_arabic_text('Girona'), reshape_arabic_text('Inter'), reshape_arabic_text('Juventus'),
+            reshape_arabic_text('Lille'), reshape_arabic_text('Liverpool'), reshape_arabic_text('Manchester City'),
+            reshape_arabic_text('Monaco'), reshape_arabic_text('PSV Eindhoven'), reshape_arabic_text('Paris Saint-Germain'),
+            reshape_arabic_text('RB Leipzig'), reshape_arabic_text('Real Madrid'), reshape_arabic_text('Salzburg'),
+            reshape_arabic_text('Shakhtar Donetsk'), reshape_arabic_text('Slovan Bratislava'), reshape_arabic_text('Sparta Prague'),
+            reshape_arabic_text('Sporting CP'), reshape_arabic_text('Sturm Graz'), reshape_arabic_text('VfB Stuttgart')
+        ]
 
-    if league and league != 'UEFA Champions League':
-        htn = st.sidebar.selectbox('Select Home Team', team_list, key='home_team', index=None, on_change=reset_confirmed)
+    if league and league != reshape_arabic_text('دوري أبطال أوروبا'):
+        htn = st.sidebar.selectbox(reshape_arabic_text('اختر الفريق المضيف'), team_list, key='home_team', index=None, on_change=reset_confirmed)
         
         if htn:
             atn_options = [team for team in team_list if team != htn]
-            atn = st.sidebar.selectbox('Select Away Team Name', atn_options, key='away_team', index=None, on_change=reset_confirmed)
+            atn = st.sidebar.selectbox(reshape_arabic_text('اختر الفريق الضيف'), atn_options, key='away_team', index=None, on_change=reset_confirmed)
             
-    elif league == 'UEFA Champions League':
-        stage = st.sidebar.selectbox('Select Stage', ['League Phase', 'Knockout Playoff', 'Round of 16', 'Quarter Final', 'Quarter Final', 'Final'], key='stage_selection', index=None, on_change=reset_confirmed)
+    elif league == reshape_arabic_text('دوري أبطال أوروبا'):
+        stage_options = [
+            reshape_arabic_text('مرحلة الدوري'),
+            reshape_arabic_text('الملحق التأهيلي'),
+            reshape_arabic_text('دور الـ 16'),
+            reshape_arabic_text('ربع النهائي'),
+            reshape_arabic_text('نصف النهائي'),
+            reshape_arabic_text('النهائي')
+        ]
+        stage = st.sidebar.selectbox(reshape_arabic_text('اختر المرحلة'), stage_options, key='stage_selection', index=None, on_change=reset_confirmed)
         if stage:
-            htn = st.sidebar.selectbox('Select Home Team', team_list, key='home_team', index=None, on_change=reset_confirmed)
+            htn = st.sidebar.selectbox(reshape_arabic_text('اختر الفريق المضيف'), team_list, key='home_team', index=None, on_change=reset_confirmed)
             
             if htn:
                 atn_options = [team for team in team_list if team != htn]
-                atn = st.sidebar.selectbox('Select Away Team Name', atn_options, key='away_team', index=None, on_change=reset_confirmed)
+                atn = st.sidebar.selectbox(reshape_arabic_text('اختر الفريق الضيف'), atn_options, key='away_team', index=None, on_change=reset_confirmed)
 
-    if league and league != 'UEFA Champions League' and league != 'Serie A' and htn and atn:
-        league = league.replace(' ', '_')
+    # معالجة رسائل الخطأ
+    if league and league != reshape_arabic_text('دوري أبطال أوروبا') and league != reshape_arabic_text('الدوري الإيطالي') and htn and atn:
+        league_en = league  # احتفظ بالقيمة الإنجليزية للرابط
+        league = league_en.replace(' ', '_')
         match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{htn}_vs_{atn}.html"
         match_html_path = match_html_path.replace(' ', '%20')
         try:
             response = requests.get(match_html_path)
-            response.raise_for_status()  # Raise an error for invalid responses (e.g., 404, 500)
-            # Only show the button if the response is successful
-            match_input = st.sidebar.button('Confirm Selections', on_click=lambda: st.session_state.update({'confirmed': True}))
+            response.raise_for_status()
+            match_input = st.sidebar.button(reshape_arabic_text('تأكيد الاختيارات'), on_click=lambda: st.session_state.update({'confirmed': True}))
         except:
             st.session_state['confirmed'] = False
-            st.sidebar.write('Match not found')
+            st.sidebar.write(reshape_arabic_text('لم يتم العثور على المباراة'))
             
-    elif league and league == 'Serie A' and htn and atn:
-        league = league.replace(' ', '_')
+    elif league and league == reshape_arabic_text('الدوري الإيطالي') and htn and atn:
+        league_en = 'Serie A'  # القيمة الإنجليزية للرابط
+        league = league_en.replace(' ', '_')
         match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{htn}_vs_{atn}.html"
         match_html_path = match_html_path.replace(' ', '%20')
         try:
             response = requests.get(match_html_path)
-            response.raise_for_status()  # Raise an error for invalid responses (e.g., 404, 500)
-            # Only show the button if the response is successful
-            match_input = st.sidebar.button('Confirm Selections', on_click=lambda: st.session_state.update({'confirmed': True}))
+            response.raise_for_status()
+            match_input = st.sidebar.button(reshape_arabic_text('تأكيد الاختيارات'), on_click=lambda: st.session_state.update({'confirmed': True}))
         except:
             st.session_state['confirmed'] = False
-            st.sidebar.write('Serie A Matches available till GameWeek 12\nRemaining data will be uploaded soon\nThanks for your patience')
+            st.sidebar.write(reshape_arabic_text('مباريات الدوري الإيطالي متاحة حتى الأسبوع 12\nسيتم رفع باقي البيانات قريبًا\nشكرًا لصبرك'))
             
-    elif league and league == 'UEFA Champions League' and stage and htn and atn:
-        league = league.replace(' ', '_')
-        match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{stage}/{htn}_vs_{atn}.html"
+    elif league and league == reshape_arabic_text('دوري أبطال أوروبا') and stage and htn and atn:
+        league_en = 'UEFA Champions League'  # القيمة الإنجليزية للرابط
+        stage_en = stage  # تحتاج إلى تحويل المرحلة إلى الإنجليزية
+        stage_mapping = {
+            reshape_arabic_text('مرحلة الدوري'): 'League Phase',
+            reshape_arabic_text('الملحق التأهيلي'): 'Knockout Playoff',
+            reshape_arabic_text('دور الـ 16'): 'Round of 16',
+            reshape_arabic_text('ربع النهائي'): 'Quarter Final',
+            reshape_arabic_text('نصف النهائي'): 'Semi Final',
+            reshape_arabic_text('النهائي'): 'Final'
+        }
+        stage_en = stage_mapping[stage]
+        league = league_en.replace(' ', '_')
+        match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{stage_en}/{htn}_vs_{atn}.html"
         match_html_path = match_html_path.replace(' ', '%20')
         try:
             response = requests.get(match_html_path)
-            response.raise_for_status()  # Raise an error for invalid responses (e.g., 404, 500)
-            # Only show the button if the response is successful
-            match_input = st.sidebar.button('Confirm Selections', on_click=lambda: st.session_state.update({'confirmed': True}))
+            response.raise_for_status()
+            match_input = st.sidebar.button(reshape_arabic_text('تأكيد الاختيارات'), on_click=lambda: st.session_state.update({'confirmed': True}))
         except:
             st.session_state['confirmed'] = False
-            st.sidebar.write('Match not found')
+            st.sidebar.write(reshape_arabic_text('لم يتم العثور على المباراة'))
 
 if league and htn and atn and st.session_state.confirmed:
     @st.cache_data
