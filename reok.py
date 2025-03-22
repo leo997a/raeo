@@ -12,7 +12,6 @@ import matplotlib.patches as patches
 from mplsoccer import Pitch, VerticalPitch, add_image
 from matplotlib import rcParams
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.patheffects as path_effects  # إضافة هذا الاستيراد
 from highlight_text import ax_text, fig_text
 from PIL import Image
