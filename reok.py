@@ -907,29 +907,29 @@ def def_acts_hm(ax, team_name, col, phase_tag):
             m_name = 'None'
             m_count = 0   
             
-                if len(rigt_prop) != 0:
-                    name_counts = rigt_prop['shortName'].value_counts()
-                    name_counts_df = name_counts.reset_index()
-                    name_counts_df.columns = ['name', 'count']
-                    name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-                    name_counts_df = name_counts_df.reset_index()
-                    r_name = name_counts_df['name'][0]
-                    r_count = name_counts_df['count'][0]
-                else:
-                    r_name = 'None'
-                    r_count = 0   
+    if len(rigt_prop) != 0:
+        name_counts = rigt_prop['shortName'].value_counts()
+        name_counts_df = name_counts.reset_index()
+        name_counts_df.columns = ['name', 'count']
+        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
+        name_counts_df = name_counts_df.reset_index()
+        r_name = name_counts_df['name'][0]
+        r_count = name_counts_df['count'][0]
+    else:
+        r_name = 'None'
+        r_count = 0   
             
-                pitch.lines(df_prop.x, df_prop.y, df_prop.endX, df_prop.endY, comet=True, lw=4, color=col, ax=ax)
-                pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=, ec=col, lw=1.5, ax=ax)
+    pitch.lines(df_prop.x, df_prop.y, df_prop.endX, df_prop.endY, comet=True, lw=4, color=col, ax=ax)
+    pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=, ec=col, lw=1.5, ax=ax)
             
-                if phase_tag == 'Full Time':
-                    ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'First Half':
-                    ax.text(34, 116, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'Second Half':
-                    ax.text(34, 116, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                ax.text(34, 112, f'Open-Play Progressive Passes: {len(df_prop)}', color=col, fontsize=13, ha='center', va='center')
-                ax.text(34, 108, f'Most by: {most_name}({most_count})', color=col, fontsize=13, ha='center', va='center')
+    if phase_tag == 'Full Time':
+        ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+    elif phase_tag == 'First Half':
+        ax.text(34, 116, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+    elif phase_tag == 'Second Half':
+        ax.text(34, 116, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
+        ax.text(34, 112, f'Open-Play Progressive Passes: {len(df_prop)}', color=col, fontsize=13, ha='center', va='center')
+        ax.text(34, 108, f'Most by: {most_name}({most_count})', color=col, fontsize=13, ha='center', va='center')
             
                 ax.vlines(136/3, ymin=0, ymax=105, color='gray', ls='dashed', lw=2)
                 ax.vlines(68/3, ymin=0, ymax=105, color='gray', ls='dashed', lw=2)
