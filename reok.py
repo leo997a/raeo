@@ -731,18 +731,18 @@ aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftm
 aimage = Image.open(aimage)
 ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-    st.pyplot(fig)
+st.pyplot(fig)
 
-    col1, col2 = st.columns(2)
-    with col1:
+col1, col2 = st.columns(2)
+with col1:
         st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
         st.dataframe(home_pass_btn, hide_index=True)
-    with col2:
-        st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
-        st.dataframe(away_pass_btn, hide_index=True)
+with col2:
+    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
+    st.dataframe(away_pass_btn, hide_index=True)
 
-    if an_tp == 'Defensive Actions Heatmap':
-        st.header(f'{an_tp}')
+if an_tp == 'Defensive Actions Heatmap':
+    st.header(f'{an_tp}')
             
 def def_acts_hm(ax, team_name, col, phase_tag):
     def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
