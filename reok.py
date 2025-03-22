@@ -777,7 +777,7 @@ if league and htn and atn and st.session_state.confirmed:
 tab1, tab2 = st.tabs([reshape_arabic_text("تحليل المباراة"), reshape_arabic_text("تبويب آخر")])
 
 with tab1:
-    if an_tp == reshape_arabic_text('شبكة التمريرات'):
+        if an_tp == reshape_arabic_text('شبكة التمريرات'):
         st.header(reshape_arabic_text('شبكة التمريرات'))
         
         pn_time_phase = st.radio(
