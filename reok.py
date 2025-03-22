@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import to_rgba
+from matplotlib.colors import to_rgba, LinearSegmentedColormap
 import seaborn as sns
 import requests
 import matplotlib.patches as patches
@@ -551,7 +551,9 @@ if league and htn and atn and st.session_state.confirmed:
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
 def pass_network(ax, team_name, col, phase_tag):
-    # Data processing remains the same as in your original code
+    print(f"Running pass_network for team: {team_name}, phase: {phase_tag}")  # Debugging
+
+    # Data processing (same as original)
     if phase_tag == 'Full Time':
         df_pass = df.copy()
         df_pass = df_pass.reset_index(drop=True)
@@ -595,7 +597,7 @@ def pass_network(ax, team_name, col, phase_tag):
     pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
 
     # Modern design adjustments
-    MAX_LINE_WIDTH = 10  # Thinner lines for a sleeker look
+    MAX_LINE_WIDTH = 10
     MIN_TRANSPARENCY = 0.1
     MAX_TRANSPARENCY = 0.9
     color = np.array(to_rgba(col))
@@ -608,27 +610,28 @@ def pass_network(ax, team_name, col, phase_tag):
     pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, linewidth=1.5, line_color=line_color)
     pitch.draw(ax=ax)
 
-    # Apply gradient background to the pitch
+    # Apply gradient background
     gradient = LinearSegmentedColormap.from_list("pitch_gradient", gradient_colors, N=100)
     x = np.linspace(0, 1, 100)
     y = np.linspace(0, 1, 100)
     X, Y = np.meshgrid(x, y)
     Z = Y  # Gradient from top to bottom
     ax.imshow(Z, extent=[0, 68, 0, 105], cmap=gradient, alpha=0.8, aspect='auto', zorder=0)
+    print("Gradient background applied.")  # Debugging
     pitch.draw(ax=ax)  # Redraw pitch lines over the gradient
 
-    # Plot lines between players with modern styling
+    # Plot lines between players
     pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y,
                 lw=pass_counts_df.width, color=color, zorder=1, ax=ax)
 
-    # Plot player nodes with modern styling
+    # Plot player nodes
     for index, row in avg_locs_df.iterrows():
         if row['isFirstEleven'] == True:
             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='o', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.9, ax=ax)
         else:
             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='s', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.7, ax=ax)
 
-    # Plot shirt numbers with modern font
+    # Plot shirt numbers
     for index, row in avg_locs_df.iterrows():
         player_initials = row["shirtNo"]
         pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c='white', ha='center', va='center', size=14, weight='bold', ax=ax)
@@ -648,7 +651,7 @@ def pass_network(ax, team_name, col, phase_tag):
 
     v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
 
-    # Add text with modern styling
+    # Add text
     if phase_tag == 'Full Time':
         ax.text(34, 112, 'الوقت بالكامل : 0-90 minutes', color='white', fontsize=14, ha='center', va='center', weight='bold')
         ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
@@ -663,7 +666,7 @@ def pass_network(ax, team_name, col, phase_tag):
 
     return pass_btn
 
-# Plotting section with modern design
+# Plotting section
 pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
 
 if pn_time_phase == 'Full Time':
@@ -679,7 +682,7 @@ elif pn_time_phase == 'Second Half':
     home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
     away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
-# Add title and logos with modern styling
+# Add title and logos
 fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}],
          fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
 fig.text(0.5, 1.01, 'Passing Network', fontsize=18, ha='center', va='center', color='white', weight='bold')
@@ -690,7 +693,6 @@ fig.text(0.5, 0.05, '*Circles = Starter Players, Box = Substituted On Players, N
 fig.text(0.5, 0.03, '*Width & Brightness of the Lines represent the amount of Successful Open-Play Passes between the Players',
          fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-# Add team logos
 himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
 himage = Image.open(himage)
 ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
