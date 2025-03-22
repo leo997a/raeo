@@ -1,4 +1,3 @@
-# Import Packages
 import json
 import re
 import pandas as pd
@@ -23,10 +22,10 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 
-# تهيئة matplotlib لدعم العربية
+# إعدادات matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
 mpl.rcParams['font.family'] = 'sans-serif'
-mpl.rcParams['font.sans-serif'] = ['Amiri', 'Noto Sans Arabic', 'Arial', 'Tahoma']
+mpl.rcParams['font.sans-serif'] = ['Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', 'Tahoma']
 mpl.rcParams['axes.unicode_minus'] = False
 
 # دالة لتحويل النص العربي
@@ -34,16 +33,19 @@ def reshape_arabic_text(text):
     reshaped_text = arabic_reshaper.reshape(text)
     return get_display(reshaped_text)
 
-# إضافة CSS محسّن لدعم RTL في Streamlit
+# تعريف الدالة reset_confirmed قبل استخدامها
+def reset_confirmed():
+    st.session_state['confirmed'] = False
+
+# إضافة CSS محسّن لدعم RTL في Streamlit مع استثناءات للرسومات
 st.markdown("""
     <style>
     @font-face {
         font-family: 'Noto Sans Arabic';
         src: url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap');
     }
+    /* تطبيق RTL فقط على العناصر النصية */
     body, .stApp {
-        direction: rtl !important;
-        text-align: right !important;
         font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
     h1, h2, h3, h4, h5, h6, p, div, span, label, button, input, select, option, table, th, td {
@@ -86,14 +88,18 @@ st.markdown("""
         text-align: right !important;
         font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
+    /* استثناء الرسومات والصور من RTL */
+    canvas, img, .stImage, [data-testid="stImage"], .stPlotlyChart, .stPyplot {
+        direction: ltr !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# تعريف القيم الافتراضية للألوان أولاً
-default_hcol = '#d00000'  # لون الفريق المضيف الافتراضي
-default_acol = '#003087'  # لون الفريق الضيف الافتراضي
-default_bg_color = '#1e1e2f'  # لون الخلفية الافتراضي
-default_gradient_colors = ['#003087', '#d00000']  # ألوان التدرج الافتراضية
+# تعريف القيم الافتراضية للألوان
+default_hcol = '#d00000'
+default_acol = '#003087'
+default_bg_color = '#1e1e2f'
+default_gradient_colors = ['#003087', '#d00000']
 
 # إضافة أدوات اختيار الألوان في الشريط الجانبي
 st.sidebar.title(reshape_arabic_text('اختيار الألوان'))
@@ -102,12 +108,22 @@ acol = st.sidebar.color_picker(reshape_arabic_text('لون الفريق الضي
 bg_color = st.sidebar.color_picker(reshape_arabic_text('لون الخلفية'), default_bg_color, key='bg_color_picker')
 gradient_start = st.sidebar.color_picker(reshape_arabic_text('بداية التدرج'), default_gradient_colors[0], key='gradient_start_picker')
 gradient_end = st.sidebar.color_picker(reshape_arabic_text('نهاية التدرج'), default_gradient_colors[1], key='gradient_end_picker')
-gradient_colors = [gradient_start, gradient_end]  # تحديث قائمة ألوان التدرج
+gradient_colors = [gradient_start, gradient_end]
 line_color = st.sidebar.color_picker(reshape_arabic_text('لون الخطوط'), '#ffffff', key='line_color_picker')
 
 st.sidebar.title(reshape_arabic_text('اختيار المباراة'))
+
+season = None
+league = None
+stage = None
+htn = None
+atn = None
+
+if 'confirmed' not in st.session_state:
+    st.session_state.confirmed = False
+
 season = st.sidebar.selectbox(reshape_arabic_text('اختر الموسم:'), [reshape_arabic_text('2024_25')], key='season', index=0, on_change=reset_confirmed)
-    if season:
+if season:
     league_options = [
         reshape_arabic_text('الدوري الإسباني'),
         reshape_arabic_text('الدوري الإنجليزي الممتاز'),
@@ -186,7 +202,6 @@ season = st.sidebar.selectbox(reshape_arabic_text('اختر الموسم:'), [re
                 atn_options = [team for team in team_list if team != htn]
                 atn = st.sidebar.selectbox(reshape_arabic_text('اختر الفريق الضيف'), atn_options, key='away_team', index=None, on_change=reset_confirmed)
 
-    # معالجة رسائل الخطأ
     if league and league != reshape_arabic_text('دوري أبطال أوروبا') and league != reshape_arabic_text('الدوري الإيطالي') and htn and atn:
         league_en = league  # احتفظ بالقيمة الإنجليزية للرابط
         league = league_en.replace(' ', '_')
@@ -201,7 +216,7 @@ season = st.sidebar.selectbox(reshape_arabic_text('اختر الموسم:'), [re
             st.sidebar.write(reshape_arabic_text('لم يتم العثور على المباراة'))
             
     elif league and league == reshape_arabic_text('الدوري الإيطالي') and htn and atn:
-        league_en = 'Serie A'  # القيمة الإنجليزية للرابط
+        league_en = 'Serie A'
         league = league_en.replace(' ', '_')
         match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{htn}_vs_{atn}.html"
         match_html_path = match_html_path.replace(' ', '%20')
@@ -214,8 +229,8 @@ season = st.sidebar.selectbox(reshape_arabic_text('اختر الموسم:'), [re
             st.sidebar.write(reshape_arabic_text('مباريات الدوري الإيطالي متاحة حتى الأسبوع 12\nسيتم رفع باقي البيانات قريبًا\nشكرًا لصبرك'))
             
     elif league and league == reshape_arabic_text('دوري أبطال أوروبا') and stage and htn and atn:
-        league_en = 'UEFA Champions League'  # القيمة الإنجليزية للرابط
-        stage_en = stage  # تحتاج إلى تحويل المرحلة إلى الإنجليزية
+        league_en = 'UEFA Champions League'
+        stage_en = stage
         stage_mapping = {
             reshape_arabic_text('مرحلة الدوري'): 'League Phase',
             reshape_arabic_text('الملحق التأهيلي'): 'Knockout Playoff',
