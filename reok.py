@@ -551,9 +551,6 @@ if league and htn and atn and st.session_state.confirmed:
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
 def pass_network(ax, team_name, col, phase_tag):
-    print(f"Running pass_network for team: {team_name}, phase: {phase_tag}")  # Debugging
-
-    # Data processing (same as original)
     if phase_tag == 'Full Time':
         df_pass = df.copy()
         df_pass = df_pass.reset_index(drop=True)
@@ -596,8 +593,8 @@ def pass_network(ax, team_name, col, phase_tag):
     pass_btn = pass_counts_df[['name', 'shirtNo', 'pass_receiver', 'shirtNo_receiver', 'pass_count']]
     pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
 
-    # Modern design adjustments
-    MAX_LINE_WIDTH = 10
+    # إعدادات التصميم العصري
+    MAX_LINE_WIDTH = 10  # جعل الخطوط أرفع
     MIN_TRANSPARENCY = 0.1
     MAX_TRANSPARENCY = 0.9
     color = np.array(to_rgba(col))
@@ -606,41 +603,40 @@ def pass_network(ax, team_name, col, phase_tag):
     c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
     color[:, 3] = c_transparency
 
-    # Create a gradient pitch
+    # إنشاء ملعب بتصميم متدرج
     pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, linewidth=1.5, line_color=line_color)
     pitch.draw(ax=ax)
 
-    # Apply gradient background
+    # تطبيق خلفية متدرجة
     gradient = LinearSegmentedColormap.from_list("pitch_gradient", gradient_colors, N=100)
     x = np.linspace(0, 1, 100)
     y = np.linspace(0, 1, 100)
     X, Y = np.meshgrid(x, y)
-    Z = Y  # Gradient from top to bottom
+    Z = Y
     ax.imshow(Z, extent=[0, 68, 0, 105], cmap=gradient, alpha=0.8, aspect='auto', zorder=0)
-    print("Gradient background applied.")  # Debugging
-    pitch.draw(ax=ax)  # Redraw pitch lines over the gradient
+    pitch.draw(ax=ax)
 
-    # Plot lines between players
+    # رسم الخطوط بين اللاعبين
     pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y,
                 lw=pass_counts_df.width, color=color, zorder=1, ax=ax)
 
-    # Plot player nodes
+    # رسم دوائر اللاعبين
     for index, row in avg_locs_df.iterrows():
         if row['isFirstEleven'] == True:
             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='o', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.9, ax=ax)
         else:
             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='s', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.7, ax=ax)
 
-    # Plot shirt numbers
+    # كتابة أرقام القمصان
     for index, row in avg_locs_df.iterrows():
         player_initials = row["shirtNo"]
         pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c='white', ha='center', va='center', size=14, weight='bold', ax=ax)
 
-    # Vertical compactness line
+    # خط التماسك العمودي
     avgph = round(avg_locs_df['avg_x'].median(), 2)
     ax.axhline(y=avgph, color='white', linestyle='--', alpha=0.5, linewidth=1.5)
 
-    # Defense and forward line heights
+    # ارتفاع خط الدفاع والهجوم
     center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
     def_line_h = round(center_backs_height['avg_x'].median(), 2)
     Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == 1].sort_values(by='avg_x', ascending=False).head(2)
@@ -651,69 +647,75 @@ def pass_network(ax, team_name, col, phase_tag):
 
     v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
 
-    # Add text
+    # إضافة النصوص
     if phase_tag == 'Full Time':
-        ax.text(34, 112, 'الوقت بالكامل : 0-90 minutes', color='white', fontsize=14, ha='center', va='center', weight='bold')
-        ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
+        ax.text(34, 112, 'الوقت بالكامل: 0-90 دقيقة', color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 108, f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
     elif phase_tag == 'First Half':
-        ax.text(34, 112, 'First Half: 0-45 minutes', color='white', fontsize=14, ha='center', va='center', weight='bold')
-        ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
+        ax.text(34, 112, 'الشوط الأول: 0-45 دقيقة', color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 108, f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
     elif phase_tag == 'Second Half':
-        ax.text(34, 112, 'Second Half: 45-90 minutes', color='white', fontsize=14, ha='center', va='center', weight='bold')
-        ax.text(34, 108, f'Total Pass: {len(total_pass)} | Accurate: {len(accrt_pass)} | Accuracy: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
+        ax.text(34, 112, 'الشوط الثاني: 45-90 دقيقة', color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 108, f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%', color='white', fontsize=12, ha='center', va='center')
 
-    ax.text(34, -5, f"On The Ball\nVertical Compactness (shaded area): {v_comp}%", color='white', fontsize=12, ha='center', va='center', weight='bold')
+    ax.text(34, -5, f"على الكرة\nالتماسك العمودي (المنطقة المظللة): {v_comp}%", color='white', fontsize=12, ha='center', va='center', weight='bold')
 
     return pass_btn
 
-# Plotting section
-pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
+# تحديث قسم "شبكة التمريرات" داخل with tab1:
+with tab1:
+    an_tp = st.selectbox('نوع التحليل:', ['شبكة التمريرات', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
+                         'Zone14 & Half-Space Passes', 'Final Third Entries', 'Box Entries', 'High-Turnovers', 'Chances Creating Zones', 'Crosses', 'Team Domination Zones', 'Pass Target Zones'], index=0, key='analysis_type')
 
-if pn_time_phase == 'Full Time':
-    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-elif pn_time_phase == 'First Half':
-    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-    away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-elif pn_time_phase == 'Second Half':
-    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+    if an_tp == 'شبكة التمريرات':
+        st.header(f'{an_tp}')
+        
+        pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
+        
+        if pn_time_phase == 'Full Time':
+            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
+        elif pn_time_phase == 'First Half':
+            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
+            away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
+        elif pn_time_phase == 'Second Half':
+            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
+            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
-# Add title and logos
-fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}],
-         fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
-fig.text(0.5, 1.01, 'Passing Network', fontsize=18, ha='center', va='center', color='white', weight='bold')
-fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+        # إضافة العنوان والشعارات
+        fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}],
+                 fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+        fig.text(0.5, 1.01, 'شبكة التمريرات', fontsize=18, ha='center', va='center', color='white', weight='bold')
+        fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
 
-fig.text(0.5, 0.05, '*Circles = Starter Players, Box = Substituted On Players, Numbers inside = Jersey Numbers of the Players',
-         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-fig.text(0.5, 0.03, '*Width & Brightness of the Lines represent the amount of Successful Open-Play Passes between the Players',
-         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+        fig.text(0.5, 0.05, '*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان',
+                 fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+        fig.text(0.5, 0.03, '*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين',
+                 fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-himage = Image.open(himage)
-ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+        himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+        himage = Image.open(himage)
+        ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
 
-aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-aimage = Image.open(aimage)
-ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+        aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+        aimage = Image.open(aimage)
+        ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-st.pyplot(fig)
+        st.pyplot(fig)
 
-col1, col2 = st.columns(2)
-with col1:
-    st.write(f'{hteamName} Passing Pairs:')
-    st.dataframe(home_pass_btn, hide_index=True)
-with col2:
-    st.write(f'{ateamName} Passing Pairs:')
-    st.dataframe(away_pass_btn, hide_index=True)
-            
-        if an_tp == 'Defensive Actions Heatmap':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f'أزواج التمرير لفريق {hteamName}:')
+            st.dataframe(home_pass_btn, hide_index=True)
+        with col2:
+            st.write(f'أزواج التمرير لفريق {ateamName}:')
+            st.dataframe(away_pass_btn, hide_index=True)
+
+    if an_tp == 'Defensive Actions Heatmap':
+        st.header(f'{an_tp}')
             
             def def_acts_hm(ax, team_name, col, phase_tag):
                 def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
