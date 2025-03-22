@@ -5,7 +5,7 @@ seaborn>=0.11.0
 requests>=2.26.0
 mplsoccer>=1.1.4
 highlight-text>=0.2.0
-Pillow>=8.2.0
+plotly==5.18.0
 unidecode>=1.3.0
 scipy>=1.7.0
 streamlit>=1.41.0
@@ -13,5 +13,4 @@ beautifulsoup4
 scikit-learn
 arabic-reshaper
 python-bidi
-plotly
 Pillow
