@@ -665,14 +665,14 @@ def pass_network(ax, team_name, col, phase_tag):
 tab1, tab2 = st.tabs(["تحليل المباراة", "تبويب آخر"])
 
 with tab1:
-    an_tp = st.selectbox('نوع التحليل:', [
+    an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
         reshape_arabic_text('شبكة التمريرات'), 
-        'Defensive Actions Heatmap', 
-        'Progressive Passes', 
-        'Progressive Carries', 
-        'Shotmap', 
-        'GK Saves', 
-        'Match Momentum',
+        reshape_arabic_text('خريطة الإجراءات الدفاعية'),  # Defensive Actions Heatmap
+        reshape_arabic_text('التمريرات التقدمية'),        # Progressive Passes
+        reshape_arabic_text('التقدم بالكرة'),            # Progressive Carries
+        reshape_arabic_text('خريطة التسديدات'),          # Shotmap
+        reshape_arabic_text('تصديات حارس المرمى'),      # GK Saves
+        reshape_arabic_text('زخم المباراة'),             # Match Momentum
         reshape_arabic_text('Zone14 & Half-Space Passes'), 
         reshape_arabic_text('Final Third Entries'), 
         reshape_arabic_text('Box Entries'), 
