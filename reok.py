@@ -716,10 +716,6 @@ home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
 away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
 title = f"<{home_part}> - <{away_part}>"
 
-    home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
-    away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
-    title = f"<{home_part}> - <{away_part}>"
-
     fig_text(0.5, 1.05, title, 
              highlight_textprops=[{'color': hcol}, {'color': acol}],
              fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
