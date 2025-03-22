@@ -713,47 +713,6 @@ def pass_network(ax, team_name, col, phase_tag):
 
     return pass_btn
 
-# الجزء الخارجي من الكود مع معالجة النصوص العربية وضبط الإحداثيات
-# إضافة CSS محسّن لدعم RTL في Streamlit
-st.markdown("""
-    <style>
-    body {
-        direction: rtl;
-        text-align: right;
-    }
-    .stApp {
-        direction: rtl;
-        text-align: right;
-    }
-    h1, h2, h3, h4, h5, h6, p, div, span, label {
-        direction: rtl !important;
-        text-align: right !important;
-    }
-    .stSelectbox > div > div > div {
-        text-align: right;
-    }
-    .stRadio > div {
-        flex-direction: row-reverse;
-    }
-    .stRadio > div > label {
-        margin-left: 10px;
-        margin-right: 0;
-    }
-    .stTabs > div > div {
-        flex-direction: row-reverse;
-    }
-    .stTabs > div > div > button {
-        margin-left: 10px;
-        margin-right: 0;
-    }
-    .stColumn > div {
-        direction: rtl;
-        text-align: right;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# ... (باقي الكود حتى الجزء الخاص بواجهة Streamlit)
 
 # الجزء الخارجي من الكود مع معالجة النصوص العربية وضبط الإحداثيات
 tab1, tab2 = st.tabs([reshape_arabic_text("تحليل المباراة"), reshape_arabic_text("تبويب آخر")])
