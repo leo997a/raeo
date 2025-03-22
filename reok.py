@@ -161,7 +161,7 @@ if season:
         if league and htn and atn and st.session_state.confirmed:
             df, teams_dict, players_df = get_event_data(season, league, stage, htn, atn)
         
-            def extract_json_from_html(html_path, save_output=False):
+        def extract_json_from_html(html_path, save_output=False):
             response = requests.get(html_path)
             response.raise_for_status()  # Ensure the request was successful
             html = response.text
