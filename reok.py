@@ -509,7 +509,7 @@ if season:
         
         df = df[df['period']!='PenaltyShootout']
         df = df.reset_index(drop=True)
-        return df, teams_dict, players_df
+    return df, teams_dict, players_df
     
     df, teams_dict, players_df = get_event_data(season, league, stage, htn, atn)
     
