@@ -44,11 +44,28 @@ st.markdown("""
     .stApp {
         direction: rtl;
         text-align: right;
+        font-family: 'Amiri', 'Noto Sans Arabic', 'Arial', sans-serif;
     }
-    h1, h2, h3, h4, h5, h6, p, div, span, label {
+    h1, h2, h3, h4, h5, h6, p, div, span, label, button, input, select, option, table, th, td {
+        direction: rtl !important;
+        text-align: right !important;
+        font-family: 'Amiri', 'Noto Sans Arabic', 'Arial', sans-serif !important;
+    }
+    /* تحسين الجداول */
+    .stDataFrame, .dataframe {
         direction: rtl !important;
         text-align: right !important;
     }
+    th, td {
+        direction: rtl !important;
+        text-align: right !important;
+    }
+    /* تحسين القوائم المنسدلة */
+    .custom-select, .custom-select option {
+        direction: rtl !important;
+        text-align: right !important;
+    }
+    /* تحسين علامات التبويب */
     .custom-tabs {
         display: flex;
         flex-direction: row-reverse;
@@ -71,21 +88,6 @@ st.markdown("""
     .custom-tab.active {
         color: #007bff;
         border-bottom: 3px solid #007bff;
-    }
-    .custom-select {
-        width: 100%;
-        padding: 10px;
-        font-size: 16px;
-        direction: rtl;
-        text-align: right;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        background-color: #fff;
-        cursor: pointer;
-    }
-    .custom-select option {
-        direction: rtl;
-        text-align: right;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -578,8 +580,8 @@ if league and htn and atn and st.session_state.confirmed:
     hftmb_tid = df_teamNameId[df_teamNameId['teamName']==hteamName].teamId.to_list()[0]
     aftmb_tid = df_teamNameId[df_teamNameId['teamName']==ateamName].teamId.to_list()[0]
     
-    st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
-    st.text(f'{league}')
+    st.header(reshape_arabic_text(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}'))
+    st.text(reshape_arabic_text(f'{league}'))
     
     # إنشاء علامات تبويب مخصصة باستخدام HTML
     tabs_html = f"""
@@ -614,64 +616,32 @@ if league and htn and atn and st.session_state.confirmed:
     st.markdown(tabs_html, unsafe_allow_html=True)
 
     # إنشاء قائمة منسدلة مخصصة باستخدام HTML
-    options = [
-        reshape_arabic_text('شبكة التمريرات'),
-        'Defensive Actions Heatmap',
-        'Progressive Passes',
-        'Progressive Carries',
-        'Shotmap',
-        'GK Saves',
-        'Match Momentum',
-        reshape_arabic_text('Zone14 & Half-Space Passes'),
-        reshape_arabic_text('Final Third Entries'),
-        reshape_arabic_text('Box Entries'),
-        reshape_arabic_text('High-Turnovers'),
-        reshape_arabic_text('Chances Creating Zones'),
-        reshape_arabic_text('Crosses'),
-        reshape_arabic_text('Team Domination Zones'),
-        reshape_arabic_text('Pass Target Zones')
-    ]
+options = [
+    'شبكة التمريرات',
+    'Defensive Actions Heatmap',
+    'Progressive Passes',
+    'Progressive Carries',
+    'Shotmap',
+    'GK Saves',
+    'Match Momentum',
+    'Zone14 & Half-Space Passes',
+    'Final Third Entries',
+    'Box Entries',
+    'High-Turnovers',
+    'Chances Creating Zones',
+    'Crosses',
+    'Team Domination Zones',
+    'Pass Target Zones'
+]
 
-    # إنشاء HTML للقائمة المنسدلة
-    select_html = f"""
-    <div>
-        <label for="analysis-type">{reshape_arabic_text('نوع التحليل:')}</label>
-        <select id="analysis-type" class="custom-select" onchange="updateAnalysisType(this.value)">
-            {''.join(f'<option value="{opt}">{opt}</option>' for opt in options)}
-        </select>
-    </div>
+# تحويل الخيارات إلى نصوص عربية معالجة
+options_display = [reshape_arabic_text(opt) for opt in options]
 
-    <script>
-    function updateAnalysisType(value) {{
-        // حفظ القيمة المختارة في متغير JavaScript
-        window.selectedAnalysisType = value;
-        // إرسال القيمة إلى Streamlit (اختياري، يمكن استخدامه لتحديث الحالة)
-        // هنا يمكنك استخدام Streamlit Component للتفاعل مع Python
-    }}
-    // تعيين القيمة الافتراضية
-    document.getElementById('analysis-type').value = '{options[0]}';
-    window.selectedAnalysisType = '{options[0]}';
-    </script>
-    """
-    st.markdown(select_html, unsafe_allow_html=True)
+# استخدام st.selectbox بدلاً من HTML مخصص
+an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), options_display, index=0)
 
-    # استخدام st.session_state لتخزين القيمة المختارة
-    if 'analysis_type' not in st.session_state:
-        st.session_state['analysis_type'] = options[0]
-
-    # تحديث st.session_state بناءً على الاختيار (باستخدام JavaScript)
-    st.markdown("""
-    <script>
-    if (window.selectedAnalysisType) {
-        // تحديث st.session_state باستخدام JavaScript (هذا يتطلب Streamlit Component أو حل بديل)
-        // حاليًا، سنعتمد على إعادة تحميل الصفحة لتحديث القيمة
-    }
-    </script>
-    """, unsafe_allow_html=True)
-
-    # استخدام القيمة المختارة من القائمة المنسدلة
-    an_tp = st.session_state['analysis_type']
-
+# تحديث st.session_state
+st.session_state['analysis_type'] = an_tp
     # تحديث an_tp بناءً على التغيير في القائمة المنسدلة
     # ملاحظة: نظرًا لأن Streamlit لا يدعم التفاعل المباشر مع JavaScript، قد نحتاج إلى إعادة تحميل الصفحة أو استخدام مكون مخصص
     # كحل مؤقت، يمكننا استخدام st.experimental_rerun() لتحديث القيمة
@@ -868,22 +838,24 @@ with tab1:
         with col1:
             st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
             if home_pass_btn is not None:
-                # معالجة أسماء اللاعبين في DataFrame
-                home_pass_btn['name'] = home_pass_btn['name'].apply(lambda x: reshape_arabic_text(x) if isinstance(x, str) else x)
-                home_pass_btn['pass_receiver'] = home_pass_btn['pass_receiver'].apply(lambda x: reshape_arabic_text(x) if isinstance(x, str) else x)
-                st.dataframe(home_pass_btn, hide_index=True)
+                # معالجة جميع الأعمدة التي تحتوي على نصوص عربية
+                home_pass_btn_display = home_pass_btn.copy()
+                for col in home_pass_btn_display.columns:
+                    if home_pass_btn_display[col].dtype == "object":  # تطبيق فقط على الأعمدة النصية
+                        home_pass_btn_display[col] = home_pass_btn_display[col].apply(lambda x: reshape_arabic_text(str(x)))
+                st.dataframe(home_pass_btn_display, hide_index=True)
             else:
                 st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
         with col2:
             st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
             if away_pass_btn is not None:
-                # معالجة أسماء اللاعبين في DataFrame
-                away_pass_btn['name'] = away_pass_btn['name'].apply(lambda x: reshape_arabic_text(x) if isinstance(x, str) else x)
-                away_pass_btn['pass_receiver'] = away_pass_btn['pass_receiver'].apply(lambda x: reshape_arabic_text(x) if isinstance(x, str) else x)
-                st.dataframe(away_pass_btn, hide_index=True)
+                away_pass_btn_display = away_pass_btn.copy()
+                for col in away_pass_btn_display.columns:
+                    if away_pass_btn_display[col].dtype == "object":
+                        away_pass_btn_display[col] = away_pass_btn_display[col].apply(lambda x: reshape_arabic_text(str(x)))
+                st.dataframe(away_pass_btn_display, hide_index=True)
             else:
                 st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
-
 if an_tp == 'Defensive Actions Heatmap':
     st.header(f'{an_tp}')
             
