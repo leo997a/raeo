@@ -807,7 +807,6 @@ def def_acts_hm(ax, team_name, col, phase_tag):
     return df_def_show
                     
     if an_tp == 'Defensive Actions Heatmap':
-    if an_tp == 'Defensive Actions Heatmap':
         st.header(f'{an_tp}')
         
         dah_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='dah_time_pill')
