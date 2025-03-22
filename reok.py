@@ -553,20 +553,20 @@ agoal_count = len(awaydf[(awaydf['teamName'] == ateamName_original) & (awaydf['t
 hgoal_count = hgoal_count + len(awaydf[(awaydf['teamName'] == ateamName_original) & (awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
 agoal_count = agoal_count + len(homedf[(homedf['teamName'] == hteamName_original) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
     
-    df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
-    hftmb_tid = df_teamNameId[df_teamNameId['teamName']==hteamName].teamId.to_list()[0]
-    aftmb_tid = df_teamNameId[df_teamNameId['teamName']==ateamName].teamId.to_list()[0]
+df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
+hftmb_tid = df_teamNameId[df_teamNameId['teamName']==hteamName].teamId.to_list()[0]
+aftmb_tid = df_teamNameId[df_teamNameId['teamName']==ateamName].teamId.to_list()[0]
     
-    st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
-    st.text(f'{league}')
+st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
+st.text(f'{league}')
     
-    tab1, tab2, tab3, tab4 = st.tabs(['تحليل الفريق', 'Player Analysis', 'Match Statistics', 'Top Players'])
+tab1, tab2, tab3, tab4 = st.tabs(['تحليل الفريق', 'Player Analysis', 'Match Statistics', 'Top Players'])
     
-    with tab1:
-        an_tp = st.selectbox('Team Analysis Type:', ['شبكة التمريرات', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
+with tab1:
+    an_tp = st.selectbox('Team Analysis Type:', ['شبكة التمريرات', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
                              'Zone14 & Half-Space Passes', 'Final Third Entries', 'Box Entries', 'High-Turnovers', 'Chances Creating Zones', 'Crosses', 'Team Domination Zones', 'Pass Target Zones'], index=0, key='analysis_type')
-        # if st.session_state.analysis_type:
-        if an_tp == 'شبكة التمريرات':
+    # if st.session_state.analysis_type:
+    if an_tp == 'شبكة التمريرات':
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
 def pass_network(ax, team_name, team_name_original, col, phase_tag):
