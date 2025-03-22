@@ -689,31 +689,39 @@ with tab1:
         
         pn_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pn_time_pill')
         
-        if pn_time_phase == 'Full Time':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-        elif pn_time_phase == 'First Half':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-        elif pn_time_phase == 'Second Half':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+if an_tp == reshape_arabic_text('شبكة التمريرات'):
+    st.header(reshape_arabic_text('شبكة التمريرات'))
+    
+    pn_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='pn_time_pill')
+    
+    if pn_time_phase == 'Full Time':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+        away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
+    elif pn_time_phase == 'First Half':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
+        away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
+    elif pn_time_phase == 'Second Half':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
+        away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
 
         # إضافة العنوان والشعارات
-        fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', 
-                 highlight_textprops=[{'color': hcol}, {'color': acol}],
-                 fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
-        fig.text(0.5, 1.01, 'شبكة التمريرات', fontsize=18, ha='center', va='center', color='white', weight='bold')
-        fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+    title = f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>'
+    reshaped_title = reshape_arabic_text(title.replace('<', '').replace('>', ''))
+    fig_text(0.5, 1.05, f'<{reshaped_title}>', 
+             highlight_textprops=[{'color': hcol}, {'color': acol}],
+             fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
+    fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
 
-        fig.text(0.5, 0.05, '*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان',
-                 fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-        fig.text(0.5, 0.03, '*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين',
-                 fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+    fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
+             fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+    fig.text(0.5, 0.03, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
+             fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+
 
         himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
         himage = Image.open(himage)
@@ -725,13 +733,13 @@ with tab1:
 
         st.pyplot(fig)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write(f'أزواج التمرير لفريق {hteamName}:')
-            st.dataframe(home_pass_btn, hide_index=True)
-        with col2:
-            st.write(f'أزواج التمرير لفريق {ateamName}:')
-            st.dataframe(away_pass_btn, hide_index=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
+        st.dataframe(home_pass_btn, hide_index=True)
+    with col2:
+        st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
+        st.dataframe(away_pass_btn, hide_index=True)
 
     if an_tp == 'Defensive Actions Heatmap':
         st.header(f'{an_tp}')
