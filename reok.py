@@ -569,8 +569,16 @@ def pass_network(ax, team_name, col, phase_tag):
         df_pass = df[df['period'] == 'SecondHalf']
         df_pass = df_pass.reset_index(drop=True)
 
+    # إضافة سجل للتحقق من عدد الأحداث
+    print(f"عدد الأحداث في df_pass لفريق {team_name} في {phase_tag}: {len(df_pass)}")
+
     total_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass')]
     accrt_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
+    
+    # إضافة سجل للتحقق من عدد التمريرات
+    print(f"عدد التمريرات الكلي لفريق {team_name}: {len(total_pass)}")
+    print(f"عدد التمريرات الناجحة لفريق {team_name}: {len(accrt_pass)}")
+
     if len(total_pass) != 0:
         accuracy = round((len(accrt_pass) / len(total_pass)) * 100, 2)
     else:
@@ -579,17 +587,30 @@ def pass_network(ax, team_name, col, phase_tag):
     df_pass['pass_receiver'] = df_pass.loc[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'].shift(-1) == team_name), 'name'].shift(-1)
     df_pass['pass_receiver'] = df_pass['pass_receiver'].fillna('No')
 
+    # إضافة سجل للتحقق من عدد التمريرات الناجحة بعد إضافة pass_receiver
+    successful_passes = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name)]
+    print(f"عدد التمريرات الناجحة بعد إضافة pass_receiver لفريق {team_name}: {len(successful_passes)}")
+
     off_acts_df = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
     off_acts_df = off_acts_df[['name', 'x', 'y']].reset_index(drop=True)
     avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
     team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
     avg_locs_df = avg_locs_df.merge(team_pdf, on='name', how='left')
 
+    # إضافة سجل للتحقق من avg_locs_df
+    print(f"عدد اللاعبين في avg_locs_df لفريق {team_name}: {len(avg_locs_df)}")
+
     df_pass = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
     df_pass = df_pass[['type', 'name', 'pass_receiver']].reset_index(drop=True)
 
+    # إضافة سجل للتحقق من عدد التمريرات بعد التصفية
+    print(f"عدد التمريرات الناجحة بعد استبعاد Corner|Freekick لفريق {team_name}: {len(df_pass)}")
+
     pass_count_df = df_pass.groupby(['name', 'pass_receiver']).size().reset_index(name='pass_count').sort_values(by='pass_count', ascending=False)
     pass_count_df = pass_count_df.reset_index(drop=True)
+
+    # إضافة سجل للتحقق من pass_count_df
+    print(f"عدد أزواج التمرير في pass_count_df لفريق {team_name}: {len(pass_count_df)}")
 
     pass_counts_df = pd.merge(pass_count_df, avg_locs_df, on='name', how='left')
     pass_counts_df.rename(columns={'avg_x': 'pass_avg_x', 'avg_y': 'pass_avg_y'}, inplace=True)
@@ -601,6 +622,10 @@ def pass_network(ax, team_name, col, phase_tag):
     pass_btn = pass_counts_df[['name', 'shirtNo', 'pass_receiver', 'shirtNo_receiver', 'pass_count']]
     pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
 
+    # إضافة سجل للتحقق من pass_counts_df
+    print(f"عدد أزواج التمرير بعد الدمج في pass_counts_df لفريق {team_name}: {len(pass_counts_df)}")
+
+    # باقي الكود كما هو...
     # إعدادات التصميم العصري
     MAX_LINE_WIDTH = 10  # جعل الخطوط أرفع
     MIN_TRANSPARENCY = 0.1
