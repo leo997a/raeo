@@ -944,7 +944,7 @@ def def_acts_hm(ax, team_name, col, phase_tag):
                  
     return name_counts_df_show
             
-        pp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pp_time_pill')
+    pp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pp_time_pill')
     if pp_time_phase == 'Full Time':
         fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
         home_prop = progressive_pass(axs[0], hteamName, hcol, 'Full Time')
