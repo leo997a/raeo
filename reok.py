@@ -37,66 +37,54 @@ def reshape_arabic_text(text):
 # إضافة CSS محسّن لدعم RTL في Streamlit
 st.markdown("""
     <style>
-    body {
-        direction: rtl;
-        text-align: right;
+    /* ضبط الاتجاه العام للتطبيق */
+    body, .stApp {
+        direction: rtl !important;
+        text-align: right !important;
+        font-family: 'Amiri', 'Noto Sans Arabic', 'Arial', sans-serif !important;
     }
-    .stApp {
-        direction: rtl;
-        text-align: right;
-        font-family: 'Amiri', 'Noto Sans Arabic', 'Arial', sans-serif;
-    }
+
+    /* ضبط النصوص في جميع العناصر */
     h1, h2, h3, h4, h5, h6, p, div, span, label, button, input, select, option, table, th, td {
         direction: rtl !important;
         text-align: right !important;
         font-family: 'Amiri', 'Noto Sans Arabic', 'Arial', sans-serif !important;
     }
-    /* تحسين الجداول */
-    .stDataFrame, .dataframe {
+
+    /* ضبط القوائم المنسدلة (st.selectbox) */
+    .stSelectbox, .stSelectbox div, .stSelectbox label, .stSelectbox select, .stSelectbox option {
         direction: rtl !important;
         text-align: right !important;
     }
-    th, td {
-        direction: rtl !important;
-        text-align: right !important;
-    }
-    /* تحسين القوائم المنسدلة */
-    select, .stSelectbox, .stSelectbox div, .stSelectbox label {
-        direction: rtl !important;
-        text-align: right !important;
-    }
-    /* تحسين st.radio */
+
+    /* ضبط أزرار الراديو (st.radio) */
     .stRadio, .stRadio div, .stRadio label, .stRadio input {
         direction: rtl !important;
         text-align: right !important;
     }
-    /* تحسين علامات التبويب */
+
+    /* ضبط علامات التبويب (st.tabs) */
     .stTabs, .stTabs div, .stTabs button {
         direction: rtl !important;
         text-align: right !important;
     }
-    .custom-tabs {
-        display: flex;
-        flex-direction: row-reverse;
-        border-bottom: 2px solid #ddd;
-        margin-bottom: 20px;
+
+    /* ضبط الجداول */
+    .stDataFrame, .dataframe, table, th, td {
+        direction: rtl !important;
+        text-align: right !important;
     }
-    .custom-tab {
-        padding: 10px 20px;
-        cursor: pointer;
-        font-size: 16px;
-        font-weight: bold;
-        color: #555;
-        border-bottom: 3px solid transparent;
-        transition: all 0.3s ease;
+
+    /* ضبط العناصر في الشريط الجانبي */
+    .stSidebar, .stSidebar div, .stSidebar label, .stSidebar select, .stSidebar option {
+        direction: rtl !important;
+        text-align: right !important;
     }
-    .custom-tab:hover {
-        color: #000;
-        border-bottom: 3px solid #007bff;
-    }
-    .custom-tab.active {
-        color: #007bff;
-        border-bottom: 3px solid #007bff;
+
+    /* ضبط أي عنصر نصي آخر */
+    [data-testid="stMarkdownContainer"], [data-testid="stText"] {
+        direction: rtl !important;
+        text-align: right !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -643,9 +631,12 @@ if league and htn and atn and st.session_state.confirmed:
         'Pass Target Zones'
     ]
     options_display = [reshape_arabic_text(opt) for opt in options]
-    an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), options_display, index=0)
-    st.session_state['analysis_type'] = an_tp
-
+    st.session_state['analysis_type'] = st.selectbox(
+        reshape_arabic_text('نوع التحليل:'),
+        options_display,
+        index=0,
+        key='analysis_type_selectbox'
+    )
 
     # دالة pass_network المعدلة
     def pass_network(ax, team_name, col, phase_tag):
