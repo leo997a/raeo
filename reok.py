@@ -662,7 +662,7 @@ def pass_network(ax, team_name, col, phase_tag):
 
     return pass_btn
 
-# تحديث قسم "شبكة التمريرات" داخل with tab1:
+tab1, tab2 = st.tabs(["تحليل المباراة", "تبويب آخر"])
 with tab1:
     an_tp = st.selectbox('نوع التحليل:', ['شبكة التمريرات', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
                          'Zone14 & Half-Space Passes', 'Final Third Entries', 'Box Entries', 'High-Turnovers', 'Chances Creating Zones', 'Crosses', 'Team Domination Zones', 'Pass Target Zones'], index=0, key='analysis_type')
