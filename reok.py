@@ -1080,7 +1080,7 @@ def progressive_carry(ax, team_name, col, phase_tag):
                  
     return name_counts_df_show
             
-            pc_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pc_time_pill')
+        pc_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pc_time_pill')
     if pc_time_phase == 'Full Time':
                 fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=)
                 home_proc = progressive_carry(axs[0], hteamName, hcol, 'Full Time')
