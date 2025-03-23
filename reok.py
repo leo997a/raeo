@@ -3489,60 +3489,112 @@ with tab2:
 
         return shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict
 
+with tab2:
+    team_player = st.pills(" ", [f"{hteamName} Players", f"{ateamName} Players", f'{hteamName} GK', f'{ateamName} GK'], 
+                           selection_mode='single', default=f"{hteamName} Players", key='selecting_team_for_player_analysis')
+
+    # ... [الدوال السابقة مثل offensive_actions و defensive_actions تبقى كما هي] ...
+
     if team_player == f"{hteamName} Players":
         home_pname_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] != 'GK')]
-        hpname = st.selectbox('Select a Player:', home_pname_df.name.unique(), index=None, key='home_player_analysis')
+        hpname = st.selectbox('اختر لاعبًا:', home_pname_df.name.unique(), index=None, key='home_player_analysis')
         if st.session_state.home_player_analysis and hpname:
-            st.header(f'{hpname} Performance Dashboard')
-            generate_player_dashboard(f'{hpname}', hftmb_tid)
+            try:
+                st.header(f'لوحة أداء {hpname}')
+                generate_player_dashboard(f'{hpname}', hftmb_tid)
 
-            shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(hpname)
-            col1, col2, col3 = st.columns(3)
+                shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(hpname)
+                col1, col2, col3 = st.columns(3)
 
-            with col1:
-                st.subheader('Shooting Stats')
-                for key, value in shooting_stats_dict.items():
-                    st.text(f"{key}: {value}")
-            with col2:
-                st.subheader('Passing Stats')
-                for key, value in passing_stats_dict.items():
-                    st.write(f"{key}: {value}")
-            with col3:
-                st.subheader('Carry Stats')
-                for key, value in carry_stats_dict.items():
-                    st.write(f"{key}: {value}")
-            st.divider()
-            col4, col5, col6 = st.columns(3)
-            with col4:
-                st.subheader('Pass Receiving Stats')
-                for key, value in pass_receiving_stats_dict.items():
-                    st.write(f"{key}: {value}")
-            with col5:
-                st.subheader('Defensive Stats')
-                for key, value in defensive_stats_dict.items():
-                    st.write(f"{key}: {value}")
-            with col6:
-                st.subheader('Other Stats')
-                for key, value in other_stats_dict.items():
-                    st.write(f"{key}: {value}")
+                with col1:
+                    st.subheader('إحصائيات التسديد')
+                    for key, value in shooting_stats_dict.items():
+                        st.text(f"{key}: {value}")
+                with col2:
+                    st.subheader('إحصائيات التمرير')
+                    for key, value in passing_stats_dict.items():
+                        st.write(f"{key}: {value}")
+                with col3:
+                    st.subheader('إحصائيات الجري بالكرة')
+                    for key, value in carry_stats_dict.items():
+                        st.write(f"{key}: {value}")
+                st.divider()
+                col4, col5, col6 = st.columns(3)
+                with col4:
+                    st.subheader('إحصائيات استقبال التمريرات')
+                    for key, value in pass_receiving_stats_dict.items():
+                        st.write(f"{key}: {value}")
+                with col5:
+                    st.subheader('إحصائيات الدفاع')
+                    for key, value in defensive_stats_dict.items():
+                        st.write(f"{key}: {value}")
+                with col6:
+                    st.subheader('إحصائيات أخرى')
+                    for key, value in other_stats_dict.items():
+                        st.write(f"{key}: {value}")
+            except Exception as e:
+                st.subheader("عذرًا، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى، وإذا استمر ظهور هذه الرسالة، أعد تشغيل التطبيق.")
+                st.error(f"تفاصيل الخطأ: {str(e)}")  # عرض تفاصيل الخطأ لأغراض التصحيح
 
     if team_player == f"{ateamName} Players":
         away_pname_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] != 'GK')]
-        apname = st.selectbox('Select a Player:', away_pname_df.name.unique(), index=None, key='away_player_analysis')
+        apname = st.selectbox('اختر لاعبًا:', away_pname_df.name.unique(), index=None, key='away_player_analysis')
         if st.session_state.away_player_analysis and apname:
-            st.header(f'{apname} Performance Dashboard')
-            generate_player_dashboard(f'{apname}', aftmb_tid)
+            try:
+                st.header(f'لوحة أداء {apname}')
+                generate_player_dashboard(f'{apname}', aftmb_tid)
 
-            shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(apname)
-            col1, col2, col3 = st.columns(3)
+                shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(apname)
+                col1, col2, col3 = st.columns(3)
 
-            with col1:
-                st.subheader('Shooting Stats')
-                for key, value in shooting_stats_dict.items():
-                    st.text(f"{key}: {value}")
-            with col2:
-                st.subheader('Passing Stats')
-                for key, value in passing_stats_dict.items():
-                    st.write(f"{key}: {value}")
-            with col3:
-                st.subheaderSorry about that, something didn't go as planned. Please try again, and if you're still seeing this message, go ahead and restart the app.
+                with col1:
+                    st.subheader('إحصائيات التسديد')
+                    for key, value in shooting_stats_dict.items():
+                        st.text(f"{key}: {value}")
+                with col2:
+                    st.subheader('إحصائيات التمرير')
+                    for key, value in passing_stats_dict.items():
+                        st.write(f"{key}: {value}")
+                with col3:
+                    st.subheader('إحصائيات الجري بالكرة')
+                    for key, value in carry_stats_dict.items():
+                        st.write(f"{key}: {value}")
+                st.divider()
+                col4, col5, col6 = st.columns(3)
+                with col4:
+                    st.subheader('إحصائيات استقبال التمريرات')
+                    for key, value in pass_receiving_stats_dict.items():
+                        st.write(f"{key}: {value}")
+                with col5:
+                    st.subheader('إحصائيات الدفاع')
+                    for key, value in defensive_stats_dict.items():
+                        st.write(f"{key}: {value}")
+                with col6:
+                    st.subheader('إحصائيات أخرى')
+                    for key, value in other_stats_dict.items():
+                        st.write(f"{key}: {value}")
+            except Exception as e:
+                st.subheader("عذرًا، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى، وإذا استمر ظهور هذه الرسالة، أعد تشغيل التطبيق.")
+                st.error(f"تفاصيل الخطأ: {str(e)}")
+
+    if team_player == f'{hteamName} GK':
+        home_gk_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] == 'GK')]
+        pname = st.selectbox('اختر حارس مرمى:', home_gk_df.name.unique(), index=None, key='home_gk_analysis')
+        if st.session_state.home_gk_analysis and pname:
+            try:
+                st.header(f'لوحة أداء {pname}')
+                generate_gk_dashboard(f'{pname}', hftmb_tid)
+            except Exception as e:
+                st.subheader("عذرًا، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى، وإذا استمر ظهور هذه الرسالة، أعد تشغيل التطبيق.")
+                st.error(f"تفاصيل الخطأ: {str(e)}")
+
+    if team_player == f'{ateamName} GK':
+        away_gk_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] == 'GK')]
+        pname = st.selectbox('اختر حارس مرمى:', away_gk_df.name.unique(), index=None, key='away_gk_analysis')
+        if st.session_state.away_gk_analysis and pname:
+            try:
+                st.header(f'لوحة أداء {pname}')
+                generate_gk_dashboard(f'{pname}', aftmb_tid)
+            except Exception as e:
+                st.subheader("عذرًا، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى، وإذا استمر ظهور هذه الرسالة، أعد تشغيل التطبيق.")
+                st.error(f"تفاصيل الخطأ: {str(e)}")
