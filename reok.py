@@ -1724,27 +1724,27 @@ def plot_match_momentm(ax, phase_tag):
                     ax.axvline(90, color='gray', linewidth=2, linestyle='dotted')
                 return
             
-            fig,axs=plt.subplots(1,2, figsize=(20,10), facecolor=bg_color)
-            plot_match_momentm(axs[0], 'FirstHalf')
-            plot_match_momentm(axs[1], 'SecondHalf')
-            fig.subplots_adjust(wspace=0.025)
+                fig,axs=plt.subplots(1,2, figsize=(20,10), facecolor=bg_color)
+                plot_match_momentm(axs[0], 'FirstHalf')
+                plot_match_momentm(axs[1], 'SecondHalf')
+                fig.subplots_adjust(wspace=0.025)
             
-            fig_text(0.5, 1.1, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=40, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.04, 'Match Momentum', fontsize=30, ha='center', va='center')
-            fig.text(0.5, 0.98, '@adnaaan433', fontsize=15, ha='center', va='center')
+                fig_text(0.5, 1.1, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=40, fontweight='bold', ha='center', va='center', ax=fig)
+                fig.text(0.5, 1.04, 'Match Momentum', fontsize=30, ha='center', va='center')
+                fig.text(0.5, 0.98, '@adnaaan433', fontsize=15, ha='center', va='center')
             
-            fig.text(0.5, -0.01, '*Momentum is the measure of the Avg. Open-Play Attacking Threat of a team per minute', fontsize=15, fontstyle='italic', ha='center', va='center')
-            fig.text(0.5, -0.05, '*green circle: Goals, orange circle: own goal', fontsize=15, fontstyle='italic', ha='center', va='center')
+                fig.text(0.5, -0.01, '*Momentum is the measure of the Avg. Open-Play Attacking Threat of a team per minute', fontsize=15, fontstyle='italic', ha='center', va='center')
+                fig.text(0.5, -0.05, '*green circle: Goals, orange circle: own goal', fontsize=15, fontstyle='italic', ha='center', va='center')
             
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=1.02, width=0.125, height=0.125)
+                himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+                himage = Image.open(himage)
+                ax_himage = add_image(himage, fig, left=0.085, bottom=1.02, width=0.125, height=0.125)
             
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=1.02, width=0.125, height=0.125)
+                aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+                aimage = Image.open(aimage)
+                ax_aimage = add_image(aimage, fig, left=0.815, bottom=1.02, width=0.125, height=0.125)
             
-            st.pyplot(fig)
+                st.pyplot(fig)
             
-            st.header('Cumulative xT')
+                st.header('Cumulative xT')
             
