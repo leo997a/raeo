@@ -601,13 +601,21 @@ def pass_network(ax, team_name, col, phase_tag):
     pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
 
     # إعدادات التصميم العصري
-    MAX_LINE_WIDTH = 10
-    MIN_TRANSPARENCY = 0.1
-    MAX_TRANSPARENCY = 0.9
+    MAX_LINE_WIDTH = 8  # الحد الأقصى لعرض الخطوط
+    MIN_LINE_WIDTH = 0.5  # الحد الأدنى لعرض الخطوط
+    MIN_TRANSPARENCY = 0.2  # الحد الأدنى للشفافية
+    MAX_TRANSPARENCY = 0.9  # الحد الأقصى للشفافية
+
+    # حساب عرض الخطوط بناءً على عدد التمريرات
+    pass_counts_df['line_width'] = (pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()) * (MAX_LINE_WIDTH - MIN_LINE_WIDTH) + MIN_LINE_WIDTH
+
+    # حساب الشفافية بناءً على عدد التمريرات
+    c_transparency = pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()
+    c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
+
+    # إنشاء اللون مع الشفافية
     color = np.array(to_rgba(col))
     color = np.tile(color, (len(pass_counts_df), 1))
-    c_transparency = pass_counts_df.pass_count / pass_counts_df.pass_count.max()
-    c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
     color[:, 3] = c_transparency
 
     # إنشاء ملعب بتصميم متدرج
@@ -623,8 +631,18 @@ def pass_network(ax, team_name, col, phase_tag):
     ax.imshow(Z, extent=[0, 68, 0, 105], cmap=gradient, alpha=0.8, aspect='auto', zorder=0)
     pitch.draw(ax=ax)
 
-    # رسم الخطوط بين اللاعبين
-    pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y, lw=1, color=color, zorder=1, ax=ax)
+    # رسم الخطوط بين اللاعبين مع عرض متغير وشفافية متغيرة
+    for idx in range(len(pass_counts_df)):
+        pitch.lines(
+            pass_counts_df['pass_avg_x'].iloc[idx],
+            pass_counts_df['pass_avg_y'].iloc[idx],
+            pass_counts_df['receiver_avg_x'].iloc[idx],
+            pass_counts_df['receiver_avg_y'].iloc[idx],
+            lw=pass_counts_df['line_width'].iloc[idx],  # عرض الخط بناءً على عدد التمريرات
+            color=color[idx],  # اللون مع الشفافية
+            zorder=1,
+            ax=ax
+        )
 
     # رسم دوائر اللاعبين
     for index, row in avg_locs_df.iterrows():
