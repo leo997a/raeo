@@ -1255,11 +1255,11 @@ def plot_ShotsMap(ax, team_name, col, phase_tag):
     player_stats_df = player_stats_df.sort_values(by='Total Shots', ascending=False)
 
     return player_stats_df
-            sm_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='sm_time_pill')
-            if sm_time_phase == 'Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-                home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'Full Time')
-                away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'Full Time')
+        sm_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='sm_time_pill')
+        if sm_time_phase == 'Full Time':
+            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+            home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'Full Time')
+            away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'Full Time')
                 
             if sm_time_phase == 'First Half':
                 fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
