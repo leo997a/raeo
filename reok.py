@@ -2852,11 +2852,18 @@ from urllib.request import urlopen
 from PIL import Image
 from mplsoccer import VerticalPitch
 from scipy.spatial import ConvexHull
+from matplotlib import font_manager  # تصحيح الاستيراد
+import os
 # تهيئة Matplotlib لدعم العربية
 font_path = "/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf"
-font_manager.fontManager.addfont(font_path)
-plt.rcParams['font.family'] = 'Noto Sans Arabic'
+if os.path.exists(font_path):
+    font_manager.fontManager.addfont(font_path)
+    plt.rcParams['font.family'] = 'Noto Sans Arabic'
+else:
+    plt.rcParams['font.family'] = 'DejaVu Sans'  # خط افتراضي
+    st.warning("الخط العربي غير موجود، يتم استخدام خط افتراضي.")
 plt.rcParams['axes.unicode_minus'] = False
+
 
 # تحميل بيانات الفرق
 df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
