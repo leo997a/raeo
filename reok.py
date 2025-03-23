@@ -557,6 +557,7 @@ if league and htn and atn and st.session_state.confirmed:
         if an_tp == 'شبكة التمريرات':
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
+# دالة pass_network المعدلة
 def pass_network(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
         df_pass = df.copy()
@@ -671,32 +672,32 @@ def pass_network(ax, team_name, col, phase_tag):
 
     v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
 
-    # إضافة النصوص مع معالجة العربية
+    # إضافة النصوص مع معالجة العربية وضبط الإحداثيات
     if phase_tag == 'Full Time':
-        ax.text(34, 112, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-        ax.text(34, 108, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+        ax.text(34, 115, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
     elif phase_tag == 'First Half':
-        ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-        ax.text(34, 108, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+        ax.text(34, 115, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
     elif phase_tag == 'Second Half':
-        ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-        ax.text(34, 108, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+        ax.text(34, 115, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
+        ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
 
     ax.text(34, -5, reshape_arabic_text(f"على الكرة\nالتماسك العمودي (المنطقة المظللة): {v_comp}%"), color='white', fontsize=12, ha='center', va='center', weight='bold')
 
     return pass_btn
 
-# الجزء الخارجي من الكود مع معالجة النصوص العربية
+# الجزء الخارجي من الكود مع معالجة النصوص العربية وضبط الإحداثيات
 tab1, tab2 = st.tabs([reshape_arabic_text("تحليل المباراة"), reshape_arabic_text("تبويب آخر")])
 
 with tab1:
     an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
-        'شبكة التمريرات', 
+        reshape_arabic_text('شبكة التمريرات'), 
         'Defensive Actions Heatmap', 
         'Progressive Passes', 
         'Progressive Carries', 
         'Shotmap', 
-        'احصائيات الحراس', 
+        'GK Saves', 
         'Match Momentum',
         reshape_arabic_text('Zone14 & Half-Space Passes'), 
         reshape_arabic_text('Final Third Entries'), 
@@ -708,8 +709,8 @@ with tab1:
         reshape_arabic_text('Pass Target Zones')
     ], index=0, key='analysis_type_tab1')
 
-    if an_tp == 'شبكة التمريرات':
-        st.header('شبكة التمريرات')
+    if an_tp == reshape_arabic_text('شبكة التمريرات'):
+        st.header(reshape_arabic_text('شبكة التمريرات'))
         
         # استبدال st.pills بـ st.radio لأن st.pills غير مدعوم افتراضيًا في Streamlit
         pn_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='pn_time_pill')
@@ -738,11 +739,13 @@ with tab1:
         fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
         fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
 
-        fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
+        # ضبط النصوص في الأسفل مع تطبيق reshape_arabic_text
+        fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
                  fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-        fig.text(0.5, 0.03, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
+        fig.text(0.5, 0.00, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
                  fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
+        # إضافة الصور
         himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
         himage = Image.open(himage)
         ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
@@ -750,6 +753,9 @@ with tab1:
         aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
         aimage = Image.open(aimage)
         ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+
+        # ضبط المساحات العلوية والسفلية للرسم
+        plt.subplots_adjust(top=0.85, bottom=0.15)
 
         st.pyplot(fig)
 
