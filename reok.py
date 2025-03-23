@@ -3621,7 +3621,7 @@ def top_dfs():
             
                 progressor_df, xT_df, sh_sq_df, defender_df = top_dfs()
             
-    def passer_bar(ax):
+def passer_bar(ax):
                 top10_progressors = progressor_df['shortName'][::-1].tolist()
                 progressor_pp = progressor_df['Progressive Passes'][::-1].tolist()
                 progressor_pc = progressor_df['Progressive Carries'][::-1].tolist()
