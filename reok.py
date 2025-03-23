@@ -158,14 +158,14 @@ if season:
             st.session_state['confirmed'] = False
             st.sidebar.write('Match not found')
     if league and htn and atn and st.session_state.confirmed:
-        pass
 @st.cache_data
-def get_event_data(season, league, stage, htn, atn):
-    def extract_json_from_html(html_path, save_output=False):
-        response = requests.get(html_path)
-        response.raise_for_status()  # Ensure the request was successful
-        html = response.text
-    # باقي الكود هنا...
+df, teams_dict, players_df, data = get_event_data(season, league, stage, htn, atn)
+    
+    # تعيين أسماء الفرق بناءً على البيانات المجلوبة
+    hteamID = list(teams_dict.keys())[0]
+    ateamID = list(teams_dict.keys())[1]
+    hteamName = teams_dict[hteamID]
+    ateamName = teams_dict[ateamID]
     
         regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
         data_txt = re.findall(regex_pattern, html)[0]
@@ -525,10 +525,10 @@ def get_event_data(season, league, stage, htn, atn):
         else:
             return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
     
-    hteamID = list(teams_dict.keys())[0]  # selected home team
-    ateamID = list(teams_dict.keys())[1]  # selected away team
-    hteamName= teams_dict[hteamID]
-    ateamName= teams_dict[ateamID]
+    hteamID = list(teams_dict.keys())[0]
+    ateamID = list(teams_dict.keys())[1]
+    hteamName = teams_dict[hteamID]
+    ateamName = teams_dict[ateamID]
     
     homedf = df[(df['teamName']==hteamName)]
     awaydf = df[(df['teamName']==ateamName)]
