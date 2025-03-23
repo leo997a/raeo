@@ -1156,8 +1156,8 @@ def progressive_carry(ax, team_name, col, phase_tag):
             st.dataframe(away_proc, hide_index=True)
             
     if an_tp == 'Shotmap':
-    st.header(reshape_arabic_text('خريطة التسديدات'))
-    st.header(f'{an_tp}')
+        st.header(reshape_arabic_text('خريطة التسديدات'))
+        st.header(f'{an_tp}')
 
     def plot_ShotsMap(ax, team_name, col, phase_tag):
         if phase_tag == 'Full Time':
