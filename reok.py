@@ -3482,7 +3482,7 @@ if team_player == f"{hteamName} Players":
                     for key, value in other_stats_dict.items():
                         st.write(f"{key}: {value}")
                 
-        if team_player == f"{ateamName} Players":
+if team_player == f"{ateamName} Players":
             away_pname_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position']!='GK')]
             apname = st.selectbox('Select a Player:', away_pname_df.name.unique(), index=None, key='away_player_analysis')
             if st.session_state.away_player_analysis:
