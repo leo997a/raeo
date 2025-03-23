@@ -3443,6 +3443,8 @@ with tab2:
         }
 
         return shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict
+
+
 if team_player == f"{hteamName} Players":
             home_pname_df = homedf[(homedf['name'] != 'nan') & (homedf['position']!='GK')]
             hpname = st.selectbox('Select a Player:', home_pname_df.name.unique(), index=None, key='home_player_analysis')
