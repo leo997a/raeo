@@ -1441,8 +1441,8 @@ elif an_tp == 'Attacking Thirds':
     pitch.draw(ax=ax2)
 
     # تحديد الفريقين بناءً على teamId
-    home_team_id = match_data['home']['teamId']
-    away_team_id = match_data['away']['teamId']
+    home_team_id = match_data['homeTeam']['teamId']  # تغيير 'home' إلى 'homeTeam'
+    away_team_id = match_data['awayTeam']['teamId']  # تغيير 'away' إلى 'awayTeam'
 
     # تقسيم البيانات حسب الفريق
     home_chances = df[(df['type'].isin(['Shot', 'Pass']) & (df['outcomeType'] == 'Successful')) & (df['teamId'] == home_team_id)]
