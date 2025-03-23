@@ -1429,66 +1429,110 @@ if an_tp == 'Match Momentum':
     # st.header(f'{st.session_state.analysis_type}')
     st.header(f'{an_tp}')
 elif an_tp == 'Attacking Thirds':
-    # إعداد الملعب
-    pitch = VerticalPitch(pitch_type='opta', pitch_color='#1a2a44', line_color='white', half=False)
-    fig, ax = pitch.draw(figsize=(8, 12))
-    fig.set_facecolor('#1a2a44')
+    st.header(reshape_arabic_text('الثلث الهجومي'))
 
-    # استخدام العمود الصحيح 'type' بدلاً من 'event_type'
-    chances = df[df['type'].isin(['Shot', 'Pass']) & (df['outcomeType'] == 'Successful')]  # التسديدات والتمريرات الناجحة
+    # تقسيم البيانات حسب الفريقين
+    homedf = df[df['teamName'] == hteamName]
+    awaydf = df[df['teamName'] == ateamName]
 
-    # تقسيم الملعب إلى ثلاثة أقسام بناءً على الموقع x
-    # في opta: x من 0 إلى 100 (من الأسفل إلى الأعلى)
-    left_third = chances[chances['x'] <= 33.33]  # الثلث الأيسر (من 0 إلى 33.33)
-    middle_third = chances[(chances['x'] > 33.33) & (chances['x'] <= 66.66)]  # الثلث الأوسط
-    right_third = chances[chances['x'] > 66.66]  # الثلث الأيمن (من 66.66 إلى 100)
+    # تصفية الفرص (التسديدات والتمريرات الناجحة)
+    home_chances = homedf[homedf['type'].isin(['Shot', 'Pass']) & (homedf['outcomeType'] == 'Successful')]
+    away_chances = awaydf[awaydf['type'].isin(['Shot', 'Pass']) & (awaydf['outcomeType'] == 'Successful')]
 
-    # حساب عدد الفرص في كل ثلث
-    total_chances = len(chances)
-    left_count = len(left_third)
-    middle_count = len(middle_third)
-    right_count = len(right_third)
+    # تقسيم الملعب إلى ثلاثة أقسام (باستخدام UEFA dimensions: 105x68)
+    def split_thirds(df_team):
+        left_third = df_team[df_team['x'] <= 35]  # الثلث الدفاعي (0-35)
+        middle_third = df_team[(df_team['x'] > 35) & (df_team['x'] <= 70)]  # الثلث الأوسط (35-70)
+        right_third = df_team[df_team['x'] > 70]  # الثلث الهجومي (70-105)
+        return left_third, middle_third, right_third
 
-    # حساب النسب المئوية
-    left_percentage = (left_count / total_chances * 100) if total_chances > 0 else 0
-    middle_percentage = (middle_count / total_chances * 100) if total_chances > 0 else 0
-    right_percentage = (right_count / total_chances * 100) if total_chances > 0 else 0
+    # تقسيم الثلثات لكل فريق
+    h_left, h_middle, h_right = split_thirds(home_chances)
+    a_left, a_middle, a_right = split_thirds(away_chances)
 
-    # تلوين الثلثات باستخدام y1 و y2
-    ax.fill_between(x=[0, 100], y1=0, y2=33.33, color='#FF9999', alpha=0.5)  # الثلث الأيسر (y من 0 إلى 33.33)
-    ax.fill_between(x=[0, 100], y1=33.33, y2=66.66, color='#FFCCCC', alpha=0.5)  # الثلث الأوسط (y من 33.33 إلى 66.66)
-    ax.fill_between(x=[0, 100], y1=66.66, y2=100, color='#FFCCCC', alpha=0.5)  # الثلث الأيمن (y من 66.66 إلى 100)
+    # حساب الإجماليات والنسب
+    h_total = len(home_chances)
+    a_total = len(away_chances)
 
-    # إضافة النسب المئوية وعدد الفرص
-    # تعديل المواقع لتتناسب مع الاتجاه العمودي
-    fig.text(0.5, 0.25, f'{left_percentage:.1f}%\n{left_count}\nchances created', 
-             fontsize=20, ha='center', va='center', color='white', fontweight='bold')
-    fig.text(0.5, 0.5, f'{middle_percentage:.1f}%\n{middle_count}\nchances created', 
-             fontsize=20, ha='center', va='center', color='white', fontweight='bold')
-    fig.text(0.5, 0.75, f'{right_percentage:.1f}%\n{right_count}\nchances created', 
-             fontsize=20, ha='center', va='center', color='white', fontweight='bold')
+    h_left_count, h_middle_count, h_right_count = len(h_left), len(h_middle), len(h_right)
+    a_left_count, a_middle_count, a_right_count = len(a_left), len(a_middle), len(a_right)
 
-    # إضافة العنوان
+    h_left_pct = (h_left_count / h_total * 100) if h_total > 0 else 0
+    h_middle_pct = (h_middle_count / h_total * 100) if h_total > 0 else 0
+    h_right_pct = (h_right_count / h_total * 100) if h_total > 0 else 0
+
+    a_left_pct = (a_left_count / a_total * 100) if a_total > 0 else 0
+    a_middle_pct = (a_middle_count / a_total * 100) if a_total > 0 else 0
+    a_right_pct = (a_right_count / a_total * 100) if a_total > 0 else 0
+
+    # إعداد الرسم
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    pitch = VerticalPitch(pitch_type='uefa', pitch_color=bg_color, line_color=line_color, corner_arcs=True, linewidth=1.5)
+
+    # رسم ملعب الفريق المضيف
+    pitch.draw(ax=axs[0])
+    axs[0].fill_between(x=[0, 68], y1=0, y2=35, color=hcol, alpha=0.3)  # الثلث الدفاعي
+    axs[0].fill_between(x=[0, 68], y1=35, y2=70, color=hcol, alpha=0.5)  # الثلث الأوسط
+    axs[0].fill_between(x=[0, 68], y1=70, y2=105, color=hcol, alpha=0.7)  # الثلث الهجومي
+
+    # إضافة النصوص للفريق المضيف
+    axs[0].text(34, 17.5, reshape_arabic_text(f'{h_left_pct:.1f}%\n{h_left_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    axs[0].text(34, 52.5, reshape_arabic_text(f'{h_middle_pct:.1f}%\n{h_middle_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    axs[0].text(34, 87.5, reshape_arabic_text(f'{h_right_pct:.1f}%\n{h_right_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    axs[0].text(34, 115, reshape_arabic_text(f'{hteamName}'), fontsize=16, ha='center', va='center', color=hcol, fontweight='bold')
+
+    # رسم ملعب الفريق الضيف
+    pitch.draw(ax=axs[1])
+    axs[1].fill_between(x=[0, 68], y1=0, y2=35, color=acol, alpha=0.3)  # الثلث الدفاعي
+    axs[1].fill_between(x=[0, 68], y1=35, y2=70, color=acol, alpha=0.5)  # الثلث الأوسط
+    axs[1].fill_between(x=[0, 68], y1=70, y2=105, color=acol, alpha=0.7)  # الثلث الهجومي
+
+    # إضافة النصوص للفريق الضيف
+    axs[1].text(34, 17.5, reshape_arabic_text(f'{a_left_pct:.1f}%\n{a_left_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    axs[1].text(34, 52.5, reshape_arabic_text(f'{a_middle_pct:.1f}%\n{a_middle_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    axs[1].text(34, 87.5, reshape_arabic_text(f'{a_right_pct:.1f}%\n{a_right_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    axs[1].text(34, 115, reshape_arabic_text(f'{ateamName}'), fontsize=16, ha='center', va='center', color=acol, fontweight='bold')
+
+    # إضافة العنوان العام
     home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
     away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
     title = f"<{home_part}> - <{away_part}>"
-    fig_text(0.5, 1.05, title, 
-             highlight_textprops=[{'color': hcol}, {'color': acol}],
-             fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+    fig_text(0.5, 1.05, title, highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
 
-    # إضافة عنوان التحليل
-    fig.text(0.5, 1.01, 'Attacking Thirds', 
-             fontsize=18, ha='center', va='center', color='white', weight='bold')
-
-    # إضافة اسم القناة
-    fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', 
-             fontsize=14, fontfamily='Roboto', fontweight='bold', 
-             color='#FFD700', ha='center', va='center',
+    fig.text(0.5, 1.01, reshape_arabic_text('الثلثات الهجومية'), fontsize=18, ha='center', va='center', color='white', weight='bold')
+    fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', fontsize=14, fontfamily='Roboto', fontweight='bold', color='#FFD700', ha='center', va='center',
              bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
              path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
 
     # إضافة وصف
-    fig.text(0.5, 0.1, 'Looking at the % of chances created from each third', 
-             fontsize=12, ha='center', va='center', color='white')
+    fig.text(0.5, 0.05, reshape_arabic_text('نسبة الفرص المخلقة من كل ثلث (تمريرات ناجحة وتسديدات)'), fontsize=12, ha='center', va='center', color='white')
+
+    # إضافة شعارات الفريقين
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
     st.pyplot(fig)
+
+    # عرض البيانات في جدول
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(reshape_arabic_text(f'تفاصيل فرص {hteamName}:'))
+        h_data = pd.DataFrame({
+            'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
+            'عدد الفرص': [h_left_count, h_middle_count, h_right_count],
+            'النسبة (%)': [f'{h_left_pct:.1f}', f'{h_middle_pct:.1f}', f'{h_right_pct:.1f}']
+        })
+        st.dataframe(h_data, hide_index=True)
+    with col2:
+        st.write(reshape_arabic_text(f'تفاصيل فرص {ateamName}:'))
+        a_data = pd.DataFrame({
+            'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
+            'عدد الفرص': [a_left_count, a_middle_count, a_right_count],
+            'النسبة (%)': [f'{a_left_pct:.1f}', f'{a_middle_pct:.1f}', f'{a_right_pct:.1f}']
+        })
+        st.dataframe(a_data, hide_index=True)
