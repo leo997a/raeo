@@ -1440,6 +1440,32 @@ elif an_tp == 'Attacking Thirds':
     away_chances = awaydf[awaydf['type'].isin(['Shot', 'Pass']) & (awaydf['outcomeType'] == 'Successful')]
 
     # تقسيم الملعب إلى ثلاثة أقسام (باستخدام UEFA dimensions: 105x68)
+    elif an_tp == 'Attacking Thirds':
+    st.header(reshape_arabic_text('الثلث الهجومي'))
+
+    # خيار اختيار الوقت
+    time_option = st.selectbox(
+        reshape_arabic_text('اختر الوقت:'),
+        [reshape_arabic_text('90 دقيقة'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')]
+    )
+
+    # تقسيم البيانات حسب الفريقين
+    homedf = df[df['teamName'] == hteamName]
+    awaydf = df[df['teamName'] == ateamName]
+
+    # تصفية البيانات حسب الوقت المختار
+    if time_option == reshape_arabic_text('الشوط الأول'):
+        homedf = homedf[homedf['period'] == 'FirstHalf']
+        awaydf = awaydf[awaydf['period'] == 'FirstHalf']
+    elif time_option == reshape_arabic_text('الشوط الثاني'):
+        homedf = homedf[homedf['period'] == 'SecondHalf']
+        awaydf = awaydf[awaydf['period'] == 'SecondHalf']
+
+    # تصفية الفرص (التسديدات والتمريرات الناجحة)
+    home_chances = homedf[homedf['type'].isin(['Shot', 'Pass']) & (homedf['outcomeType'] == 'Successful')]
+    away_chances = awaydf[awaydf['type'].isin(['Shot', 'Pass']) & (awaydf['outcomeType'] == 'Successful')]
+
+    # تقسيم الملعب إلى ثلاثة أقسام (باستخدام UEFA dimensions: 105x68)
     def split_thirds(df_team):
         left_third = df_team[df_team['x'] <= 35]  # الثلث الدفاعي (0-35)
         middle_third = df_team[(df_team['x'] > 35) & (df_team['x'] <= 70)]  # الثلث الأوسط (35-70)
@@ -1471,27 +1497,51 @@ elif an_tp == 'Attacking Thirds':
 
     # رسم ملعب الفريق المضيف
     pitch.draw(ax=axs[0])
-    axs[0].fill_between(x=[0, 68], y1=0, y2=35, color=hcol, alpha=0.3)  # الثلث الدفاعي
-    axs[0].fill_between(x=[0, 68], y1=35, y2=70, color=hcol, alpha=0.5)  # الثلث الأوسط
-    axs[0].fill_between(x=[0, 68], y1=70, y2=105, color=hcol, alpha=0.7)  # الثلث الهجومي
+    # إضافة الأسهم للثلثات
+    arrowprops = dict(facecolor=hcol, edgecolor='white', linewidth=2, alpha=0.8)
+    axs[0].annotate('', xy=(34, 35), xytext=(34, 0), arrowprops=dict(arrowstyle='->', **arrowprops))
+    axs[0].annotate('', xy=(34, 70), xytext=(34, 35), arrowprops=dict(arrowstyle='->', **arrowprops))
+    axs[0].annotate('', xy=(34, 105), xytext=(34, 70), arrowprops=dict(arrowstyle='->', **arrowprops))
 
     # إضافة النصوص للفريق المضيف
-    axs[0].text(34, 17.5, reshape_arabic_text(f'{h_left_pct:.1f}%\n{h_left_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
-    axs[0].text(34, 52.5, reshape_arabic_text(f'{h_middle_pct:.1f}%\n{h_middle_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
-    axs[0].text(34, 87.5, reshape_arabic_text(f'{h_right_pct:.1f}%\n{h_right_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    axs[0].text(34, 17.5, reshape_arabic_text(f'{h_left_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    axs[0].text(34, 52.5, reshape_arabic_text(f'{h_middle_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    axs[0].text(34, 87.5, reshape_arabic_text(f'{h_right_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
     axs[0].text(34, 115, reshape_arabic_text(f'{hteamName}'), fontsize=16, ha='center', va='center', color=hcol, fontweight='bold')
+
+    # إضافة عدد الفرص
+    axs[0].text(34, 10, reshape_arabic_text(f'{h_left_count} فرص'), fontsize=12, ha='center', va='center', color='white')
+    axs[0].text(34, 45, reshape_arabic_text(f'{h_middle_count} فرص'), fontsize=12, ha='center', va='center', color='white')
+    axs[0].text(34, 80, reshape_arabic_text(f'{h_right_count} فرص'), fontsize=12, ha='center', va='center', color='white')
+
+    # تلوين الثلثات
+    axs[0].fill_between(x=[0, 68], y1=0, y2=35, color=hcol, alpha=0.3)
+    axs[0].fill_between(x=[0, 68], y1=35, y2=70, color=hcol, alpha=0.5)
+    axs[0].fill_between(x=[0, 68], y1=70, y2=105, color=hcol, alpha=0.7)
 
     # رسم ملعب الفريق الضيف
     pitch.draw(ax=axs[1])
-    axs[1].fill_between(x=[0, 68], y1=0, y2=35, color=acol, alpha=0.3)  # الثلث الدفاعي
-    axs[1].fill_between(x=[0, 68], y1=35, y2=70, color=acol, alpha=0.5)  # الثلث الأوسط
-    axs[1].fill_between(x=[0, 68], y1=70, y2=105, color=acol, alpha=0.7)  # الثلث الهجومي
+    # إضافة الأسهم للثلثات
+    arrowprops = dict(facecolor=acol, edgecolor='white', linewidth=2, alpha=0.8)
+    axs[1].annotate('', xy=(34, 35), xytext=(34, 0), arrowprops=dict(arrowstyle='->', **arrowprops))
+    axs[1].annotate('', xy=(34, 70), xytext=(34, 35), arrowprops=dict(arrowstyle='->', **arrowprops))
+    axs[1].annotate('', xy=(34, 105), xytext=(34, 70), arrowprops=dict(arrowstyle='->', **arrowprops))
 
     # إضافة النصوص للفريق الضيف
-    axs[1].text(34, 17.5, reshape_arabic_text(f'{a_left_pct:.1f}%\n{a_left_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
-    axs[1].text(34, 52.5, reshape_arabic_text(f'{a_middle_pct:.1f}%\n{a_middle_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
-    axs[1].text(34, 87.5, reshape_arabic_text(f'{a_right_pct:.1f}%\n{a_right_count}'), fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    axs[1].text(34, 17.5, reshape_arabic_text(f'{a_left_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    axs[1].text(34, 52.5, reshape_arabic_text(f'{a_middle_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    axs[1].text(34, 87.5, reshape_arabic_text(f'{a_right_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
     axs[1].text(34, 115, reshape_arabic_text(f'{ateamName}'), fontsize=16, ha='center', va='center', color=acol, fontweight='bold')
+
+    # إضافة عدد الفرص
+    axs[1].text(34, 10, reshape_arabic_text(f'{a_left_count} فرص'), fontsize=12, ha='center', va='center', color='white')
+    axs[1].text(34, 45, reshape_arabic_text(f'{a_middle_count} فرص'), fontsize=12, ha='center', va='center', color='white')
+    axs[1].text(34, 80, reshape_arabic_text(f'{a_right_count} فرص'), fontsize=12, ha='center', va='center', color='white')
+
+    # تلوين الثلثات
+    axs[1].fill_between(x=[0, 68], y1=0, y2=35, color=acol, alpha=0.3)
+    axs[1].fill_between(x=[0, 68], y1=35, y2=70, color=acol, alpha=0.5)
+    axs[1].fill_between(x=[0, 68], y1=70, y2=105, color=acol, alpha=0.7)
 
     # إضافة العنوان العام
     home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
@@ -1505,7 +1555,7 @@ elif an_tp == 'Attacking Thirds':
              path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
 
     # إضافة وصف
-    fig.text(0.5, 0.05, reshape_arabic_text('نسبة الفرص المخلقة من كل ثلث (تمريرات ناجحة وتسديدات)'), fontsize=12, ha='center', va='center', color='white')
+    fig.text(0.5, 0.05, reshape_arabic_text(f'نسبة الفرص المخلقة من كل ثلث (تمريرات ناجحة وتسديدات) - {time_option}'), fontsize=12, ha='center', va='center', color='white')
 
     # إضافة شعارات الفريقين
     himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
@@ -1521,7 +1571,7 @@ elif an_tp == 'Attacking Thirds':
     # عرض البيانات في جدول
     col1, col2 = st.columns(2)
     with col1:
-        st.write(reshape_arabic_text(f'تفاصيل فرص {hteamName}:'))
+        st.write(reshape_arabic_text(f'تفاصيل فرص {hteamName} ({time_option}):'))
         h_data = pd.DataFrame({
             'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
             'عدد الفرص': [h_left_count, h_middle_count, h_right_count],
@@ -1529,7 +1579,7 @@ elif an_tp == 'Attacking Thirds':
         })
         st.dataframe(h_data, hide_index=True)
     with col2:
-        st.write(reshape_arabic_text(f'تفاصيل فرص {ateamName}:'))
+        st.write(reshape_arabic_text(f'تفاصيل فرص {ateamName} ({time_option}):'))
         a_data = pd.DataFrame({
             'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
             'عدد الفرص': [a_left_count, a_middle_count, a_right_count],
