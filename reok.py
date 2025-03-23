@@ -3060,8 +3060,6 @@ with tab2:
         ax.text(34, -17, '*blue area = middle 75% touches area', color=acol, fontsize=13, fontstyle='italic', ha='center', va='center')
         ax.text(34, -21, '*red area = middle 75% pass receiving area', color=hcol, fontsize=13, fontstyle='italic', ha='center', va='center')
         return
-with tab2:
-    team_player = st.pills(" ", [f"{hteamName} Players", f"{ateamName} Players", f'{hteamName} GK', f'{ateamName} GK'], selection_mode='single', default=f"{hteamName} Players", key='selecting_team_for_player_analysis')
 
     def gk_passmap(ax, pname):
         df_gk = df[(df['name'] == pname)]
