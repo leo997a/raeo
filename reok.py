@@ -2852,12 +2852,25 @@ from urllib.request import urlopen
 from PIL import Image
 from mplsoccer import VerticalPitch
 from scipy.spatial import ConvexHull
-# افترض أن لديك بيانات المباراة
-df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
-home_team = st.selectbox("اختر الفريق المضيف", team_names)
-away_team = st.selectbox("اختر الفريق الضيف", team_names, index=1)  # index=1 لاختيار فريق مختلف افتراضيًا
+# تهيئة Matplotlib لدعم العربية
+font_path = "/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf"
+font_manager.fontManager.addfont(font_path)
+plt.rcParams['font.family'] = 'Noto Sans Arabic'
+plt.rcParams['axes.unicode_minus'] = False
 
-# اختيار الفريق
+# تحميل شبكة xT
+xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/refs/heads/main/xT_Grid.csv")
+st.write("شبكة xT:", xT.head())  # للتحقق
+
+# تحميل بيانات الفرق
+df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
+team_names = df_teamNameId['team_name'].tolist()
+
+# اختيار الفريق المضيف والضيف
+home_team = st.selectbox("اختر الفريق المضيف", team_names)
+away_team = st.selectbox("اختر الفريق الضيف", team_names, index=1)  # اختيار افتراضي مختلف
+
+# اختيار الفريق لتحليل اللاعبين
 team_options = [home_team, away_team]
 selected_team = st.radio("اختر الفريق لتحليل اللاعبين", team_options)
 
@@ -2868,7 +2881,6 @@ elif st.session_state.selecting_team_for_player_analysis != f"{selected_team} Pl
     st.session_state.selecting_team_for_player_analysis = f"{selected_team} Players"
 
 st.write(f"الفريق المختار للتحليل: {st.session_state.selecting_team_for_player_analysis}")
-
 # تعريف الألوان
 bg_color = '#f5f5f5'
 line_color = '#000000'
