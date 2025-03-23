@@ -2043,381 +2043,373 @@ elif an_tp == 'Zone14 & Half-Space Passes':
 
 elif an_tp == 'Final Third Entries':
     st.header(f'{an_tp}')
-                def final_third_entry(ax, team_name, col, phase_tag):
-                if phase_tag == 'Full Time':
-                    fentry = df[(df['teamName']==team_name) & (df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner'))]
-                elif phase_tag == 'First Half':
-                    fentry = df[(df['teamName']==team_name) & (df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period']=='FirstHalf')]
-                elif phase_tag == 'Second Half':
-                    fentry = df[(df['teamName']==team_name) & (df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period']=='SecondHalf')]
+
+    def final_third_entry(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            fentry = df[(df['teamName'] == team_name) & (df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType'] == 'Successful') & (~df['qualifiers'].str.contains('Freekick|Corner'))]
+        elif phase_tag == 'First Half':
+            fentry = df[(df['teamName'] == team_name) & (df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType'] == 'Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period'] == 'FirstHalf')]
+        elif phase_tag == 'Second Half':
+            fentry = df[(df['teamName'] == team_name) & (df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType'] == 'Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period'] == 'SecondHalf')]
+
+        pitch = VerticalPitch(pitch_type='uefa', pitch_color=bg_color, line_color=line_color, linewidth=2, corner_arcs=True)
+        pitch.draw(ax=ax)
+
+        ax.hlines(70, xmin=0, xmax=68, color='gray', ls='--', lw=2)
+        ax.vlines(68/3, ymin=0, ymax=70, color='gray', ls='--', lw=2)
+        ax.vlines(136/3, ymin=0, ymax=70, color='gray', ls='--', lw=2)
+
+        fep = fentry[(fentry['type'] == 'Pass') & (fentry['x'] < 70) & (fentry['endX'] > 70)]
+        fec = fentry[(fentry['type'] == 'Carry') & (fentry['x'] < 70) & (fentry['endX'] > 70)]
+        tfent = pd.concat([fep, fec], ignore_index=True)
+        lent = tfent[tfent['y'] > 136/3]
+        ment = tfent[(tfent['y'] <= 136/3) & (tfent['y'] >= 68/3)]
+        rent = tfent[tfent['y'] < 68/3]
+
+        pitch.lines(fep.x, fep.y, fep.endX, fep.endY, comet=True, lw=3, color=col, zorder=4, ax=ax)
+        pitch.scatter(fep.endX, fep.endY, s=60, color=bg_color, ec=col, lw=1.5, zorder=5, ax=ax)
+        for index, row in fec.iterrows():
+            arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color=violet, zorder=6, mutation_scale=20, 
+                                            alpha=0.9, linewidth=3, linestyle='--')
+            ax.add_patch(arrow)
+
+        ax.text(340/6, -5, f"form left\n{len(lent)}", fontsize=13, color=line_color, ha='center', va='center')
+        ax.text(34, -5, f"form mid\n{len(ment)}", fontsize=13, color=line_color, ha='center', va='center')
+        ax.text(68/6, -5, f"form right\n{len(rent)}", fontsize=13, color=line_color, ha='center', va='center')
+
+        if phase_tag == 'Full Time':
+            ax.text(34, 112, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax_text(34, 108, f'Total: {len(fep)+len(fec)} | <By Pass: {len(fep)}> | <By Carry: {len(fec)}>', ax=ax, highlight_textprops=[{'color': col}, {'color': violet}],
+                    color=line_color, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax_text(34, 108, f'Total: {len(fep)+len(fec)} | <By Pass: {len(fep)}> | <By Carry: {len(fec)}>', ax=ax, highlight_textprops=[{'color': col}, {'color': violet}],
+                    color=line_color, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 112, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax_text(34, 108, f'Total: {len(fep)+len(fec)} | <By Pass: {len(fep)}> | <By Carry: {len(fec)}>', ax=ax, highlight_textprops=[{'color': col}, {'color': violet}],
+                    color=line_color, fontsize=13, ha='center', va='center')
+
+        tfent = tfent[['name', 'type']]
+        stats = tfent.groupby(['name', 'type']).size().unstack(fill_value=0)
+        stats['Total'] = stats.sum(axis=1)
+        stats = stats.sort_values(by='Total', ascending=False)
+        return stats
+
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    fthE_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='fthE_time_pill')
+    if fthE_time_phase == 'Full Time':
+        home_fthirdE_stats = final_third_entry(axs[0], hteamName, hcol, 'Full Time')
+        away_fthirdE_stats = final_third_entry(axs[1], ateamName, acol, 'Full Time')
+    if fthE_time_phase == 'First Half':
+        home_fthirdE_stats = final_third_entry(axs[0], hteamName, hcol, 'First Half')
+        away_fthirdE_stats = final_third_entry(axs[1], ateamName, acol, 'First Half')
+    if fthE_time_phase == 'Second Half':
+        home_fthirdE_stats = final_third_entry(axs[0], hteamName, hcol, 'Second Half')
+        away_fthirdE_stats = final_third_entry(axs[1], ateamName, acol, 'Second Half')
+
+    fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, 'Final Third Entries', fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center')
+
+    fig.text(0.5, 0.05, '*Open-Play Successful Passes & Carries which ended inside the Final third, starting from outside the Final third', fontsize=10, 
+             fontstyle='italic', ha='center', va='center')
+
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+
+    st.pyplot(fig)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f'{hteamName} Players Final Third Entries:')
+        st.dataframe(home_fthirdE_stats)
+    with col2:
+        st.write(f'{ateamName} Players Final Third Entries:')
+        st.dataframe(away_fthirdE_stats)
+
+elif an_tp == 'Box Entries':
+    st.header(f'{an_tp}')
+
+    def penalty_box_entry(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            bentry = df[(df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType'] == 'Successful') & (df['endX'] >= 88.5) &
+                       ~((df['x'] >= 88.5) & (df['y'] >= 13.6) & (df['y'] <= 54.6)) & (df['endY'] >= 13.6) & (df['endY'] <= 54.4) &
+                        (~df['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn'))]
+        elif phase_tag == 'First Half':
+            bentry = df[(df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType'] == 'Successful') & (df['endX'] >= 88.5) &
+                       ~((df['x'] >= 88.5) & (df['y'] >= 13.6) & (df['y'] <= 54.6)) & (df['endY'] >= 13.6) & (df['endY'] <= 54.4) &
+                        (~df['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn')) & (df['period'] == 'FirstHalf')]
+        elif phase_tag == 'Second Half':
+            bentry = df[(df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType'] == 'Successful') & (df['endX'] >= 88.5) &
+                       ~((df['x'] >= 88.5) & (df['y'] >= 13.6) & (df['y'] <= 54.6)) & (df['endY'] >= 13.6) & (df['endY'] <= 54.4) &
+                        (~df['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn')) & (df['period'] == 'SecondHalf')]
+
+        pitch = VerticalPitch(pitch_type='uefa', pitch_color=bg_color, line_color=line_color, linewidth=2, corner_arcs=True, half=True)
+        pitch.draw(ax=ax)
+
+        bep = bentry[(bentry['type'] == 'Pass') & (bentry['teamName'] == team_name)]
+        bec = bentry[(bentry['type'] == 'Carry') & (bentry['teamName'] == team_name)]
+        tbent = pd.concat([bep, bec], ignore_index=True)
+        lent = tbent[tbent['y'] > 136/3]
+        ment = tbent[(tbent['y'] <= 136/3) & (tbent['y'] >= 68/3)]
+        rent = tbent[tbent['y'] < 68/3]
+
+        pitch.lines(bep.x, bep.y, bep.endX, bep.endY, comet=True, lw=3, color=col, zorder=4, ax=ax)
+        pitch.scatter(bep.endX, bep.endY, s=60, color=bg_color, ec=col, lw=1.5, zorder=5, ax=ax)
+        for index, row in bec.iterrows():
+            arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color=violet, zorder=6, mutation_scale=20, 
+                                            alpha=0.9, linewidth=3, linestyle='--')
+            ax.add_patch(arrow)
+
+        ax.text(340/6, 46, f"form left\n{len(lent)}", fontsize=13, color=line_color, ha='center', va='center')
+        ax.text(34, 46, f"form mid\n{len(ment)}", fontsize=13, color=line_color, ha='center', va='center')
+        ax.text(68/6, 46, f"form right\n{len(rent)}", fontsize=13, color=line_color, ha='center', va='center')
+        ax.vlines(68/3, ymin=0, ymax=88.5, color='gray', ls='--', lw=2)
+        ax.vlines(136/3, ymin=0, ymax=88.5, color='gray', ls='--', lw=2)
+
+        if phase_tag == 'Full Time':
+            ax.text(34, 112, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax_text(34, 108, f'Total: {len(bep)+len(bec)} | <By Pass: {len(bep)}> | <By Carry: {len(bec)}>', ax=ax, highlight_textprops=[{'color': col}, {'color': violet}],
+                    color=line_color, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax_text(34, 108, f'Total: {len(bep)+len(bec)} | <By Pass: {len(bep)}> | <By Carry: {len(bec)}>', ax=ax, highlight_textprops=[{'color': col}, {'color': violet}],
+                    color=line_color, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 112, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax_text(34, 108, f'Total: {len(bep)+len(bec)} | <By Pass: {len(bep)}> | <By Carry: {len(bec)}>', ax=ax, highlight_textprops=[{'color': col}, {'color': violet}],
+                    color=line_color, fontsize=13, ha='center', va='center')
             
-                pitch = VerticalPitch(pitch_type='uefa', pitch_color=bg_color, line_color=line_color, linewidth=2, corner_arcs=True)
-                pitch.draw(ax=ax)
-            
-                ax.hlines(70, xmin=0, xmax=68, color='gray', ls='--', lw=2)
-                ax.vlines(68/3, ymin=0, ymax=70, color='gray', ls='--', lw=2)
-                ax.vlines(136/3, ymin=0, ymax=70, color='gray', ls='--', lw=2)
-            
-                fep = fentry[(fentry['type']=='Pass') & (fentry['x']<70) & (fentry['endX']>70)]
-                fec = fentry[(fentry['type']=='Carry') & (fentry['x']<70) & (fentry['endX']>70)]
-                tfent = pd.concat([fep, fec], ignore_index=True)
-                lent = tfent[tfent['y']>136/3]
-                ment = tfent[(tfent['y']<=136/3) & (tfent['y']>=68/3)]
-                rent = tfent[tfent['y']<68/3]
-            
-                pitch.lines(fep.x, fep.y, fep.endX, fep.endY, comet=True, lw=3, color=col, zorder=4, ax=ax)
-                pitch.scatter(fep.endX, fep.endY, s=60, color=bg_color, ec=col, lw=1.5, zorder=5, ax=ax)
-                for index, row in fec.iterrows():
-                    arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color=violet, zorder=6, mutation_scale=20, 
-                                                    alpha=0.9, linewidth=3, linestyle='--')
-                    ax.add_patch(arrow)
-            
-                ax.text(340/6, -5, f"form left\n{len(lent)}", fontsize=13, color=line_color, ha='center', va='center')
-                ax.text(34, -5, f"form mid\n{len(ment)}", fontsize=13, color=line_color, ha='center', va='center')
-                ax.text(68/6, -5, f"form right\n{len(rent)}", fontsize=13, color=line_color, ha='center', va='center')
-            
-                if phase_tag == 'Full Time':
-                    ax.text(34, 112, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                    ax_text(34, 108, f'Total: {len(fep)+len(fec)} | <By Pass: {len(fep)}> | <By Carry: {len(fec)}>', ax=ax, highlight_textprops=[{'color':col}, {'color':violet}],
-                            color=line_color, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'First Half':
-                    ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-                    ax_text(34, 108, f'Total: {len(fep)+len(fec)} | <By Pass: {len(fep)}> | <By Carry: {len(fec)}>', ax=ax, highlight_textprops=[{'color':col}, {'color':violet}],
-                            color=line_color, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'Second Half':
-                    ax.text(34, 112, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                    ax_text(34, 108, f'Total: {len(fep)+len(fec)} | <By Pass: {len(fep)}> | <By Carry: {len(fec)}>', ax=ax, highlight_textprops=[{'color':col}, {'color':violet}],
-                            color=line_color, fontsize=13, ha='center', va='center')
-            
-                tfent = tfent[['name', 'type']]
-                stats = tfent.groupby(['name', 'type']).size().unstack(fill_value=0)
-                stats['Total'] = stats.sum(axis=1)
-                stats = stats.sort_values(by='Total', ascending=False)
-                return stats
-            
-            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-            fthE_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='fthE_time_pill')
-            if fthE_time_phase == 'Full Time':
-                home_fthirdE_stats = final_third_entry(axs[0], hteamName, hcol, 'Full Time')
-                away_fthirdE_stats = final_third_entry(axs[1], ateamName, acol, 'Full Time')
-            if fthE_time_phase == 'First Half':
-                home_fthirdE_stats = final_third_entry(axs[0], hteamName, hcol, 'First Half')
-                away_fthirdE_stats = final_third_entry(axs[1], ateamName, acol, 'First Half')
-            if fthE_time_phase == 'Second Half':
-                home_fthirdE_stats = final_third_entry(axs[0], hteamName, hcol, 'Second Half')
-                away_fthirdE_stats = final_third_entry(axs[1], ateamName, acol, 'Second Half')
-            
-            fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, 'Final Third Entries', fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center')
-            
-            fig.text(0.5, 0.05, '*Open-Play Successful Passes & Carries which ended inside the Final third, starting from outside the Final third', fontsize=10, 
-                     fontstyle='italic', ha='center', va='center')
-            
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-            
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-            
-            st.pyplot(fig)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Players Final Third Entries:')
-                st.dataframe(home_fthirdE_stats)
-            with col2:
-                st.write(f'{ateamName} Players Final Third Entries:')
-                st.dataframe(away_fthirdE_stats)
-            
-        if an_tp == 'Box Entries':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
-            
-            def penalty_box_entry(ax, team_name, col, phase_tag):
-                if phase_tag == 'Full Time':
-                    bentry = df[(df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType']=='Successful') & (df['endX']>=88.5) &
-                               ~((df['x']>=88.5) & (df['y']>=13.6) & (df['y']<=54.6)) & (df['endY']>=13.6) & (df['endY']<=54.4) &
-                                (~df['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn'))]
-                elif phase_tag == 'First Half':
-                    bentry = df[(df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType']=='Successful') & (df['endX']>=88.5) &
-                               ~((df['x']>=88.5) & (df['y']>=13.6) & (df['y']<=54.6)) & (df['endY']>=13.6) & (df['endY']<=54.4) &
-                                (~df['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn')) & (df['period']=='FirstHalf')]
-                elif phase_tag == 'Second Half':
-                    bentry = df[(df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType']=='Successful') & (df['endX']>=88.5) &
-                               ~((df['x']>=88.5) & (df['y']>=13.6) & (df['y']<=54.6)) & (df['endY']>=13.6) & (df['endY']<=54.4) &
-                                (~df['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn')) & (df['period']=='SecondHalf')]
-            
-                pitch = VerticalPitch(pitch_type='uefa', pitch_color=bg_color, line_color=line_color, linewidth=2, corner_arcs=True, half=True)
-                pitch.draw(ax=ax)
-            
-                bep = bentry[(bentry['type']=='Pass') & (bentry['teamName']==team_name)]
-                bec = bentry[(bentry['type']=='Carry') & (bentry['teamName']==team_name)]
-                tbent = pd.concat([bep, bec], ignore_index=True)
-                lent = tbent[tbent['y']>136/3]
-                ment = tbent[(tbent['y']<=136/3) & (tbent['y']>=68/3)]
-                rent = tbent[tbent['y']<68/3]
-            
-                pitch.lines(bep.x, bep.y, bep.endX, bep.endY, comet=True, lw=3, color=col, zorder=4, ax=ax)
-                pitch.scatter(bep.endX, bep.endY, s=60, color=bg_color, ec=col, lw=1.5, zorder=5, ax=ax)
-                for index, row in bec.iterrows():
-                    arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color=violet, zorder=6, mutation_scale=20, 
-                                                    alpha=0.9, linewidth=3, linestyle='--')
-                    ax.add_patch(arrow)
-            
-                ax.text(340/6, 46, f"form left\n{len(lent)}", fontsize=13, color=line_color, ha='center', va='center')
-                ax.text(34, 46, f"form mid\n{len(ment)}", fontsize=13, color=line_color, ha='center', va='center')
-                ax.text(68/6, 46, f"form right\n{len(rent)}", fontsize=13, color=line_color, ha='center', va='center')
-                ax.vlines(68/3, ymin=0, ymax=88.5, color='gray', ls='--', lw=2)
-                ax.vlines(136/3, ymin=0, ymax=88.5, color='gray', ls='--', lw=2)
-            
-                if phase_tag == 'Full Time':
-                    ax.text(34, 112, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                    ax_text(34, 108, f'Total: {len(bep)+len(bec)} | <By Pass: {len(bep)}> | <By Carry: {len(bec)}>', ax=ax, highlight_textprops=[{'color':col}, {'color':violet}],
-                            color=line_color, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'First Half':
-                    ax.text(34, 112, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-                    ax_text(34, 108, f'Total: {len(bep)+len(bec)} | <By Pass: {len(bep)}> | <By Carry: {len(bec)}>', ax=ax, highlight_textprops=[{'color':col}, {'color':violet}],
-                            color=line_color, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'Second Half':
-                    ax.text(34, 112, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                    ax_text(34, 108, f'Total: {len(bep)+len(bec)} | <By Pass: {len(bep)}> | <By Carry: {len(bec)}>', ax=ax, highlight_textprops=[{'color':col}, {'color':violet}],
-                            color=line_color, fontsize=13, ha='center', va='center')
-                    
-                tbent = tbent[['name', 'type']]
-                stats = tbent.groupby(['name', 'type']).size().unstack(fill_value=0)
-                stats['Total'] = stats.sum(axis=1)
-                stats = stats.sort_values(by='Total', ascending=False)
-                return stats
-            
-            fig, axs = plt.subplots(1,2, figsize=(15, 6), facecolor=bg_color)
-            bent_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='bent_time_pill')
-            if bent_time_phase == 'Full Time':
-                home_boxE_stats = penalty_box_entry(axs[0], hteamName, hcol, 'Full Time')
-                away_boxE_stats = penalty_box_entry(axs[1], ateamName, acol, 'Full Time')
-            if bent_time_phase == 'First Half':
-                home_boxE_stats = penalty_box_entry(axs[0], hteamName, hcol, 'First Half')
-                away_boxE_stats = penalty_box_entry(axs[1], ateamName, acol, 'First Half')
-            if bent_time_phase == 'Second Half':
-                home_boxE_stats = penalty_box_entry(axs[0], hteamName, hcol, 'Second Half')
-                away_boxE_stats = penalty_box_entry(axs[1], ateamName, acol, 'Second Half')
-            
-            fig_text(0.5, 1.08, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, "Opponent's Penalty Box Entries", fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.96, '@adnaaan433', fontsize=10, ha='center', va='center')
-            
-            fig.text(0.5, 0.00, '*Open-Play Successful Passes & Carries which ended inside the Opponent Penalty Box, starting from outside the Penalty Box', fontsize=10, 
-                     fontstyle='italic', ha='center', va='center')
-            
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.065, bottom=0.99, width=0.16, height=0.16)
-            
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.8, bottom=0.99, width=0.16, height=0.16)
-            
-            st.pyplot(fig)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Players Penalty Box Entries:')
-                st.dataframe(home_boxE_stats)
-            with col2:
-                st.write(f'{ateamName} Players Penalty Box Entries:')
-                st.dataframe(away_boxE_stats)
-            
-        if an_tp == 'High-Turnovers':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
-            
-            def plot_high_turnover(ax, team_name, col, phase_tag):
-                if phase_tag == 'Full Time':
-                    dfhto = df.copy()
-                elif phase_tag == 'First Half':
-                    dfhto = df[df['period']=='FirstHalf']
-                elif phase_tag == 'Second Half':
-                    dfhto = df[df['period']=='SecondHalf'].reset_index(drop=True)
-            
-                pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, linewidth=2)
-                pitch.draw(ax=ax)
-                ax.set_ylim(-0.5,105.5)
-                ax.set_xlim(68.5, -0.5)
-            
-                dfhto['Distance'] = ((dfhto['x'] - 105)**2 + (dfhto['y'] - 34)**2)**0.5
-            
-                goal_count = 0
-                p_goal_list = []
-                p_blost_goal = []
-                # Iterate through the DataFrame
-                for i in range(len(dfhto)):
-                    if ((dfhto.loc[i, 'type'] in ['BallRecovery', 'Interception']) and 
-                        (dfhto.loc[i, 'teamName'] == team_name) and 
-                        (dfhto.loc[i, 'Distance'] <= 40)):
-                        
-                        possession_id = dfhto.loc[i, 'possession_id']
-                        
-                        # Check the following rows within the same possession
-                        j = i + 1
-                        while j < len(dfhto) and dfhto.loc[j, 'possession_id'] == possession_id and dfhto.loc[j, 'teamName']==team_name:
-                            if dfhto.loc[j, 'type'] == 'Goal' and dfhto.loc[j, 'teamName']==team_name:
-                                pitch.scatter(dfhto.loc[i, 'x'],dfhto.loc[i, 'y'], s=1000, marker='*', color='green', edgecolor=bg_color, zorder=3, ax=ax)
-                                # print(dfhto.loc[i, 'type'])
-                                goal_count += 1
-                                p_goal_list.append(dfhto.loc[i, 'name'])
-                                # Check the ball looser
-                                k = i - 1
-                                while k > i - 10:
-                                    if dfhto.loc[k, 'teamName']!=team_name:
-                                        p_blost_goal.append(dfhto.loc[k, 'name'])
-                                        break
-                                    k = k - 1
-                                break
-                            j += 1
-            
-                        
-            
-                shot_count = 0
-                p_shot_list = []
-                p_blost_shot = []
-                # Iterate through the DataFrame
-                for i in range(len(dfhto)):
-                    if ((dfhto.loc[i, 'type'] in ['BallRecovery', 'Interception']) and 
-                        (dfhto.loc[i, 'teamName'] == team_name) and 
-                        (dfhto.loc[i, 'Distance'] <= 40)):
-                        
-                        possession_id = dfhto.loc[i, 'possession_id']
-                        
-                        # Check the following rows within the same possession
-                        j = i + 1
-                        while j < len(dfhto) and dfhto.loc[j, 'possession_id'] == possession_id and dfhto.loc[j, 'teamName']==team_name:
-                            if ('Shot' in dfhto.loc[j, 'type']) and (dfhto.loc[j, 'teamName']==team_name):
-                                pitch.scatter(dfhto.loc[i, 'x'],dfhto.loc[i, 'y'], s=200, color=col, edgecolor=bg_color, zorder=2, ax=ax)
-                                shot_count += 1
-                                p_shot_list.append(dfhto.loc[i, 'name'])
-                                # Check the ball looser
-                                k = i - 1
-                                while k > i - 10:
-                                    if dfhto.loc[k, 'teamName']!=team_name:
-                                        p_blost_shot.append(dfhto.loc[k, 'name'])
-                                        break
-                                    k = k - 1
-                                break
-                            j += 1
-            
-                        
+        tbent = tbent[['name', 'type']]
+        stats = tbent.groupby(['name', 'type']).size().unstack(fill_value=0)
+        stats['Total'] = stats.sum(axis=1)
+        stats = stats.sort_values(by='Total', ascending=False)
+        return stats
+
+    fig, axs = plt.subplots(1, 2, figsize=(15, 6), facecolor=bg_color)
+    bent_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='bent_time_pill')
+    if bent_time_phase == 'Full Time':
+        home_boxE_stats = penalty_box_entry(axs[0], hteamName, hcol, 'Full Time')
+        away_boxE_stats = penalty_box_entry(axs[1], ateamName, acol, 'Full Time')
+    if bent_time_phase == 'First Half':
+        home_boxE_stats = penalty_box_entry(axs[0], hteamName, hcol, 'First Half')
+        away_boxE_stats = penalty_box_entry(axs[1], ateamName, acol, 'First Half')
+    if bent_time_phase == 'Second Half':
+        home_boxE_stats = penalty_box_entry(axs[0], hteamName, hcol, 'Second Half')
+        away_boxE_stats = penalty_box_entry(axs[1], ateamName, acol, 'Second Half')
+
+    fig_text(0.5, 1.08, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, "Opponent's Penalty Box Entries", fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.96, '@adnaaan433', fontsize=10, ha='center', va='center')
+
+    fig.text(0.5, 0.00, '*Open-Play Successful Passes & Carries which ended inside the Opponent Penalty Box, starting from outside the Penalty Box', fontsize=10, 
+             fontstyle='italic', ha='center', va='center')
+
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.065, bottom=0.99, width=0.16, height=0.16)
+
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.8, bottom=0.99, width=0.16, height=0.16)
+
+    st.pyplot(fig)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f'{hteamName} Players Penalty Box Entries:')
+        st.dataframe(home_boxE_stats)
+    with col2:
+        st.write(f'{ateamName} Players Penalty Box Entries:')
+        st.dataframe(away_boxE_stats)
+
+elif an_tp == 'High-Turnovers':
+    st.header(f'{an_tp}')
+
+    def plot_high_turnover(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            dfhto = df.copy()
+        elif phase_tag == 'First Half':
+            dfhto = df[df['period'] == 'FirstHalf']
+        elif phase_tag == 'Second Half':
+            dfhto = df[df['period'] == 'SecondHalf'].reset_index(drop=True)
+
+        pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, linewidth=2)
+        pitch.draw(ax=ax)
+        ax.set_ylim(-0.5, 105.5)
+        ax.set_xlim(68.5, -0.5)
+
+        dfhto['Distance'] = ((dfhto['x'] - 105)**2 + (dfhto['y'] - 34)**2)**0.5
+
+        goal_count = 0
+        p_goal_list = []
+        p_blost_goal = []
+        # Iterate through the DataFrame
+        for i in range(len(dfhto)):
+            if ((dfhto.loc[i, 'type'] in ['BallRecovery', 'Interception']) and 
+                (dfhto.loc[i, 'teamName'] == team_name) and 
+                (dfhto.loc[i, 'Distance'] <= 40)):
                 
-                ht_count = 0
-                p_hto_list = []
-                p_blost = []
-                # Iterate through the DataFrame
-                for i in range(len(dfhto)):
-                    if ((dfhto.loc[i, 'type'] in ['BallRecovery', 'Interception']) and 
-                        (dfhto.loc[i, 'teamName'] == team_name) and 
-                        (dfhto.loc[i, 'Distance'] <= 40)):
-                        
-                        # Check the following rows
-                        j = i + 1
-                        if ((dfhto.loc[j, 'teamName']==team_name) and
-                            (dfhto.loc[j, 'type']!='Dispossessed') and (dfhto.loc[j, 'type']!='OffsidePass')):
-                            pitch.scatter(dfhto.loc[i, 'x'],dfhto.loc[i, 'y'], s=200, color='None', edgecolor=col, ax=ax)
-                            ht_count += 1
-                            p_hto_list.append(dfhto.loc[i, 'name'])
-            
+                possession_id = dfhto.loc[i, 'possession_id']
+                
+                # Check the following rows within the same possession
+                j = i + 1
+                while j < len(dfhto) and dfhto.loc[j, 'possession_id'] == possession_id and dfhto.loc[j, 'teamName'] == team_name:
+                    if dfhto.loc[j, 'type'] == 'Goal' and dfhto.loc[j, 'teamName'] == team_name:
+                        pitch.scatter(dfhto.loc[i, 'x'], dfhto.loc[i, 'y'], s=1000, marker='*', color='green', edgecolor=bg_color, zorder=3, ax=ax)
+                        goal_count += 1
+                        p_goal_list.append(dfhto.loc[i, 'name'])
                         # Check the ball looser
                         k = i - 1
                         while k > i - 10:
-                            if dfhto.loc[k, 'teamName']!=team_name:
-                                p_blost.append(dfhto.loc[k, 'name'])
+                            if dfhto.loc[k, 'teamName'] != team_name:
+                                p_blost_goal.append(dfhto.loc[k, 'name'])
                                 break
                             k = k - 1
-            
-                # Plotting the half circle
-                left_circle = plt.Circle((34,105), 40, color=col, fill=True, alpha=0.25, lw=2, linestyle='dashed')
-                ax.add_artist(left_circle)
-            
-                ax.scatter(34, 35, s=12000, marker='h', color=col, edgecolor=line_color, lw=2)
-                ax.scatter(136/3, 18, s=12000, marker='h', color=col, edgecolor=line_color, lw=2)
-                ax.scatter(68/3, 18, s=12000, marker='h', color=col, edgecolor=line_color, lw=2)
-                ax.text(34, 35, f'Total:\n{ht_count}', color=bg_color, fontsize=18, fontweight='bold', ha='center', va='center')
-                ax.text(136/3, 18, f'Led\nto Shot:\n{shot_count}', color=bg_color, fontsize=18, fontweight='bold', ha='center', va='center')
-                ax.text(68/3, 18, f'Led\nto Goal:\n{goal_count}', color=bg_color, fontsize=18, fontweight='bold', ha='center', va='center')
-            
-                if phase_tag == 'Full Time':
-                    ax.text(34, 109, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'First Half':
-                    ax.text(34, 109, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'Second Half':
-                    ax.text(34, 109, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-            
-                unique_players = set(p_hto_list + p_shot_list + p_goal_list)
-                player_hto_data = {
-                    'Name': list(unique_players),
-                    'Total_High_Turnovers': [p_hto_list.count(player) for player in unique_players],
-                    'Led_to_Shot': [p_shot_list.count(player) for player in unique_players],
-                    'Led_to_Goal': [p_goal_list.count(player) for player in unique_players],
-                }
+                        break
+                    j += 1
+
+        shot_count = 0
+        p_shot_list = []
+        p_blost_shot = []
+        # Iterate through the DataFrame
+        for i in range(len(dfhto)):
+            if ((dfhto.loc[i, 'type'] in ['BallRecovery', 'Interception']) and 
+                (dfhto.loc[i, 'teamName'] == team_name) and 
+                (dfhto.loc[i, 'Distance'] <= 40)):
                 
-                player_hto_stats = pd.DataFrame(player_hto_data)
-                player_hto_stats = player_hto_stats.sort_values(by=['Total_High_Turnovers', 'Led_to_Goal', 'Led_to_Shot'], ascending=[False, False, False])
-            
-                unique_players = set(p_blost + p_blost_shot + p_blost_goal)
-                player_blost_data = {
-                    'Name': list(unique_players),
-                    'Ball_Loosing_Led_to_High_Turnovers': [p_blost.count(player) for player in unique_players],
-                    'Led_to_Shot': [p_blost_shot.count(player) for player in unique_players],
-                    'Led_to_Goal': [p_blost_goal.count(player) for player in unique_players],
-                }
+                possession_id = dfhto.loc[i, 'possession_id']
                 
-                player_blost_stats = pd.DataFrame(player_blost_data)
-                player_blost_stats = player_blost_stats.sort_values(by=['Ball_Loosing_Led_to_High_Turnovers', 'Led_to_Goal', 'Led_to_Shot'], ascending=[False, False, False])
-            
-                return player_hto_stats, player_blost_stats
-            
-            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-            hto_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='hto_time_pill')
-            if hto_time_phase == 'Full Time':
-                home_hto_stats, home_blost_stats = plot_high_turnover(axs[0], hteamName, hcol, 'Full Time')
-                away_hto_stats, away_blost_stats = plot_high_turnover(axs[1], ateamName, acol, 'Full Time')
-            if hto_time_phase == 'First Half':
-                home_hto_stats, home_blost_stats = plot_high_turnover(axs[0], hteamName, hcol, 'First Half')
-                away_hto_stats, away_blost_stats = plot_high_turnover(axs[1], ateamName, acol, 'First Half')
-            if hto_time_phase == 'Second Half':
-                home_hto_stats, home_blost_stats = plot_high_turnover(axs[0], hteamName, hcol, 'Second Half')
-                away_hto_stats, away_blost_stats = plot_high_turnover(axs[1], ateamName, acol, 'Second Half')
-            
-            fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, 'High Turnovers', fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center')
-            
-            fig.text(0.5, 0.05, '*High Turnovers means winning possession within the 40m radius from the Opponent Goal Center', fontsize=10, 
-                     fontstyle='italic', ha='center', va='center')
-            
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-            
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-            
-            st.pyplot(fig)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Ball Winners for High-Turnovers:')
-                st.dataframe(home_hto_stats, hide_index=True)
-                st.write(f'{hteamName} Ball Losers for High-Turnovers:')
-                st.dataframe(away_blost_stats, hide_index=True)
-            with col2:
-                st.write(f'{ateamName} Ball Winners for High-Turnovers:')
-                st.dataframe(away_hto_stats, hide_index=True)
-                st.write(f'{ateamName} Ball Losers for High-Turnovers:')
-                st.dataframe(home_blost_stats, hide_index=True)
-            
-        if an_tp == 'Chances Creating Zones':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
-            
+                # Check the following rows within the same possession
+                j = i + 1
+                while j < len(dfhto) and dfhto.loc[j, 'possession_id'] == possession_id and dfhto.loc[j, 'teamName'] == team_name:
+                    if ('Shot' in dfhto.loc[j, 'type']) and (dfhto.loc[j, 'teamName'] == team_name):
+                        pitch.scatter(dfhto.loc[i, 'x'], dfhto.loc[i, 'y'], s=200, color=col, edgecolor=bg_color, zorder=2, ax=ax)
+                        shot_count += 1
+                        p_shot_list.append(dfhto.loc[i, 'name'])
+                        # Check the ball looser
+                        k = i - 1
+                        while k > i - 10:
+                            if dfhto.loc[k, 'teamName'] != team_name:
+                                p_blost_shot.append(dfhto.loc[k, 'name'])
+                                break
+                            k = k - 1
+                        break
+                    j += 1
+
+        ht_count = 0
+        p_hto_list = []
+        p_blost = []
+        # Iterate through the DataFrame
+        for i in range(len(dfhto)):
+            if ((dfhto.loc[i, 'type'] in ['BallRecovery', 'Interception']) and 
+                (dfhto.loc[i, 'teamName'] == team_name) and 
+                (dfhto.loc[i, 'Distance'] <= 40)):
+                
+                # Check the following rows
+                j = i + 1
+                if ((dfhto.loc[j, 'teamName'] == team_name) and
+                    (dfhto.loc[j, 'type'] != 'Dispossessed') and (dfhto.loc[j, 'type'] != 'OffsidePass')):
+                    pitch.scatter(dfhto.loc[i, 'x'], dfhto.loc[i, 'y'], s=200, color='None', edgecolor=col, ax=ax)
+                    ht_count += 1
+                    p_hto_list.append(dfhto.loc[i, 'name'])
+
+                # Check the ball looser
+                k = i - 1
+                while k > i - 10:
+                    if dfhto.loc[k, 'teamName'] != team_name:
+                        p_blost.append(dfhto.loc[k, 'name'])
+                        break
+                    k = k - 1
+
+        # Plotting the half circle
+        left_circle = plt.Circle((34, 105), 40, color=col, fill=True, alpha=0.25, lw=2, linestyle='dashed')
+        ax.add_artist(left_circle)
+
+        ax.scatter(34, 35, s=12000, marker='h', color=col, edgecolor=line_color, lw=2)
+        ax.scatter(136/3, 18, s=12000, marker='h', color=col, edgecolor=line_color, lw=2)
+        ax.scatter(68/3, 18, s=12000, marker='h', color=col, edgecolor=line_color, lw=2)
+        ax.text(34, 35, f'Total:\n{ht_count}', color=bg_color, fontsize=18, fontweight='bold', ha='center', va='center')
+        ax.text(136/3, 18, f'Led\nto Shot:\n{shot_count}', color=bg_color, fontsize=18, fontweight='bold', ha='center', va='center')
+        ax.text(68/3, 18, f'Led\nto Goal:\n{goal_count}', color=bg_color, fontsize=18, fontweight='bold', ha='center', va='center')
+
+        if phase_tag == 'Full Time':
+            ax.text(34, 109, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 109, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 109, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
+
+        unique_players = set(p_hto_list + p_shot_list + p_goal_list)
+        player_hto_data = {
+            'Name': list(unique_players),
+            'Total_High_Turnovers': [p_hto_list.count(player) for player in unique_players],
+            'Led_to_Shot': [p_shot_list.count(player) for player in unique_players],
+            'Led_to_Goal': [p_goal_list.count(player) for player in unique_players],
+        }
+        
+        player_hto_stats = pd.DataFrame(player_hto_data)
+        player_hto_stats = player_hto_stats.sort_values(by=['Total_High_Turnovers', 'Led_to_Goal', 'Led_to_Shot'], ascending=[False, False, False])
+
+        unique_players = set(p_blost + p_blost_shot + p_blost_goal)
+        player_blost_data = {
+            'Name': list(unique_players),
+            'Ball_Loosing_Led_to_High_Turnovers': [p_blost.count(player) for player in unique_players],
+            'Led_to_Shot': [p_blost_shot.count(player) for player in unique_players],
+            'Led_to_Goal': [p_blost_goal.count(player) for player in unique_players],
+        }
+        
+        player_blost_stats = pd.DataFrame(player_blost_data)
+        player_blost_stats = player_blost_stats.sort_values(by=['Ball_Loosing_Led_to_High_Turnovers', 'Led_to_Goal', 'Led_to_Shot'], ascending=[False, False, False])
+
+        return player_hto_stats, player_blost_stats
+
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    hto_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='hto_time_pill')
+    if hto_time_phase == 'Full Time':
+        home_hto_stats, home_blost_stats = plot_high_turnover(axs[0], hteamName, hcol, 'Full Time')
+        away_hto_stats, away_blost_stats = plot_high_turnover(axs[1], ateamName, acol, 'Full Time')
+    if hto_time_phase == 'First Half':
+        home_hto_stats, home_blost_stats = plot_high_turnover(axs[0], hteamName, hcol, 'First Half')
+        away_hto_stats, away_blost_stats = plot_high_turnover(axs[1], ateamName, acol, 'First Half')
+    if hto_time_phase == 'Second Half':
+        home_hto_stats, home_blost_stats = plot_high_turnover(axs[0], hteamName, hcol, 'Second Half')
+        away_hto_stats, away_blost_stats = plot_high_turnover(axs[1], ateamName, acol, 'Second Half')
+
+    fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, 'High Turnovers', fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center')
+
+    fig.text(0.5, 0.05, '*High Turnovers means winning possession within the 40m radius from the Opponent Goal Center', fontsize=10, 
+             fontstyle='italic', ha='center', va='center')
+
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+
+    st.pyplot(fig)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f'{hteamName} Ball Winners for High-Turnovers:')
+        st.dataframe(home_hto_stats, hide_index=True)
+        st.write(f'{hteamName} Ball Losers for High-Turnovers:')
+        st.dataframe(away_blost_stats, hide_index=True)
+    with col2:
+        st.write(f'{ateamName} Ball Winners for High-Turnovers:')
+        st.dataframe(away_hto_stats, hide_index=True)
+        st.write(f'{ateamName} Ball Losers for High-Turnovers:')
+        st.dataframe(home_blost_stats, hide_index=True)
+
+elif an_tp == 'Chances Creating Zones':
+    st.header(f'{an_tp}')
