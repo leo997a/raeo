@@ -582,8 +582,8 @@ if league and htn and atn and st.session_state.confirmed:
         an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), analysis_options, index=0, key='analysis_type')
 
         if an_tp == reshape_arabic_text('شبكة التمريرات'):
-        st.header(reshape_arabic_text('شبكة التمريرات'))
-        pn_time_phase = st.radio(" ", [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
+            st.header(reshape_arabic_text('شبكة التمريرات'))
+            pn_time_phase = st.radio(" ", [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
                                  index=0, key='pn_time_pill_pass_network')
 
     elif an_tp == 'Defensive Actions Heatmap':
