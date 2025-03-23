@@ -2865,7 +2865,21 @@ from urllib.request import urlopen
 from PIL import Image
 from mplsoccer import VerticalPitch
 from scipy.spatial import ConvexHull
+# افترض أن لديك بيانات المباراة
+df_match = pd.read_csv("path_to_match_data.csv")  # استبدل بالمسار الصحيح
+home_team = df_match['home_team'].iloc[0]  # اسم الفريق المضيف
+away_team = df_match['away_team'].iloc[0]  # اسم الفريق الضيف
 
+# اختيار الفريق
+team_options = [home_team, away_team]
+selected_team = st.radio("اختر الفريق", team_options)
+
+if 'selecting_team_for_player_analysis' not in st.session_state:
+    st.session_state.selecting_team_for_player_analysis = f"{selected_team} Players"
+elif st.session_state.selecting_team_for_player_analysis != f"{selected_team} Players":
+    st.session_state.selecting_team_for_player_analysis = f"{selected_team} Players"
+
+st.write(f"الفريق المختار: {st.session_state.selecting_team_for_player_analysis}")
 # تعريف الألوان
 bg_color = '#f5f5f5'
 line_color = '#000000'
