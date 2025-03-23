@@ -68,7 +68,7 @@ default_hcol = '#d00000'  # لون الفريق المضيف الافتراضي
 default_acol = '#003087'  # لون الفريق الضيف الافتراضي
 default_bg_color = '#1e1e2f'  # لون الخلفية الافتراضي
 default_gradient_colors = ['#003087', '#d00000']  # ألوان التدرج الافتراضية
-
+violet = '#800080'  # تعريف اللون البنفسجي كقيمة ثابتة
 # إضافة أدوات اختيار الألوان في الشريط الجانبي
 st.sidebar.title('اختيار الألوان')
 hcol = st.sidebar.color_picker('لون الفريق المضيف', default_hcol, key='hcol_picker')
@@ -2517,7 +2517,7 @@ if an_tp == 'Chances Creating Zones':
 if an_tp == 'Crosses':
     st.header(f'{an_tp}')
 
-    def plot_crossed(ax, team_name, col, phase_tag):
+    def plot_crossed(ax, team_name, col, phase_tag, violet_color='#800080'):
         if phase_tag == 'Full Time':
             dfcrs = df[(df['teamName'] == team_name) & (df['qualifiers'].str.contains('Cross')) & (~df['qualifiers'].str.contains('Corner|Freekick'))]
         elif phase_tag == 'First Half':
