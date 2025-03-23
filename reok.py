@@ -1434,10 +1434,11 @@ elif an_tp == 'Attacking Thirds':
     fig, ax = pitch.draw(figsize=(8, 12))
     fig.set_facecolor('#1a2a44')
 
-    # افترض أن df هو DataFrame يحتوي على بيانات المباراة
-    # سنستخدم عمود 'event_type' لتحديد الفرص (مثل التسديدات أو التمريرات الحاسمة)
-    # وعمود 'x' لتحديد الثلث
-    chances = df[df['event_type'].isin(['Shot', 'Key Pass'])]  # افتراضي: الفرص هي التسديدات أو التمريرات الحاسمة
+    # التحقق من الأعمدة (اختياري للتصحيح)
+    # print(df.columns)  # أزل هذا السطر بعد التحقق
+
+    # استخدام العمود الصحيح 'type' بدلاً من 'event_type'
+    chances = df[df['type'].isin(['Shot', 'Pass']) & (df['outcomeType'] == 'Successful')]  # التسديدات والتمريرات الناجحة
 
     # تقسيم الملعب إلى ثلاثة أقسام بناءً على الموقع x
     # في opta: x من 0 إلى 100 (من الأسفل إلى الأعلى)
