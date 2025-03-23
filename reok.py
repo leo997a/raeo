@@ -690,8 +690,8 @@ with tab1:
         reshape_arabic_text('Pass Target Zones')
     ], index=0, key='analysis_type_tab1')
 
-    if an_tp =='شبكة التمريرات':
-        st.header'شبكة التمريرات')
+    if an_tp == 'شبكة التمريرات':
+        st.header'شبكة التمريرات'
         
         # استبدال st.pills بـ st.radio لأن st.pills غير مدعوم افتراضيًا في Streamlit
         pn_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='pn_time_pill')
