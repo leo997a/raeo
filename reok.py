@@ -31,41 +31,56 @@ mpl.rcParams['axes.unicode_minus'] = False
 
 # دالة لتحويل النص العربي
 def reshape_arabic_text(text):
-    print(f"النص قبل التحويل: {text}")
     reshaped_text = arabic_reshaper.reshape(text)
-    print(f"النص بعد التحويل: {reshaped_text}")
     return get_display(reshaped_text)
 
-# إضافة CSS لدعم RTL في streamlit
+# إضافة CSS محسّن لدعم RTL في Streamlit
 st.markdown("""
     <style>
-    body {
-        direction: rtl;
-        text-align: right;
+    @font-face {
+        font-family: 'Noto Sans Arabic';
+        src: url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap');
     }
-    .stSelectbox > div > div > div {
-        text-align: right;
+    body, .stApp {
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
+        direction: rtl !important;
+        text-align: right !important;
+    }
+    h1, h2, h3, h4, h5, h6, p, div, span, label, button, input, select, option, table, th, td {
+        direction: rtl !important;
+        text-align: right !important;
+        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
+    }
+    .stSelectbox, .stRadio, .stTabs, .stDataFrame, .stSidebar, .stButton {
+        direction: rtl !important;
+        text-align: right !important;
+    }
+    canvas, img, .stImage, [data-testid="stImage"], .stPlotlyChart, .stPyplot {
+        direction: ltr !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# تعريف القيم الافتراضية للألوان أولاً
-default_hcol = '#d00000'  # لون الفريق المضيف الافتراضي
-default_acol = '#003087'  # لون الفريق الضيف الافتراضي
-default_bg_color = '#1e1e2f'  # لون الخلفية الافتراضي
-default_gradient_colors = ['#003087', '#d00000']  # ألوان التدرج الافتراضية
+# تعريف القيم الافتراضية للألوان
+default_hcol = '#d00000'
+default_acol = '#003087'
+default_bg_color = '#1e1e2f'
+default_gradient_colors = ['#003087', '#d00000']
 
-# إضافة أدوات اختيار الألوان في الشريط الجانبي
-st.sidebar.title('اختيار الألوان')
-hcol = st.sidebar.color_picker('لون الفريق المضيف', default_hcol, key='hcol_picker')
-acol = st.sidebar.color_picker('لون الفريق الضيف', default_acol, key='acol_picker')
-bg_color = st.sidebar.color_picker('لون الخلفية', default_bg_color, key='bg_color_picker')
-gradient_start = st.sidebar.color_picker('بداية التدرج', default_gradient_colors[0], key='gradient_start_picker')
-gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradient_colors[1], key='gradient_end_picker')
-gradient_colors = [gradient_start, gradient_end]  # تحديث قائمة ألوان التدرج
-line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker')  # اختياري
+# إعداد الشريط الجانبي لاختيار الألوان
+st.sidebar.title(reshape_arabic_text('اختيار الألوان'))
+hcol = st.sidebar.color_picker(reshape_arabic_text('لون الفريق المضيف'), default_hcol, key='hcol_picker')
+acol = st.sidebar.color_picker(reshape_arabic_text('لون الفريق الضيف'), default_acol, key='acol_picker')
+bg_color = st.sidebar.color_picker(reshape_arabic_text('لون الخلفية'), default_bg_color, key='bg_color_picker')
+gradient_start = st.sidebar.color_picker(reshape_arabic_text('بداية التدرج'), default_gradient_colors[0], key='gradient_start_picker')
+gradient_end = st.sidebar.color_picker(reshape_arabic_text('نهاية التدرج'), default_gradient_colors[1], key='gradient_end_picker')
+gradient_colors = [gradient_start, gradient_end]
+line_color = st.sidebar.color_picker(reshape_arabic_text('لون الخطوط'), '#ffffff', key='line_color_picker')
 
-st.sidebar.title('Match Selection')
+# دالة لإعادة تعيين حالة التأكيد
+st.sidebar.title(reshape_arabic_text('اختيار المباراة'))
+if 'confirmed' not in st.session_state:
+    st.session_state.confirmed = False
 # ... (باقي الكود)
     
 season = None
@@ -545,8 +560,8 @@ if league and htn and atn and st.session_state.confirmed:
     hftmb_tid = df_teamNameId[df_teamNameId['teamName']==hteamName].teamId.to_list()[0]
     aftmb_tid = df_teamNameId[df_teamNameId['teamName']==ateamName].teamId.to_list()[0]
     
-    st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
-    st.text(f'{league}')
+    st.header(reshape_arabic_text(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}'))
+    st.text(reshape_arabic_text(league))
     
     tab1, tab2, tab3, tab4 = st.tabs(['تحليل الفريق', 'Player Analysis', 'Match Statistics', 'Top Players'])
     
