@@ -441,21 +441,21 @@ if league and htn and atn and st.session_state.confirmed:
         add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
                 # عرض الرسم في Streamlit
-                st.pyplot(fig)
+        st.pyplot(fig)
                 
                 # عرض البيانات في عمودين
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {hteamName}:'))
-                    if home_df_def is not None:
-                        st.dataframe(home_df_def, hide_index=True)
-                with col2:
-                    st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {ateamName}:'))
-                    if away_df_def is not None:
-                        st.dataframe(away_df_def, hide_index=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {hteamName}:'))
+            if home_df_def is not None:
+                st.dataframe(home_df_def, hide_index=True)
+        with col2:
+            st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {ateamName}:'))
+            if away_df_def is not None:
+                st.dataframe(away_df_def, hide_index=True)
 
-            elif an_tp == 'Progressive Passes':
-                st.header(reshape_arabic_text('التمريرات التقدمية'))
+        elif an_tp == 'Progressive Passes':
+            st.header(reshape_arabic_text('التمريرات التقدمية'))
                 # أضف كود التمريرات التقدمية هنا إذا لزم الأمر
 
             elif an_tp == 'Progressive Carries':
