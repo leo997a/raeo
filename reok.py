@@ -24,20 +24,7 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 import time
-# اختيار الفريق من قبل المستخدم
-hteamName = st.selectbox("اختر الفريق المضيف", ["الفريق أ", "الفريق ب"])  # استبدل بالفرق الفعلية
-if 'selecting_team_for_player_analysis' not in st.session_state:
-    st.session_state.selecting_team_for_player_analysis = f"{hteamName} Players"
-if 'home_player_analysis' not in st.session_state:
-    st.session_state.home_player_analysis = None
-if 'away_player_analysis' not in st.session_state:
-    st.session_state.away_player_analysis = None
-if 'home_gk_analysis' not in st.session_state:
-    st.session_state.home_gk_analysis = None
-if 'away_gk_analysis' not in st.session_state:
-    st.session_state.away_gk_analysis = None
-if 'analysis_type' not in st.session_state:
-    st.session_state.analysis_type = 'شبكة التمريرات'  # لـ tab1
+
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
 mpl.rcParams['font.family'] = 'sans-serif'
