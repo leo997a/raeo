@@ -1294,7 +1294,7 @@ def progressive_carry(ax, team_name, col, phase_tag):
         st.write(reshape_arabic_text(f'أفضل المسددين في فريق {ateamName}:'))
         st.dataframe(away_shots_stats, hide_index=True)
 
-if an_tp == 'GK Saves':
+if an_tp == 'احصائيات الحراس':
     # st.header(f'{st.session_state.analysis_type}')
     st.header(f'{an_tp}')
     
