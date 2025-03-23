@@ -1440,7 +1440,7 @@ elif an_tp == 'Attacking Thirds':
     away_chances = awaydf[awaydf['type'].isin(['Shot', 'Pass']) & (awaydf['outcomeType'] == 'Successful')]
 
     # تقسيم الملعب إلى ثلاثة أقسام (باستخدام UEFA dimensions: 105x68)
-    elif an_tp == 'Attacking Thirds':
+elif an_tp == 'Attacking Thirds':
     st.header(reshape_arabic_text('الثلث الهجومي'))
 
     # خيار اختيار الوقت
