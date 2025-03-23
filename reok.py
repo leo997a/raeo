@@ -446,62 +446,63 @@ if league and htn and atn and st.session_state.confirmed:
                 st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
 
                 def def_acts_hm(ax, team_name, col, phase_tag):
-                    def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
-                                           (df['type'] == 'BallRecovery') | (df['type'] == 'BlockedPass') | (df['type'] == 'Challenge') |
-                                           (df['type'] == 'Clearance') | ((df['type'] == 'Save') & (df['position'] != 'GK')) |
-                                           ((df['type'] == 'Foul') & (df['outcomeType'] == 'Unsuccessful')) | (df['type'] == 'Interception') |
-                                           (df['type'] == 'Tackle')]
-                    df_def = df.loc[def_acts_id, ["x", "y", "teamName", "name", "type", "outcomeType", "period"]]
-                    if phase_tag == 'Full Time':
-                        df_def = df_def.reset_index(drop=True)
-                    elif phase_tag == 'First Half':
-                        df_def = df_def[df_def['period'] == 'FirstHalf'].reset_index(drop=True)
-                    elif phase_tag == 'Second Half':
-                        df_def = df_def[df_def['period'] == 'SecondHalf'].reset_index(drop=True)
+    def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
+                           (df['type'] == 'BallRecovery') | (df['type'] == 'BlockedPass') | (df['type'] == 'Challenge') |
+                           (df['type'] == 'Clearance') | ((df['type'] == 'Save') & (df['position'] != 'GK')) |
+                           ((df['type'] == 'Foul') & (df['outcomeType'] == 'Unsuccessful')) | (df['type'] == 'Interception') |
+                           (df['type'] == 'Tackle')]
+    df_def = df.loc[def_acts_id, ["x", "y", "teamName", "name", "type", "outcomeType", "period"]]
+    if phase_tag == 'Full Time':
+        df_def = df_def.reset_index(drop=True)
+    elif phase_tag == 'First Half':
+        df_def = df_def[df_def['period'] == 'FirstHalf'].reset_index(drop=True)
+    elif phase_tag == 'Second Half':
+        df_def = df_def[df_def['period'] == 'SecondHalf'].reset_index(drop=True)
 
-                    total_def_acts = df_def[df_def['teamName'] == team_name]
-                    avg_locs_df = total_def_acts.groupby('name').agg({'x': 'median', 'y': ['median', 'count']}).reset_index()
-                    avg_locs_df.columns = ['name', 'x', 'y', 'def_acts_count']
-                    avg_locs_df = avg_locs_df.merge(players_df[['name', 'shirtNo', 'position', 'isFirstEleven']], on='name', how='left')
-                    avg_locs_df = avg_locs_df[avg_locs_df['position'] != 'GK'].dropna(subset=['shirtNo'])
-                    df_def_show = avg_locs_df[['name', 'def_acts_count', 'shirtNo', 'position']]
+    total_def_acts = df_def[df_def['teamName'] == team_name]
+    avg_locs_df = total_def_acts.groupby('name').agg({'x': 'median', 'y': ['median', 'count']}).reset_index()
+    avg_locs_df.columns = ['name', 'x', 'y', 'def_acts_count']
+    avg_locs_df = avg_locs_df.merge(players_df[['name', 'shirtNo', 'position', 'isFirstEleven']], on='name', how='left')
+    avg_locs_df = avg_locs_df[avg_locs_df['position'] != 'GK'].dropna(subset=['shirtNo'])
+    df_def_show = avg_locs_df[['name', 'def_acts_count', 'shirtNo', 'position']]
 
-                    MAX_MARKER_SIZE = 3000
-                    avg_locs_df['marker_size'] = (avg_locs_df['def_acts_count'] / avg_locs_df['def_acts_count'].max() * MAX_MARKER_SIZE)
-                    color = np.array(to_rgba(col))
-                    color = np.tile(color, (len(avg_locs_df), 1))
-                    c_transparency = avg_locs_df.def_acts_count / avg_locs_df.def_acts_count.max()
-                    c_transparency = (c_transparency * (0.85 - 0.05)) + 0.05
-                    color[:, 3] = c_transparency
+    MAX_MARKER_SIZE = 3000
+    avg_locs_df['marker_size'] = (avg_locs_df['def_acts_count'] / avg_locs_df['def_acts_count'].max() * MAX_MARKER_SIZE)
+    color = np.array(to_rgba(col))
+    color = np.tile(color, (len(avg_locs_df), 1))
+    c_transparency = avg_locs_df.def_acts_count / avg_locs_df.def_acts_count.max()
+    c_transparency = (c_transparency * (0.85 - 0.05)) + 0.05
+    color[:, 3] = c_transparency
 
-                    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=2, linewidth=2)
-                    pitch.draw(ax=ax)
-                    flamingo_cmap = LinearSegmentedColormap.from_list("Flamingo", ['#000000', col], N=250)
-                    pitch.kdeplot(total_def_acts.x, total_def_acts.y, ax=ax, fill=True, levels=2500, thresh=0.02, cut=4, cmap=flamingo_cmap)
+    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=2, linewidth=2)
+    pitch.draw(ax=ax)
+    flamingo_cmap = LinearSegmentedColormap.from_list("Flamingo", ['#000000', col], N=250)
+    pitch.kdeplot(total_def_acts.x, total_def_acts.y, ax=ax, fill=True, levels=2500, thresh=0.02, cut=4, cmap=flamingo_cmap)
 
-                    for index, row in avg_locs_df.iterrows():
-                        pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='o' if row['isFirstEleven'] else 's', color=bg_color, edgecolor=line_color, linewidth=2, zorder=3, alpha=1 if row['isFirstEleven'] else 0.75, ax=ax)
-                        pitch.annotate(int(row["shirtNo"]), xy=(row.x, row.y), c=col, ha='center', va='center', size=12, zorder=4, ax=ax)
+    for index, row in avg_locs_df.iterrows():
+        pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='o' if row['isFirstEleven'] else 's', color=bg_color, edgecolor=line_color, linewidth=2, zorder=3, alpha=1 if row['isFirstEleven'] else 0.75, ax=ax)
+        pitch.annotate(int(row["shirtNo"]), xy=(row.x, row.y), c=col, ha='center', va='center', size=12, zorder=4, ax=ax)
 
-                    avgph = round(avg_locs_df['x'].median(), 2)
-                    ax.axhline(y=avgph, color='gray', linestyle='--', alpha=0.75, linewidth=2)
-                    center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
-                    def_line_h = round(center_backs_height['x'].median(), 2) if not center_backs_height.empty else avgph
-                    Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == True].sort_values(by='x', ascending=False).head(2)
-                    fwd_line_h = round(Forwards_height['x'].mean(), 2) if not Forwards_height.empty else avgph
-                    v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
+    avgph = round(avg_locs_df['x'].median(), 2)
+    ax.axhline(y=avgph, color='gray', linestyle='--', alpha=0.75, linewidth=2)
+    center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
+    def_line_h = round(center_backs_height['x'].median(), 2) if not center_backs_height.empty else avgph
+    Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == True].sort_values(by='x', ascending=False).head(2)
+    fwd_line_h = round(Forwards_height['x'].mean(), 2) if not Forwards_height.empty else avgph
+    v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
 
-                    if phase_tag == 'Full Time':
-                        ax.text(34, 112, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
-                        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
-                    elif phase_tag == 'First Half':
-                        ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=15, ha='center', va='center')
-                        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
-                    elif phase_tag == 'Second Half':
-                        ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
-                        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
-                    ax.text(34, -5, reshape_arabic_text(f"الأفعال الدفاعية\nالتماسك العمودي: {v_comp}%"), color=col, fontsize=12, ha='center', va='center')
-                    return df_def_show
+    if phase_tag == 'Full Time':
+        ax.text(34, 112, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
+        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
+    elif phase_tag == 'First Half':
+        ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=15, ha='center', va='center')
+        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
+    elif phase_tag == 'Second Half':
+        ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
+        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
+    ax.text(34, -5, reshape_arabic_text(f"الأفعال الدفاعية\nالتماسك العمودي: {v_comp}%"), color=col, fontsize=12, ha='center', va='center')
+    
+    return df_def_show  # This return statement is correctly inside the function
 
                 dah_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='dah_time_pill')
                 fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
