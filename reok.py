@@ -1434,9 +1434,6 @@ elif an_tp == 'Attacking Thirds':
     fig, ax = pitch.draw(figsize=(8, 12))
     fig.set_facecolor('#1a2a44')
 
-    # التحقق من الأعمدة (اختياري للتصحيح)
-    # print(df.columns)  # أزل هذا السطر بعد التحقق
-
     # استخدام العمود الصحيح 'type' بدلاً من 'event_type'
     chances = df[df['type'].isin(['Shot', 'Pass']) & (df['outcomeType'] == 'Successful')]  # التسديدات والتمريرات الناجحة
 
@@ -1457,17 +1454,18 @@ elif an_tp == 'Attacking Thirds':
     middle_percentage = (middle_count / total_chances * 100) if total_chances > 0 else 0
     right_percentage = (right_count / total_chances * 100) if total_chances > 0 else 0
 
-    # تلوين الثلثات
-    pitch.fill_between(x=[0, 33.33], y1=0, y2=100, color='#FF9999', alpha=0.5, ax=ax)  # الثلث الأيسر
-    pitch.fill_between(x=[33.33, 66.66], y1=0, y2=100, color='#FFCCCC', alpha=0.5, ax=ax)  # الثلث الأوسط
-    pitch.fill_between(x=[66.66, 100], y1=0, y2=100, color='#FFCCCC', alpha=0.5, ax=ax)  # الثلث الأيمن
+    # تلوين الثلثات باستخدام ax بدلاً من pitch
+    ax.fill_between(x=[0, 100], y=[0, 33.33], color='#FF9999', alpha=0.5)  # الثلث الأيسر (y من 0 إلى 33.33)
+    ax.fill_between(x=[0, 100], y=[33.33, 66.66], color='#FFCCCC', alpha=0.5)  # الثلث الأوسط (y من 33.33 إلى 66.66)
+    ax.fill_between(x=[0, 100], y=[66.66, 100], color='#FFCCCC', alpha=0.5)  # الثلث الأيمن (y من 66.66 إلى 100)
 
     # إضافة النسب المئوية وعدد الفرص
-    fig.text(0.25, 0.4, f'{left_percentage:.1f}%\n{left_count}\nchances created', 
+    # تعديل المواقع لتتناسب مع الاتجاه العمودي
+    fig.text(0.5, 0.25, f'{left_percentage:.1f}%\n{left_count}\nchances created', 
              fontsize=20, ha='center', va='center', color='white', fontweight='bold')
-    fig.text(0.5, 0.4, f'{middle_percentage:.1f}%\n{middle_count}\nchances created', 
+    fig.text(0.5, 0.5, f'{middle_percentage:.1f}%\n{middle_count}\nchances created', 
              fontsize=20, ha='center', va='center', color='white', fontweight='bold')
-    fig.text(0.75, 0.4, f'{right_percentage:.1f}%\n{right_count}\nchances created', 
+    fig.text(0.5, 0.75, f'{right_percentage:.1f}%\n{right_count}\nchances created', 
              fontsize=20, ha='center', va='center', color='white', fontweight='bold')
 
     # إضافة العنوان
