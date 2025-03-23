@@ -304,7 +304,7 @@ if season:
                 st.sidebar.write('لم يتم العثور على المباراة')
 if league and htn and atn and st.session_state.confirmed:
     df, teams_dict, players_df = get_event_data(season, league, stage, htn, atn)
-    if df is not None:
+    if df is not None:  # تحقق من أن البيانات تم جلبها بنجاح
         hteamID = list(teams_dict.keys())[0]
         ateamID = list(teams_dict.keys())[1]
         hteamName = teams_dict[hteamID]
@@ -326,14 +326,21 @@ if league and htn and atn and st.session_state.confirmed:
         st.text(league)
 
         tab1, tab2 = st.tabs([reshape_arabic_text("تحليل المباراة"), reshape_arabic_text("تبويب آخر")])
+
         with tab1:
             an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
-                reshape_arabic_text('شبكة التمريرات'), 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap'
-            ], index=0, key='analysis_type')
+                reshape_arabic_text('شبكة التمريرات'), 'Defensive Actions Heatmap', 'Progressive Passes', 
+                'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
+                reshape_arabic_text('Zone14 & Half-Space Passes'), reshape_arabic_text('Final Third Entries'),
+                reshape_arabic_text('Box Entries'), reshape_arabic_text('High-Turnovers'),
+                reshape_arabic_text('Chances Creating Zones'), reshape_arabic_text('Crosses'),
+                reshape_arabic_text('Team Domination Zones'), reshape_arabic_text('Pass Target Zones')
+            ], index=0, key='analysis_type_tab1')
 
             if an_tp == reshape_arabic_text('شبكة التمريرات'):
                 st.header(reshape_arabic_text('شبكة التمريرات'))
-                # أضف كود شبكة التمريرات هنا إذا لزم الأمر
+                pn_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='pn_time_pill')
+                # ... (باقي كود شبكة التمريرات كما هو)
 
             elif an_tp == 'Defensive Actions Heatmap':
                 st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
