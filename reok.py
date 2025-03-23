@@ -708,6 +708,7 @@ with tab1:
         reshape_arabic_text('Crosses'), 
         reshape_arabic_text('Team Domination Zones'), 
         reshape_arabic_text('Pass Target Zones')
+        'Attacking Thirds'  # خيار جديد
     ], index=0, key='analysis_type_tab1')
     
     if an_tp == 'شبكة التمريرات':
@@ -1427,3 +1428,68 @@ if an_tp == 'احصائيات الحراس':
 if an_tp == 'Match Momentum':
     # st.header(f'{st.session_state.analysis_type}')
     st.header(f'{an_tp}')
+elif an_tp == 'Attacking Thirds':
+    # إعداد الملعب
+    pitch = VerticalPitch(pitch_type='opta', pitch_color='#1a2a44', line_color='white', half=False)
+    fig, ax = pitch.draw(figsize=(8, 12))
+    fig.set_facecolor('#1a2a44')
+
+    # افترض أن df هو DataFrame يحتوي على بيانات المباراة
+    # سنستخدم عمود 'event_type' لتحديد الفرص (مثل التسديدات أو التمريرات الحاسمة)
+    # وعمود 'x' لتحديد الثلث
+    chances = df[df['event_type'].isin(['Shot', 'Key Pass'])]  # افتراضي: الفرص هي التسديدات أو التمريرات الحاسمة
+
+    # تقسيم الملعب إلى ثلاثة أقسام بناءً على الموقع x
+    # في opta: x من 0 إلى 100 (من الأسفل إلى الأعلى)
+    left_third = chances[chances['x'] <= 33.33]  # الثلث الأيسر (من 0 إلى 33.33)
+    middle_third = chances[(chances['x'] > 33.33) & (chances['x'] <= 66.66)]  # الثلث الأوسط
+    right_third = chances[chances['x'] > 66.66]  # الثلث الأيمن (من 66.66 إلى 100)
+
+    # حساب عدد الفرص في كل ثلث
+    total_chances = len(chances)
+    left_count = len(left_third)
+    middle_count = len(middle_third)
+    right_count = len(right_third)
+
+    # حساب النسب المئوية
+    left_percentage = (left_count / total_chances * 100) if total_chances > 0 else 0
+    middle_percentage = (middle_count / total_chances * 100) if total_chances > 0 else 0
+    right_percentage = (right_count / total_chances * 100) if total_chances > 0 else 0
+
+    # تلوين الثلثات
+    pitch.fill_between(x=[0, 33.33], y1=0, y2=100, color='#FF9999', alpha=0.5, ax=ax)  # الثلث الأيسر
+    pitch.fill_between(x=[33.33, 66.66], y1=0, y2=100, color='#FFCCCC', alpha=0.5, ax=ax)  # الثلث الأوسط
+    pitch.fill_between(x=[66.66, 100], y1=0, y2=100, color='#FFCCCC', alpha=0.5, ax=ax)  # الثلث الأيمن
+
+    # إضافة النسب المئوية وعدد الفرص
+    fig.text(0.25, 0.4, f'{left_percentage:.1f}%\n{left_count}\nchances created', 
+             fontsize=20, ha='center', va='center', color='white', fontweight='bold')
+    fig.text(0.5, 0.4, f'{middle_percentage:.1f}%\n{middle_count}\nchances created', 
+             fontsize=20, ha='center', va='center', color='white', fontweight='bold')
+    fig.text(0.75, 0.4, f'{right_percentage:.1f}%\n{right_count}\nchances created', 
+             fontsize=20, ha='center', va='center', color='white', fontweight='bold')
+
+    # إضافة العنوان
+    home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+    away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+    title = f"<{home_part}> - <{away_part}>"
+    fig_text(0.5, 1.05, title, 
+             highlight_textprops=[{'color': hcol}, {'color': acol}],
+             fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+
+    # إضافة عنوان التحليل
+    fig.text(0.5, 1.01, 'Attacking Thirds', 
+             fontsize=18, ha='center', va='center', color='white', weight='bold')
+
+    # إضافة اسم القناة
+    fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', 
+             fontsize=14, fontfamily='Roboto', fontweight='bold', 
+             color='#FFD700', ha='center', va='center',
+             bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
+             path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
+
+    # إضافة وصف
+    fig.text(0.5, 0.1, 'Looking at the % of chances created from each third', 
+             fontsize=12, ha='center', va='center', color='white')
+
+    st.pyplot(fig)
