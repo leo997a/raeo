@@ -3672,7 +3672,7 @@ def passer_bar(ax):
                 ax.legend(fontsize=35, loc='lower right')
                 return 
             
-            def sh_sq_bar(ax):
+def sh_sq_bar(ax):
                 top10 = sh_sq_df.head(10).iloc[::-1]
             
                 # Plot horizontal bar chart
@@ -3722,7 +3722,7 @@ def passer_bar(ax):
             
                 ax.legend(fontsize=35, loc='lower right')
                 
-            def top_defender(ax):
+def top_defender(ax):
                 top10 = defender_df.head(10).iloc[::-1]
             
                 # Plot horizontal bar chart
@@ -3774,7 +3774,7 @@ def passer_bar(ax):
             
                 return
             
-            def xT_bar(ax):
+def xT_bar(ax):
                 path_eff = [path_effects.Stroke(linewidth=2.5, foreground=line_color), path_effects.Normal()]
                 top10_progressors = xT_df['shortName'][::-1].tolist()
                 progressor_pp = xT_df['xT from Pass'][::-1].tolist()
@@ -3828,7 +3828,7 @@ def passer_bar(ax):
                 return
             
             
-            if top_type == 'Top Ball Progressors':
+if top_type == 'Top Ball Progressors':
                 fig,ax = plt.subplots(figsize=(25,25), facecolor=bg_color)
                 passer_bar(ax)
                 
@@ -3838,7 +3838,7 @@ def passer_bar(ax):
                 
                 st.pyplot(fig)
                 
-            if top_type == 'Top Shot Sequences Involvements':
+if top_type == 'Top Shot Sequences Involvements':
                 fig,ax = plt.subplots(figsize=(25,25), facecolor=bg_color)
                 sh_sq_bar(ax)
                 
@@ -3848,7 +3848,7 @@ def passer_bar(ax):
                 
                 st.pyplot(fig)
                 
-            if top_type == 'Top Defensive Involvements':
+if top_type == 'Top Defensive Involvements':
                 fig,ax = plt.subplots(figsize=(25,25), facecolor=bg_color)
                 top_defender(ax)
                 
@@ -3858,7 +3858,7 @@ def passer_bar(ax):
                 
                 st.pyplot(fig)
                 
-            if top_type == 'Top Threat Creating Players':
+if top_type == 'Top Threat Creating Players':
                 fig,ax = plt.subplots(figsize=(25,25), facecolor=bg_color)
                 xT_bar(ax)
                 
