@@ -445,8 +445,8 @@ if league and htn and atn and st.session_state.confirmed:
 elif an_tp == 'Defensive Actions Heatmap':
             st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
 
-    def def_acts_hm(ax, team_name, col, phase_tag):
-    def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
+def def_acts_hm(ax, team_name, col, phase_tag):
+def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
                            (df['type'] == 'BallRecovery') | (df['type'] == 'BlockedPass') | (df['type'] == 'Challenge') |
                            (df['type'] == 'Clearance') | ((df['type'] == 'Save') & (df['position'] != 'GK')) |
                            ((df['type'] == 'Foul') & (df['outcomeType'] == 'Unsuccessful')) | (df['type'] == 'Interception') |
