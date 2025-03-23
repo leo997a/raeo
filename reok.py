@@ -442,241 +442,288 @@ if league and htn and atn and st.session_state.confirmed:
                 if away_pass_btn is not None:
                     st.dataframe(away_pass_btn, hide_index=True)
 
+# إذا كان نوع التحليل هو "الخريطة الحرارية للأفعال الدفاعية"
 elif an_tp == 'Defensive Actions Heatmap':
-            st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
+    st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
 
-def def_acts_hm(ax, team_name, col, phase_tag):
-def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
-                           (df['type'] == 'BallRecovery') | (df['type'] == 'BlockedPass') | (df['type'] == 'Challenge') |
-                           (df['type'] == 'Clearance') | ((df['type'] == 'Save') & (df['position'] != 'GK')) |
-                           ((df['type'] == 'Foul') & (df['outcomeType'] == 'Unsuccessful')) | (df['type'] == 'Interception') |
-                           (df['type'] == 'Tackle')]
-    df_def = df.loc[def_acts_id, ["x", "y", "teamName", "name", "type", "outcomeType", "period"]]
-    if phase_tag == 'Full Time':
-        df_def = df_def.reset_index(drop=True)
-    elif phase_tag == 'First Half':
-        df_def = df_def[df_def['period'] == 'FirstHalf'].reset_index(drop=True)
-    elif phase_tag == 'Second Half':
-        df_def = df_def[df_def['period'] == 'SecondHalf'].reset_index(drop=True)
-
-    total_def_acts = df_def[df_def['teamName'] == team_name]
-    avg_locs_df = total_def_acts.groupby('name').agg({'x': 'median', 'y': ['median', 'count']}).reset_index()
-    avg_locs_df.columns = ['name', 'x', 'y', 'def_acts_count']
-    avg_locs_df = avg_locs_df.merge(players_df[['name', 'shirtNo', 'position', 'isFirstEleven']], on='name', how='left')
-    avg_locs_df = avg_locs_df[avg_locs_df['position'] != 'GK'].dropna(subset=['shirtNo'])
-    df_def_show = avg_locs_df[['name', 'def_acts_count', 'shirtNo', 'position']]
-
-    MAX_MARKER_SIZE = 3000
-    avg_locs_df['marker_size'] = (avg_locs_df['def_acts_count'] / avg_locs_df['def_acts_count'].max() * MAX_MARKER_SIZE)
-    color = np.array(to_rgba(col))
-    color = np.tile(color, (len(avg_locs_df), 1))
-    c_transparency = avg_locs_df.def_acts_count / avg_locs_df.def_acts_count.max()
-    c_transparency = (c_transparency * (0.85 - 0.05)) + 0.05
-    color[:, 3] = c_transparency
-
-    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=2, linewidth=2)
-    pitch.draw(ax=ax)
-    flamingo_cmap = LinearSegmentedColormap.from_list("Flamingo", ['#000000', col], N=250)
-    pitch.kdeplot(total_def_acts.x, total_def_acts.y, ax=ax, fill=True, levels=2500, thresh=0.02, cut=4, cmap=flamingo_cmap)
-
-    for index, row in avg_locs_df.iterrows():
-        pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='o' if row['isFirstEleven'] else 's', color=bg_color, edgecolor=line_color, linewidth=2, zorder=3, alpha=1 if row['isFirstEleven'] else 0.75, ax=ax)
-        pitch.annotate(int(row["shirtNo"]), xy=(row.x, row.y), c=col, ha='center', va='center', size=12, zorder=4, ax=ax)
-
-    avgph = round(avg_locs_df['x'].median(), 2)
-    ax.axhline(y=avgph, color='gray', linestyle='--', alpha=0.75, linewidth=2)
-    center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
-    def_line_h = round(center_backs_height['x'].median(), 2) if not center_backs_height.empty else avgph
-    Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == True].sort_values(by='x', ascending=False).head(2)
-    fwd_line_h = round(Forwards_height['x'].mean(), 2) if not Forwards_height.empty else avgph
-    v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
-
-    if phase_tag == 'Full Time':
-        ax.text(34, 112, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
-        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
-    elif phase_tag == 'First Half':
-        ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=15, ha='center', va='center')
-        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
-    elif phase_tag == 'Second Half':
-        ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
-        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
-    ax.text(34, -5, reshape_arabic_text(f"الأفعال الدفاعية\nالتماسك العمودي: {v_comp}%"), color=col, fontsize=12, ha='center', va='center')
-    
-    return df_def_show  # This return statement is correctly inside the function
-
-                dah_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='dah_time_pill')
-                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-                
-                if dah_time_phase == reshape_arabic_text('الوقت الكامل'):
-                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
-                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
-                elif dah_time_phase == reshape_arabic_text('الشوط الأول'):
-                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
-                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
-                elif dah_time_phase == reshape_arabic_text('الشوط الثاني'):
-                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
-                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
-
-                fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-                fig.text(0.5, 1.01, reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'), fontsize=20, ha='center', va='center', color='white')
-                fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
-                fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-                fig.text(0.5, 0.03, reshape_arabic_text('*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-
-                himage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png"))
-                add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-                aimage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png"))
-                add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-
-                st.pyplot(fig)
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {hteamName}:'))
-                    if home_df_def is not None:
-                        st.dataframe(home_df_def, hide_index=True)
-                with col2:
-                    st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {ateamName}:'))
-                    if away_df_def is not None:
-                        st.dataframe(away_df_def, hide_index=True)
-
-            # يمكنك إضافة المزيد من دوال التحليل هنا بنفس النمط (Progressive Passes, Shotmap, إلخ)
-        if an_tp == 'Progressive Passes':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
-            
-            def progressive_pass(ax, team_name, col, phase_tag):
-                if phase_tag == 'Full Time':
-                    df_prop = df[(df['teamName']==team_name) & (df['outcomeType']=='Successful') & (df['prog_pass']>9.144) & (~df['qualifiers'].str.contains('Corner|Freekick')) & (df['x']>=35)]
-                elif phase_tag == 'First Half':
-                    df_fh = df[df['period'] == 'FirstHalf']
-                    df_prop = df_fh[(df_fh['teamName']==team_name) & (df_fh['outcomeType']=='Successful') & (df_fh['prog_pass']>9.11) & (~df_fh['qualifiers'].str.contains('Corner|Freekick')) & (df_fh['x']>=35)]
-                elif phase_tag == 'Second Half':
-                    df_sh = df[df['period'] == 'SecondHalf']
-                    df_prop = df_sh[(df_sh['teamName']==team_name) & (df_sh['outcomeType']=='Successful') & (df_sh['prog_pass']>9.11) & (~df_sh['qualifiers'].str.contains('Corner|Freekick')) & (df_sh['x']>=35)]
-                
-    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
-    pitch.draw(ax=ax)
-
-            
-    left_prop = df_prop[df_prop['y']>136/3]
-    midd_prop = df_prop[(df_prop['y']<=136/3) & (df_prop['y']>=68/3)]
-    rigt_prop = df_prop[df_prop['y']<68/3]
-            
-    if len(df_prop) != 0:
-        name_counts = df_prop['shortName'].value_counts()
-        name_counts_df = name_counts.reset_index()
-        name_counts_df.columns = ['name', 'count']
-        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-        name_counts_df_show = name_counts_df.reset_index(drop=True)
-        most_name = name_counts_df_show['name'][0]
-        most_count = name_counts_df_show['count'][0]
-    else:
-                most_name = 'None'
-                most_count = 0  
-                
-    if len(left_prop) != 0:
-        name_counts = left_prop['shortName'].value_counts()
-        name_counts_df = name_counts.reset_index()
-        name_counts_df.columns = ['name', 'count']
-        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-        name_counts_df = name_counts_df.reset_index()
-        l_name = name_counts_df['name'][0]
-        l_count = name_counts_df['count'][0]
-    else:
-        l_name = 'None'
-        l_count = 0   
-            
-    if len(midd_prop) != 0:
-        name_counts = midd_prop['shortName'].value_counts()
-        name_counts_df = name_counts.reset_index()
-        name_counts_df.columns = ['name', 'count']
-        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-        name_counts_df = name_counts_df.reset_index()
-        m_name = name_counts_df['name'][0]
-        m_count = name_counts_df['count'][0]
-    else:
-            m_name = 'None'
-            m_count = 0   
-            
-    if len(rigt_prop) != 0:
-        name_counts = rigt_prop['shortName'].value_counts()
-        name_counts_df = name_counts.reset_index()
-        name_counts_df.columns = ['name', 'count']
-        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-        name_counts_df = name_counts_df.reset_index()
-        r_name = name_counts_df['name'][0]
-        r_count = name_counts_df['count'][0]
-    else:
-        r_name = 'None'
-        r_count = 0   
-            
-    pitch.lines(df_prop.x, df_prop.y, df_prop.endX, df_prop.endY, comet=True, lw=4, color=col, ax=ax)
-    pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=bg_color, ec=col, lw=1.5, ax=ax)
-            
-    if phase_tag == 'Full Time':
-        ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-    elif phase_tag == 'First Half':
-        ax.text(34, 116, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-    elif phase_tag == 'Second Half':
-        ax.text(34, 116, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-        ax.text(34, 112, f'Open-Play Progressive Passes: {len(df_prop)}', color=col, fontsize=13, ha='center', va='center')
-        ax.text(34, 108, f'Most by: {most_name}({most_count})', color=col, fontsize=13, ha='center', va='center')
-            
-        ax.text(10, 10, f'التقدم بالكرة من الجهة اليسرى\n{prop_left} تقدم ({prop_left_per}%)', color=col, fontsize=12, ha='center', va='center')
-        ax.text(58, 10, f'التقدم بالكرة من الجهة اليمنى\n{prop_right} تقدم ({prop_right_per}%)', color=col, fontsize=12, ha='center', va='center')
-            
-        ax.text(340/6, -5, f'From Left: {len(left_prop)}', color=col, ha='center', va='center')
-        ax.text(34, -5, f'From Mid: {len(midd_prop)}', color=col, ha='center', va='center')
-        ax.text(68/6, -5, f'From Right: {len(rigt_prop)}', color=col, ha='center', va='center')
-            
-        ax.text(340/6, -7, f'Most by:\n{l_name}({l_count})', color=col, ha='center', va='top')
-        ax.text(34, -7, f'Most by:\n{m_name}({m_count})', color=col, ha='center', va='top')
-        ax.text(68/6, -7, f'Most by:\n{r_name}({r_count})', color=col, ha='center', va='top')
-                 
-    return name_counts_df_show
-            
-    pp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pp_time_pill')
-    if pp_time_phase == 'Full Time':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            shotmap(axs[0], hteamName, hcol, 'Full Time')
-            shotmap(axs[1], ateamName, acol, 'Full Time')
+    # تعريف دالة لرسم الخريطة الحرارية للأفعال الدفاعية
+    def def_acts_hm(ax, team_name, col, phase_tag):
+        # اختيار الأحداث الدفاعية من قاعدة البيانات
+        def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
+                               (df['type'] == 'BallRecovery') | (df['type'] == 'BlockedPass') | (df['type'] == 'Challenge') |
+                               (df['type'] == 'Clearance') | ((df['type'] == 'Save') & (df['position'] != 'GK')) |
+                               ((df['type'] == 'Foul') & (df['outcomeType'] == 'Unsuccessful')) | (df['type'] == 'Interception') |
+                               (df['type'] == 'Tackle')]
+        df_def = df.loc[def_acts_id, ["x", "y", "teamName", "name", "type", "outcomeType", "period"]]
         
-    if pp_time_phase == 'First Half':
-            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-            home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
-            away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
-                
-    if pp_time_phase == 'Second Half':
-            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-            home_prop = progressive_pass(axs[0], hteamName, hcol, 'Second Half')
-            away_prop = progressive_pass(axs[1], ateamName, acol, 'Second Half')
-                
-            fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, 'Progressive Passes', fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
-            
-            fig.text(0.5, 0.02, '*Progressive Passes : Open-Play Successful Passes that move the ball at least 10 yards towards the Opponent Goal Center', fontsize=10, fontstyle='italic', ha='center', va='center')
-            fig.text(0.5, 0.00, '*Excluding the passes started from Own Defensive Third of the Pitch', fontsize=10, fontstyle='italic', ha='center', va='center')
-            
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-            
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-            
-            st.pyplot(fig)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Progressive Passers:')
-                st.dataframe(home_prop, hide_index=True)
-            with col2:
-                st.write(f'{ateamName} Progressive Passers:')
-                st.dataframe(away_prop, hide_index=True)
-            
+        # تصفية البيانات حسب فترة المباراة
+        if phase_tag == 'Full Time':
+            df_def = df_def.reset_index(drop=True)
+        elif phase_tag == 'First Half':
+            df_def = df_def[df_def['period'] == 'FirstHalf'].reset_index(drop=True)
+        elif phase_tag == 'Second Half':
+            df_def = df_def[df_def['period'] == 'SecondHalf'].reset_index(drop=True)
+
+        # اختيار الأفعال الدفاعية للفريق المحدد
+        total_def_acts = df_def[df_def['teamName'] == team_name]
+        avg_locs_df = total_def_acts.groupby('name').agg({'x': 'median', 'y': ['median', 'count']}).reset_index()
+        avg_locs_df.columns = ['name', 'x', 'y', 'def_acts_count']
+        avg_locs_df = avg_locs_df.merge(players_df[['name', 'shirtNo', 'position', 'isFirstEleven']], on='name', how='left')
+        avg_locs_df = avg_locs_df[avg_locs_df['position'] != 'GK'].dropna(subset=['shirtNo'])
+        df_def_show = avg_locs_df[['name', 'def_acts_count', 'shirtNo', 'position']]
+
+        # تحديد حجم العلامات على الرسم
+        MAX_MARKER_SIZE = 3000
+        avg_locs_df['marker_size'] = (avg_locs_df['def_acts_count'] / avg_locs_df['def_acts_count'].max() * MAX_MARKER_SIZE)
+        color = np.array(to_rgba(col))
+        color = np.tile(color, (len(avg_locs_df), 1))
+        c_transparency = avg_locs_df.def_acts_count / avg_locs_df.def_acts_count.max()
+        c_transparency = (c_transparency * (0.85 - 0.05)) + 0.05
+        color[:, 3] = c_transparency
+
+        # رسم الملعب والخريطة الحرارية
+        pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=2, linewidth=2)
+        pitch.draw(ax=ax)
+        flamingo_cmap = LinearSegmentedColormap.from_list("Flamingo", ['#000000', col], N=250)
+        pitch.kdeplot(total_def_acts.x, total_def_acts.y, ax=ax, fill=True, levels=2500, thresh=0.02, cut=4, cmap=flamingo_cmap)
+
+        # إضافة العلامات للاعبين
+        for index, row in avg_locs_df.iterrows():
+            pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='o' if row['isFirstEleven'] else 's', color=bg_color, edgecolor=line_color, linewidth=2, zorder=3, alpha=1 if row['isFirstEleven'] else 0.75, ax=ax)
+            pitch.annotate(int(row["shirtNo"]), xy=(row.x, row.y), c=col, ha='center', va='center', size=12, zorder=4, ax=ax)
+
+        # حساب التماسك العمودي
+        avgph = round(avg_locs_df['x'].median(), 2)
+        ax.axhline(y=avgph, color='gray', linestyle='--', alpha=0.75, linewidth=2)
+        center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
+        def_line_h = round(center_backs_height['x'].median(), 2) if not center_backs_height.empty else avgph
+        Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == True].sort_values(by='x', ascending=False).head(2)
+        fwd_line_h = round(Forwards_height['x'].mean(), 2) if not Forwards_height.empty else avgph
+        v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
+
+        # إضافة النصوص حسب فترة المباراة
+        if phase_tag == 'Full Time':
+            ax.text(34, 112, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
+            ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=15, ha='center', va='center')
+            ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
+            ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
+        ax.text(34, -5, reshape_arabic_text(f"الأفعال الدفاعية\nالتماسك العمودي: {v_comp}%"), color=col, fontsize=12, ha='center', va='center')
+        
+        return df_def_show  # إرجاع بيانات الأفعال الدفاعية
+
+    # اختيار فترة المباراة باستخدام أداة الراديو
+    dah_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), 
+                              [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
+                              index=0, key='dah_time_pill')
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    
+    # رسم الخرائط الحرارية للفريقين حسب الفترة المختارة
+    if dah_time_phase == reshape_arabic_text('الوقت الكامل'):
+        home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
+        away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
+    elif dah_time_phase == reshape_arabic_text('الشوط الأول'):
+        home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
+        away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
+    elif dah_time_phase == reshape_arabic_text('الشوط الثاني'):
+        home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
+        away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
+
+    # إضافة العنوان والنصوص التوضيحية
+    fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', 
+             highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'), fontsize=20, ha='center', va='center', color='white')
+    fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+    fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), 
+             fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+    fig.text(0.5, 0.03, reshape_arabic_text('*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية'), 
+             fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+
+    # إضافة شعارات الفريقين
+    himage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png"))
+    add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+    aimage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png"))
+    add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+
+    # عرض الرسم في Streamlit
+    st.pyplot(fig)
+    
+    # عرض البيانات في عمودين
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {hteamName}:'))
+        if home_df_def is not None:
+            st.dataframe(home_df_def, hide_index=True)
+    with col2:
+        st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {ateamName}:'))
+        if away_df_def is not None:
+            st.dataframe(away_df_def, hide_index=True)
+
+# إذا كان نوع التحليل هو "التمريرات التقدمية"
+elif an_tp == 'Progressive Passes':
+    st.header(reshape_arabic_text('التمريرات التقدمية'))
+    
+    # تعريف دالة لرسم التمريرات التقدمية
+    def progressive_pass(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            df_prop = df[(df['teamName'] == team_name) & (df['outcomeType'] == 'Successful') & 
+                          (df['prog_pass'] > 9.144) & (~df['qualifiers'].str.contains('Corner|Freekick')) & (df['x'] >= 35)]
+        elif phase_tag == 'First Half':
+            df_fh = df[df['period'] == 'FirstHalf']
+            df_prop = df_fh[(df_fh['teamName'] == team_name) & (df_fh['outcomeType'] == 'Successful') & 
+                            (df_fh['prog_pass'] > 9.11) & (~df_fh['qualifiers'].str.contains('Corner|Freekick')) & (df_fh['x'] >= 35)]
+        elif phase_tag == 'Second Half':
+            df_sh = df[df['period'] == 'SecondHalf']
+            df_prop = df_sh[(df_sh['teamName'] == team_name) & (df_sh['outcomeType'] == 'Successful') & 
+                            (df_sh['prog_pass'] > 9.11) & (~df_sh['qualifiers'].str.contains('Corner|Freekick')) & (df_sh['x'] >= 35)]
+        
+        # رسم الملعب
+        pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+        pitch.draw(ax=ax)
+
+        # تقسيم التمريرات حسب المناطق
+        left_prop = df_prop[df_prop['y'] > 136/3]
+        midd_prop = df_prop[(df_prop['y'] <= 136/3) & (df_prop['y'] >= 68/3)]
+        rigt_prop = df_prop[df_prop['y'] < 68/3]
+        
+        total_prop = len(df_prop)
+        prop_left = len(left_prop)
+        prop_mid = len(midd_prop)
+        prop_right = len(rigt_prop)
+        prop_left_per = round((prop_left / total_prop * 100), 1) if total_prop > 0 else 0
+        prop_right_per = round((prop_right / total_prop * 100), 1) if total_prop > 0 else 0
+        
+        # حساب اللاعب الأكثر تقدماً
+        if total_prop != 0:
+            name_counts = df_prop['shortName'].value_counts()
+            name_counts_df = name_counts.reset_index()
+            name_counts_df.columns = ['name', 'count']
+            name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
+            name_counts_df_show = name_counts_df.reset_index(drop=True)
+            most_name = name_counts_df_show['name'][0]
+            most_count = name_counts_df_show['count'][0]
+        else:
+            most_name = 'لا يوجد'
+            most_count = 0
+        
+        # المنطقة اليسرى
+        if prop_left != 0:
+            name_counts = left_prop['shortName'].value_counts()
+            name_counts_df = name_counts.reset_index()
+            name_counts_df.columns = ['name', 'count']
+            name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
+            l_name = name_counts_df['name'].iloc[0]
+            l_count = name_counts_df['count'].iloc[0]
+        else:
+            l_name = 'لا يوجد'
+            l_count = 0
+        
+        # المنطقة الوسطى
+        if prop_mid != 0:
+            name_counts = midd_prop['shortName'].value_counts()
+            name_counts_df = name_counts.reset_index()
+            name_counts_df.columns = ['name', 'count']
+            name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
+            m_name = name_counts_df['name'].iloc[0]
+            m_count = name_counts_df['count'].iloc[0]
+        else:
+            m_name = 'لا يوجد'
+            m_count = 0
+        
+        # المنطقة اليمنى
+        if prop_right != 0:
+            name_counts = rigt_prop['shortName'].value_counts()
+            name_counts_df = name_counts.reset_index()
+            name_counts_df.columns = ['name', 'count']
+            name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
+            r_name = name_counts_df['name'].iloc[0]
+            r_count = name_counts_df['count'].iloc[0]
+        else:
+            r_name = 'لا يوجد'
+            r_count = 0
+        
+        # رسم التمريرات
+        pitch.lines(df_prop.x, df_prop.y, df_prop.endX, df_prop.endY, comet=True, lw=4, color=col, ax=ax)
+        pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=bg_color, ec=col, lw=1.5, ax=ax)
+        
+        # إضافة النصوص
+        if phase_tag == 'Full Time':
+            ax.text(34, 116, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 112, reshape_arabic_text(f'التمريرات التقدمية في اللعب المفتوح: {total_prop}'), color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 108, reshape_arabic_text(f'الأكثر تقدماً: {most_name} ({most_count})'), color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 116, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 112, reshape_arabic_text(f'التمريرات التقدمية في اللعب المفتوح: {total_prop}'), color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 108, reshape_arabic_text(f'الأكثر تقدماً: {most_name} ({most_count})'), color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 116, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 112, reshape_arabic_text(f'التمريرات التقدمية في اللعب المفتوح: {total_prop}'), color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 108, reshape_arabic_text(f'الأكثر تقدماً: {most_name} ({most_count})'), color=col, fontsize=13, ha='center', va='center')
+        
+        ax.text(10, 10, reshape_arabic_text(f'التقدم من الجهة اليسرى\n{prop_left} تقدم ({prop_left_per}%)'), color=col, fontsize=12, ha='center', va='center')
+        ax.text(58, 10, reshape_arabic_text(f'التقدم من الجهة اليمنى\n{prop_right} تقدم ({prop_right_per}%)'), color=col, fontsize=12, ha='center', va='center')
+        
+        ax.text(340/6, -5, reshape_arabic_text(f'من اليسار: {prop_left}'), color=col, ha='center', va='center')
+        ax.text(34, -5, reshape_arabic_text(f'من الوسط: {prop_mid}'), color=col, ha='center', va='center')
+        ax.text(68/6, -5, reshape_arabic_text(f'من اليمين: {prop_right}'), color=col, ha='center', va='center')
+        
+        ax.text(340/6, -7, reshape_arabic_text(f'الأكثر:\n{l_name} ({l_count})'), color=col, ha='center', va='top')
+        ax.text(34, -7, reshape_arabic_text(f'الأكثر:\n{m_name} ({m_count})'), color=col, ha='center', va='top')
+        ax.text(68/6, -7, reshape_arabic_text(f'الأكثر:\n{r_name} ({r_count})'), color=col, ha='center', va='top')
+        
+        return name_counts_df_show
+
+    # اختيار فترة المباراة
+    pp_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), 
+                             [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
+                             index=0, key='pp_time_pill')
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    
+    # رسم التمريرات التقدمية للفريقين
+    if pp_time_phase == reshape_arabic_text('الوقت الكامل'):
+        home_prop = progressive_pass(axs[0], hteamName, hcol, 'Full Time')
+        away_prop = progressive_pass(axs[1], ateamName, acol, 'Full Time')
+    elif pp_time_phase == reshape_arabic_text('الشوط الأول'):
+        home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
+        away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
+    elif pp_time_phase == reshape_arabic_text('الشوط الثاني'):
+        home_prop = progressive_pass(axs[0], hteamName, hcol, 'Second Half')
+        away_prop = progressive_pass(axs[1], ateamName, acol, 'Second Half')
+    
+    # إضافة العنوان والنصوص التوضيحية
+    fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', 
+             highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, reshape_arabic_text('التمريرات التقدمية'), fontsize=20, ha='center', va='center', color='white')
+    fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+    fig.text(0.5, 0.02, reshape_arabic_text('*التمريرات التقدمية: تمريرات ناجحة في اللعب المفتوح تحرك الكرة 10 ياردات على الأقل نحو مركز مرمى الخصم'), 
+             fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+    fig.text(0.5, 0.00, reshape_arabic_text('*باستثناء التمريرات التي تبدأ من الثلث الدفاعي للفريق'), 
+             fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+    
+    # إضافة شعارات الفريقين
+    himage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png"))
+    add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+    aimage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png"))
+    add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+    
+    # عرض الرسم
+    st.pyplot(fig)
+    
+    # عرض البيانات في عمودين
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(reshape_arabic_text(f'التمريرات التقدمية لفريق {hteamName}:'))
+        if home_prop is not None:
+            st.dataframe(home_prop, hide_index=True)
+    with col2:
+        st.write(reshape_arabic_text(f'التمريرات التقدمية لفريق {ateamName}:'))
+        if away_prop is not None:
+            st.dataframe(away_prop, hide_index=True)
+
+# ملاحظة: يمكنك إضافة باقي الأقسام مثل "الحملات التقدمية" بنفس الطريقة
     if an_tp == 'Progressive Carries':
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
