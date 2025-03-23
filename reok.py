@@ -1431,42 +1431,80 @@ if an_tp == 'Match Momentum':
 elif an_tp == 'Attacking Thirds':
     # إعداد الملعب
     pitch = VerticalPitch(pitch_type='opta', pitch_color='#1a2a44', line_color='white', half=False)
-    fig, ax = pitch.draw(figsize=(8, 12))
+    
+    # إنشاء صورتين منفصلتين لكل فريق
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 16))  # صورتان عموديتان (واحدة لكل فريق)
     fig.set_facecolor('#1a2a44')
 
-    # استخدام العمود الصحيح 'type' بدلاً من 'event_type'
-    chances = df[df['type'].isin(['Shot', 'Pass']) & (df['outcomeType'] == 'Successful')]  # التسديدات والتمريرات الناجحة
+    # رسم الملعب لكل فريق
+    pitch.draw(ax=ax1)
+    pitch.draw(ax=ax2)
 
-    # تقسيم الملعب إلى ثلاثة أقسام بناءً على الموقع x
-    # في opta: x من 0 إلى 100 (من الأسفل إلى الأعلى)
-    left_third = chances[chances['x'] <= 33.33]  # الثلث الأيسر (من 0 إلى 33.33)
-    middle_third = chances[(chances['x'] > 33.33) & (chances['x'] <= 66.66)]  # الثلث الأوسط
-    right_third = chances[chances['x'] > 66.66]  # الثلث الأيمن (من 66.66 إلى 100)
+    # تحديد الفريقين بناءً على teamId
+    home_team_id = match_data['home']['teamId']
+    away_team_id = match_data['away']['teamId']
 
-    # حساب عدد الفرص في كل ثلث
-    total_chances = len(chances)
-    left_count = len(left_third)
-    middle_count = len(middle_third)
-    right_count = len(right_third)
+    # تقسيم البيانات حسب الفريق
+    home_chances = df[(df['type'].isin(['Shot', 'Pass']) & (df['outcomeType'] == 'Successful')) & (df['teamId'] == home_team_id)]
+    away_chances = df[(df['type'].isin(['Shot', 'Pass']) & (df['outcomeType'] == 'Successful')) & (df['teamId'] == away_team_id)]
 
-    # حساب النسب المئوية
-    left_percentage = (left_count / total_chances * 100) if total_chances > 0 else 0
-    middle_percentage = (middle_count / total_chances * 100) if total_chances > 0 else 0
-    right_percentage = (right_count / total_chances * 100) if total_chances > 0 else 0
+    # تقسيم الملعب إلى ثلاثة أقسام بناءً على الموقع x (من الأعلى إلى الأسفل)
+    # الثلث العلوي (x من 66.66 إلى 100)
+    home_top_third = home_chances[home_chances['x'] >= 66.66]
+    away_top_third = away_chances[away_chances['x'] >= 66.66]
+    # الثلث الأوسط (x من 33.33 إلى 66.66)
+    home_middle_third = home_chances[(home_chances['x'] >= 33.33) & (home_chances['x'] < 66.66)]
+    away_middle_third = away_chances[(away_chances['x'] >= 33.33) & (away_chances['x'] < 66.66)]
+    # الثلث السفلي (x من 0 إلى 33.33)
+    home_bottom_third = home_chances[home_chances['x'] < 33.33]
+    away_bottom_third = away_chances[away_chances['x'] < 33.33]
 
-    # تلوين الثلثات باستخدام y1 و y2
-    ax.fill_between(x=[0, 100], y1=0, y2=33.33, color='#FF9999', alpha=0.5)  # الثلث الأيسر (y من 0 إلى 33.33)
-    ax.fill_between(x=[0, 100], y1=33.33, y2=66.66, color='#FFCCCC', alpha=0.5)  # الثلث الأوسط (y من 33.33 إلى 66.66)
-    ax.fill_between(x=[0, 100], y1=66.66, y2=100, color='#FFCCCC', alpha=0.5)  # الثلث الأيمن (y من 66.66 إلى 100)
+    # حساب عدد الفرص لكل فريق
+    home_total_chances = len(home_chances)
+    away_total_chances = len(away_chances)
 
-    # إضافة النسب المئوية وعدد الفرص
-    # تعديل المواقع لتتناسب مع الاتجاه العمودي
-    fig.text(0.5, 0.25, f'{left_percentage:.1f}%\n{left_count}\nchances created', 
-             fontsize=20, ha='center', va='center', color='white', fontweight='bold')
-    fig.text(0.5, 0.5, f'{middle_percentage:.1f}%\n{middle_count}\nchances created', 
-             fontsize=20, ha='center', va='center', color='white', fontweight='bold')
-    fig.text(0.5, 0.75, f'{right_percentage:.1f}%\n{right_count}\nchances created', 
-             fontsize=20, ha='center', va='center', color='white', fontweight='bold')
+    home_top_count = len(home_top_third)
+    home_middle_count = len(home_middle_third)
+    home_bottom_count = len(home_bottom_third)
+
+    away_top_count = len(away_top_third)
+    away_middle_count = len(away_middle_third)
+    away_bottom_count = len(away_bottom_third)
+
+    # حساب النسب المئوية لكل فريق
+    home_top_percentage = (home_top_count / home_total_chances * 100) if home_total_chances > 0 else 0
+    home_middle_percentage = (home_middle_count / home_total_chances * 100) if home_total_chances > 0 else 0
+    home_bottom_percentage = (home_bottom_count / home_total_chances * 100) if home_total_chances > 0 else 0
+
+    away_top_percentage = (away_top_count / away_total_chances * 100) if away_total_chances > 0 else 0
+    away_middle_percentage = (away_middle_count / away_total_chances * 100) if away_total_chances > 0 else 0
+    away_bottom_percentage = (away_bottom_count / away_total_chances * 100) if away_total_chances > 0 else 0
+
+    # تلوين الثلثات للفريق المضيف (ax1)
+    ax1.fill_between(x=[66.66, 100], y1=0, y2=100, color='#8B5A2B', alpha=0.5)  # الثلث العلوي (أغمق)
+    ax1.fill_between(x=[33.33, 66.66], y1=0, y2=100, color='#A67D3D', alpha=0.5)  # الثلث الأوسط
+    ax1.fill_between(x=[0, 33.33], y1=0, y2=100, color='#C19A6B', alpha=0.5)  # الثلث السفلي (أفتح)
+
+    # تلوين الثلثات للفريق الضيف (ax2)
+    ax2.fill_between(x=[66.66, 100], y1=0, y2=100, color='#8B5A2B', alpha=0.5)  # الثلث العلوي (أغمق)
+    ax2.fill_between(x=[33.33, 66.66], y1=0, y2=100, color='#A67D3D', alpha=0.5)  # الثلث الأوسط
+    ax2.fill_between(x=[0, 33.33], y1=0, y2=100, color='#C19A6B', alpha=0.5)  # الثلث السفلي (أفتح)
+
+    # إضافة النسب المئوية وعدد الفرص للفريق المضيف (ax1)
+    ax1.text(83, 50, f'{home_top_percentage:.1f}%\n{home_top_count}\nchances created', 
+             fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    ax1.text(50, 50, f'{home_middle_percentage:.1f}%\n{home_middle_count}\nchances created', 
+             fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    ax1.text(16, 50, f'{home_bottom_percentage:.1f}%\n{home_bottom_count}\nchances created', 
+             fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+
+    # إضافة النسب المئوية وعدد الفرص للفريق الضيف (ax2)
+    ax2.text(83, 50, f'{away_top_percentage:.1f}%\n{away_top_count}\nchances created', 
+             fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    ax2.text(50, 50, f'{away_middle_percentage:.1f}%\n{away_middle_count}\nchances created', 
+             fontsize=14, ha='center', va='center', color='white', fontweight='bold')
+    ax2.text(16, 50, f'{away_bottom_percentage:.1f}%\n{away_bottom_count}\nchances created', 
+             fontsize=14, ha='center', va='center', color='white', fontweight='bold')
 
     # إضافة العنوان
     home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
@@ -1490,5 +1528,12 @@ elif an_tp == 'Attacking Thirds':
     # إضافة وصف
     fig.text(0.5, 0.1, 'Looking at the % of chances created from each third', 
              fontsize=12, ha='center', va='center', color='white')
+
+    # إضافة عناوين لكل فريق
+    fig.text(0.5, 0.72, f'{hteamName}', fontsize=16, ha='center', va='center', color='white', weight='bold')
+    fig.text(0.5, 0.22, f'{ateamName}', fontsize=16, ha='center', va='center', color='white', weight='bold')
+
+    # ضبط المسافات بين الصورتين
+    plt.tight_layout()
 
     st.pyplot(fig)
