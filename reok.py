@@ -24,7 +24,8 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 import time
-# تهيئة st.session_state لجميع المفاتيح المستخدمة
+# اختيار الفريق من قبل المستخدم
+hteamName = st.selectbox("اختر الفريق المضيف", ["الفريق أ", "الفريق ب"])  # استبدل بالفرق الفعلية
 if 'selecting_team_for_player_analysis' not in st.session_state:
     st.session_state.selecting_team_for_player_analysis = f"{hteamName} Players"
 if 'home_player_analysis' not in st.session_state:
