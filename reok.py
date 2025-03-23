@@ -454,7 +454,7 @@ if league and htn and atn and st.session_state.confirmed:
             if away_df_def is not None:
                 st.dataframe(away_df_def, hide_index=True)
 
-        elif an_tp == 'Progressive Passes':
+    elif an_tp == 'Progressive Passes':
             st.header(reshape_arabic_text('التمريرات التقدمية'))
                 # أضف كود التمريرات التقدمية هنا إذا لزم الأمر
 
