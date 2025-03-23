@@ -159,7 +159,6 @@ if season:
             st.sidebar.write('Match not found')
     
 if league and htn and atn and st.session_state.confirmed:
-    @st.cache_data
 @st.cache_data
 def get_event_data(season, league, stage, htn, atn):
     def extract_json_from_html(html_path, save_output=False):
