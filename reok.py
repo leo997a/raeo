@@ -1464,6 +1464,23 @@ elif an_tp == 'Attacking Thirds':
     st.write("إجمالي التمريرات للفريق المضيف:", len(home_passes))
     st.write("إجمالي التمريرات للفريق الضيف:", len(away_passes))
 
+    # دالة لحساب المسافة بين نقطتي التمريرة
+    def calculate_distance(row):
+        x1, y1 = row['x'], row['y']
+        x2, y2 = row['endX'], row['endY']
+        return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+
+    # تصنيف التمريرات إلى طويلة وقصيرة (الناجحة فقط)
+    home_successful_passes['distance'] = home_successful_passes.apply(calculate_distance, axis=1)
+    away_successful_passes['distance'] = away_successful_passes.apply(calculate_distance, axis=1)
+
+    # التمريرات القصيرة (أقل من 15 مترًا) والطويلة (15 مترًا أو أكثر)
+    home_short_passes = home_successful_passes[home_successful_passes['distance'] < 15]
+    home_long_passes = home_successful_passes[home_successful_passes['distance'] >= 15]
+
+    away_short_passes = away_successful_passes[away_successful_passes['distance'] < 15]
+    away_long_passes = away_successful_passes[away_successful_passes['distance'] >= 15]
+
     # تقسيم الملعب إلى ثلاثة أقسام (باستخدام UEFA dimensions: 105x68)
     def split_thirds(df_team):
         left_third = df_team[df_team['x'] <= 35]  # الثلث الدفاعي (0-35)
@@ -1477,6 +1494,13 @@ elif an_tp == 'Attacking Thirds':
 
     h_left_total, h_middle_total, h_right_total = split_thirds(home_passes)
     a_left_total, a_middle_total, a_right_total = split_thirds(away_passes)
+
+    # تقسيم التمريرات الطويلة والقصيرة الناجحة
+    h_left_short, h_middle_short, h_right_short = split_thirds(home_short_passes)
+    h_left_long, h_middle_long, h_right_long = split_thirds(home_long_passes)
+
+    a_left_short, a_middle_short, a_right_short = split_thirds(away_short_passes)
+    a_left_long, a_middle_long, a_right_long = split_thirds(away_long_passes)
 
     # حساب عدد التمريرات الناجحة والإجمالية في كل منطقة
     h_left_success_count = len(h_left_success)
@@ -1494,6 +1518,23 @@ elif an_tp == 'Attacking Thirds':
     a_left_total_count = len(a_left_total)
     a_middle_total_count = len(a_middle_total)
     a_right_total_count = len(a_right_total)
+
+    # حساب عدد التمريرات الطويلة والقصيرة الناجحة في كل منطقة
+    h_left_short_count = len(h_left_short)
+    h_middle_short_count = len(h_middle_short)
+    h_right_short_count = len(h_right_short)
+
+    h_left_long_count = len(h_left_long)
+    h_middle_long_count = len(h_middle_long)
+    h_right_long_count = len(h_right_long)
+
+    a_left_short_count = len(a_left_short)
+    a_middle_short_count = len(a_middle_short)
+    a_right_short_count = len(a_right_short)
+
+    a_left_long_count = len(a_left_long)
+    a_middle_long_count = len(a_middle_long)
+    a_right_long_count = len(a_right_long)
 
     # حساب نسب النجاح
     h_left_success_rate = (h_left_success_count / h_left_total_count * 100) if h_left_total_count > 0 else 0
@@ -1597,7 +1638,9 @@ elif an_tp == 'Attacking Thirds':
             'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
             'التمريرات الناجحة': [h_left_success_count, h_middle_success_count, h_right_success_count],
             'إجمالي التمريرات': [h_left_total_count, h_middle_total_count, h_right_total_count],
-            'نسبة النجاح (%)': [f'{h_left_success_rate:.1f}', f'{h_middle_success_rate:.1f}', f'{h_right_success_rate:.1f}']
+            'نسبة النجاح (%)': [f'{h_left_success_rate:.1f}', f'{h_middle_success_rate:.1f}', f'{h_right_success_rate:.1f}'],
+            'التمريرات القصيرة (ناجحة)': [h_left_short_count, h_middle_short_count, h_right_short_count],
+            'التمريرات الطويلة (ناجحة)': [h_left_long_count, h_middle_long_count, h_right_long_count]
         })
         st.dataframe(h_data, hide_index=True)
     with col2:
@@ -1606,6 +1649,8 @@ elif an_tp == 'Attacking Thirds':
             'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
             'التمريرات الناجحة': [a_left_success_count, a_middle_success_count, a_right_success_count],
             'إجمالي التمريرات': [a_left_total_count, a_middle_total_count, a_right_total_count],
-            'نسبة النجاح (%)': [f'{a_left_success_rate:.1f}', f'{a_middle_success_rate:.1f}', f'{a_right_success_rate:.1f}']
+            'نسبة النجاح (%)': [f'{a_left_success_rate:.1f}', f'{a_middle_success_rate:.1f}', f'{a_right_success_rate:.1f}'],
+            'التمريرات القصيرة (ناجحة)': [a_left_short_count, a_middle_short_count, a_right_short_count],
+            'التمريرات الطويلة (ناجحة)': [a_left_long_count, a_middle_long_count, a_right_long_count]
         })
         st.dataframe(a_data, hide_index=True)
