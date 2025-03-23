@@ -2858,18 +2858,12 @@ font_manager.fontManager.addfont(font_path)
 plt.rcParams['font.family'] = 'Noto Sans Arabic'
 plt.rcParams['axes.unicode_minus'] = False
 
-# تحميل شبكة xT
-xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/refs/heads/main/xT_Grid.csv")
-st.write("شبكة xT:", xT.head())  # للتحقق
-
 # تحميل بيانات الفرق
 df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
-team_names = df_teamNameId['team_name'].tolist()
+team_names = df_teamNameId['team_name'].tolist()  # قائمة بأسماء الفرق
 
-# اختيار الفريق المضيف والضيف
 home_team = st.selectbox("اختر الفريق المضيف", team_names)
 away_team = st.selectbox("اختر الفريق الضيف", team_names, index=1)  # اختيار افتراضي مختلف
-
 # اختيار الفريق لتحليل اللاعبين
 team_options = [home_team, away_team]
 selected_team = st.radio("اختر الفريق لتحليل اللاعبين", team_options)
