@@ -3519,16 +3519,16 @@ if st.session_state.away_player_analysis and apname:  # التأكد من أن a
                 for key, value in other_stats_dict.items():
                     st.write(f"{key}: {value}")
 
-    elif team_player == f'{hteamName} GK':
+elif team_player == f'{hteamName} GK':
         home_gk_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] == 'GK')]
         pname = st.selectbox('Select a Goal-Keeper:', home_gk_df.name.unique(), index=None, key='home_player_analysis')
-        if st.session_state.home_player_analysis and pname:  # التأكد من أن pname ليس None
+if st.session_state.home_player_analysis and pname:  # التأكد من أن pname ليس None
             st.header(f'{pname} Performance Dashboard')
             generate_gk_dashboard(f'{pname}', hftmb_tid)  # تصحيح اسم الدالة
 
-    elif team_player == f'{ateamName} GK':
+elif team_player == f'{ateamName} GK':
         away_gk_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] == 'GK')]
         pname = st.selectbox('Select a Goal-Keeper:', away_gk_df.name.unique(), index=None, key='home_player_analysis')
-        if st.session_state.home_player_analysis and pname:  # التأكد من أن pname ليس None
+if st.session_state.home_player_analysis and pname:  # التأكد من أن pname ليس None
             st.header(f'{pname} Performance Dashboard')
             generate_gk_dashboard(f'{pname}', aftmb_tid)  # تصحيح اسم الدالة
