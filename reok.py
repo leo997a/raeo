@@ -411,18 +411,18 @@ if league and htn and atn and st.session_state.confirmed:
         dah_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), 
                                           [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
                                           index=0, key='dah_time_pill')
-                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
                 
-                # رسم الخرائط الحرارية للفريقين حسب الفترة المختارة
-                if dah_time_phase == reshape_arabic_text('الوقت الكامل'):
-                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
-                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
-                elif dah_time_phase == reshape_arabic_text('الشوط الأول'):
-                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
-                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
-                elif dah_time_phase == reshape_arabic_text('الشوط الثاني'):
-                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
-                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
+        # رسم الخرائط الحرارية للفريقين حسب الفترة المختارة
+        if dah_time_phase == reshape_arabic_text('الوقت الكامل'):
+            home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
+            away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
+        elif dah_time_phase == reshape_arabic_text('الشوط الأول'):
+            home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
+            away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
+        elif dah_time_phase == reshape_arabic_text('الشوط الثاني'):
+            home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
+            away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
 
                 # إضافة العنوان والنصوص التوضيحية
                 fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', 
