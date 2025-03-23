@@ -3224,7 +3224,33 @@ def generate_gk_dashboard(pname, ftmb_tid):
     add_image(himage, fig, left=0.1, bottom=0.91, width=0.1, height=0.1)
 
     st.pyplot(fig)
+def generate_player_dashboard(pname, ftmb_tid):
+    fig, axs = plt.subplots(1, 3, figsize=(24, 15), facecolor='#f5f5f5')
 
+    # Calculate minutes played
+    mins_played, subs_text = playing_time(pname)
+
+    # Generate individual plots
+    passmap(axs[0], pname)  # خريطة التمريرات
+    shotmap(axs[1], pname)  # خريطة التسديدات
+    touches(axs[2], pname)  # خريطة اللمسات
+    fig.subplots_adjust(wspace=0.025)
+
+    # Add text and images to the figure
+    fig.text(0.22, 0.98, f'{pname}', fontsize=40, fontweight='bold', ha='left', va='center')
+    if subs_text is None:
+        fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played}', 
+                 fontsize=25, ha='left', va='center')
+    else:
+        fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played} ({subs_text})', 
+                 fontsize=25, ha='left', va='center')
+    fig.text(0.87, 0.995, '@adnaaan433', fontsize=15, ha='right', va='center')
+
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{ftmb_tid}.png")
+    himage = Image.open(himage)
+    add_image(himage, fig, left=0.1, bottom=0.91, width=0.1, height=0.1)
+
+    st.pyplot(fig)
 def player_detailed_data(pname):
     df_filt = df[~df['type'].str.contains('Carry|TakeOn|Challenge')].reset_index(drop=True)
     df_flt = df[~df['type'].str.contains('TakeOn|Challenge')].reset_index(drop=True)
@@ -3475,7 +3501,7 @@ if team_player == f"{hteamName} Players":
     hpname = st.selectbox('Select a Player:', home_pname_df.name.unique(), index=None, key='home_player_analysis')
     if st.session_state.home_player_analysis:
         st.header(f'{hpname} Performance Dashboard')
-        generate_player_dahsboard(f'{hpname}', hftmb_tid)
+        generate_player_dashboard(f'{hpname}', hftmb_tid)
 
         shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(hpname)
         col1, col2, col3 = st.columns(3)
@@ -3512,7 +3538,7 @@ if team_player == f"{ateamName} Players":
     apname = st.selectbox('Select a Player:', away_pname_df.name.unique(), index=None, key='away_player_analysis')
     if st.session_state.away_player_analysis:
         st.header(f'{apname} Performance Dashboard')
-        generate_player_dahsboard(f'{apname}', aftmb_tid)
+        generate_player_dashboard(f'{apname}', aftmb_tid)
 
         shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(apname)
         col1, col2, col3 = st.columns(3)
