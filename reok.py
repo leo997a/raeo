@@ -157,14 +157,16 @@ if season:
         except:
             st.session_state['confirmed'] = False
             st.sidebar.write('Match not found')
-    
-if league and htn and atn and st.session_state.confirmed:
+    if league and htn and atn and st.session_state.confirmed:
+    pass
+
 @st.cache_data
 def get_event_data(season, league, stage, htn, atn):
     def extract_json_from_html(html_path, save_output=False):
         response = requests.get(html_path)
         response.raise_for_status()  # Ensure the request was successful
         html = response.text
+    # باقي الكود هنا...
     
         regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
         data_txt = re.findall(regex_pattern, html)[0]
