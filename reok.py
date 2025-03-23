@@ -707,7 +707,7 @@ with tab1:
         reshape_arabic_text('Chances Creating Zones'), 
         reshape_arabic_text('Crosses'), 
         reshape_arabic_text('Team Domination Zones'), 
-        reshape_arabic_text('Pass Target Zones')
+        reshape_arabic_text('Pass Target Zones'),
         'Attacking Thirds'  # خيار جديد
     ], index=0, key='analysis_type_tab1')
     
