@@ -571,7 +571,7 @@ if league and htn and atn and st.session_state.confirmed:
     ])
 
     with tab1:
-    analysis_options = [
+        analysis_options = [
         reshape_arabic_text('شبكة التمريرات'), 'Defensive Actions Heatmap', 'Progressive Passes',  
             'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
             reshape_arabic_text('Zone14 & Half-Space Passes'), reshape_arabic_text('Final Third Entries'),
