@@ -1446,19 +1446,23 @@ elif an_tp == 'Attacking Thirds':
 
     # تصفية البيانات حسب الوقت المختار
     if time_option == reshape_arabic_text('الشوط الأول'):
-        homedf = homedf[homedf['period'] == 1]  # تعديل بناءً على القيم الفعلية
+        homedf = homedf[homedf['period'] == 1]
         awaydf = awaydf[awaydf['period'] == 1]
     elif time_option == reshape_arabic_text('الشوط الثاني'):
         homedf = homedf[homedf['period'] == 2]
         awaydf = awaydf[awaydf['period'] == 2]
 
-    # تصفية الفرص (التسديدات والتمريرات الناجحة)
-    home_chances = homedf[homedf['type'].isin(['Shot', 'Pass']) & (homedf['outcomeType'] == 'Successful')]
-    away_chances = awaydf[awaydf['type'].isin(['Shot', 'Pass']) & (awaydf['outcomeType'] == 'Successful')]
+    # تصفية التمريرات فقط (ناجحة وغير ناجحة)
+    home_passes = homedf[homedf['type'] == 'Pass']
+    away_passes = awaydf[awaydf['type'] == 'Pass']
 
-    # التحقق من عدد الأحداث
-    st.write("عدد الأحداث للفريق المضيف:", len(home_chances))
-    st.write("عدد الأحداث للفريق الضيف:", len(away_chances))
+    # تصفية التمريرات الناجحة فقط
+    home_successful_passes = home_passes[home_passes['outcomeType'] == 'Successful']
+    away_successful_passes = away_passes[away_passes['outcomeType'] == 'Successful']
+
+    # التحقق من عدد التمريرات
+    st.write("إجمالي التمريرات للفريق المضيف:", len(home_passes))
+    st.write("إجمالي التمريرات للفريق الضيف:", len(away_passes))
 
     # تقسيم الملعب إلى ثلاثة أقسام (باستخدام UEFA dimensions: 105x68)
     def split_thirds(df_team):
@@ -1467,29 +1471,43 @@ elif an_tp == 'Attacking Thirds':
         right_third = df_team[df_team['x'] > 70]  # الثلث الهجومي (70-105)
         return left_third, middle_third, right_third
 
-    # تقسيم الثلثات لكل فريق
-    h_left, h_middle, h_right = split_thirds(home_chances)
-    a_left, a_middle, a_right = split_thirds(away_chances)
+    # تقسيم التمريرات (ناجحة وإجمالي) لكل فريق
+    h_left_success, h_middle_success, h_right_success = split_thirds(home_successful_passes)
+    a_left_success, a_middle_success, a_right_success = split_thirds(away_successful_passes)
 
-    # حساب الإجماليات والنسب
-    h_total = len(home_chances)
-    a_total = len(away_chances)
+    h_left_total, h_middle_total, h_right_total = split_thirds(home_passes)
+    a_left_total, a_middle_total, a_right_total = split_thirds(away_passes)
+
+    # حساب عدد التمريرات الناجحة والإجمالية في كل منطقة
+    h_left_success_count = len(h_left_success)
+    h_middle_success_count = len(h_middle_success)
+    h_right_success_count = len(h_right_success)
+
+    a_left_success_count = len(a_left_success)
+    a_middle_success_count = len(a_middle_success)
+    a_right_success_count = len(a_right_success)
+
+    h_left_total_count = len(h_left_total)
+    h_middle_total_count = len(h_middle_total)
+    h_right_total_count = len(h_right_total)
+
+    a_left_total_count = len(a_left_total)
+    a_middle_total_count = len(a_middle_total)
+    a_right_total_count = len(a_right_total)
+
+    # حساب نسب النجاح
+    h_left_success_rate = (h_left_success_count / h_left_total_count * 100) if h_left_total_count > 0 else 0
+    h_middle_success_rate = (h_middle_success_count / h_middle_total_count * 100) if h_middle_total_count > 0 else 0
+    h_right_success_rate = (h_right_success_count / h_right_total_count * 100) if h_right_total_count > 0 else 0
+
+    a_left_success_rate = (a_left_success_count / a_left_total_count * 100) if a_left_total_count > 0 else 0
+    a_middle_success_rate = (a_middle_success_count / a_middle_total_count * 100) if a_middle_total_count > 0 else 0
+    a_right_success_rate = (a_right_success_count / a_right_total_count * 100) if a_right_total_count > 0 else 0
 
     # التحقق من وجود بيانات
-    if h_total == 0 and a_total == 0:
-        st.warning(reshape_arabic_text("لا توجد بيانات متاحة للفرص المخلقة في هذه الفترة."))
-        st.stop()  # إيقاف التنفيذ في Streamlit
-
-    h_left_count, h_middle_count, h_right_count = len(h_left), len(h_middle), len(h_right)
-    a_left_count, a_middle_count, a_right_count = len(a_left), len(a_middle), len(a_right)
-
-    h_left_pct = (h_left_count / h_total * 100) if h_total > 0 else 0
-    h_middle_pct = (h_middle_count / h_total * 100) if h_total > 0 else 0
-    h_right_pct = (h_right_count / h_total * 100) if h_total > 0 else 0
-
-    a_left_pct = (a_left_count / a_total * 100) if a_total > 0 else 0
-    a_middle_pct = (a_middle_count / a_total * 100) if a_total > 0 else 0
-    a_right_pct = (a_right_count / a_total * 100) if a_total > 0 else 0
+    if len(home_passes) == 0 and len(away_passes) == 0:
+        st.warning(reshape_arabic_text("لا توجد بيانات متاحة للتمريرات في هذه الفترة."))
+        st.stop()
 
     # إعداد الرسم
     fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
@@ -1503,16 +1521,16 @@ elif an_tp == 'Attacking Thirds':
     axs[0].annotate('', xy=(34, 70), xytext=(34, 35), arrowprops=dict(arrowstyle='->', **arrowprops))
     axs[0].annotate('', xy=(34, 105), xytext=(34, 70), arrowprops=dict(arrowstyle='->', **arrowprops))
 
-    # إضافة النصوص للفريق المضيف
-    axs[0].text(34, 17.5, reshape_arabic_text(f'{h_left_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
-    axs[0].text(34, 52.5, reshape_arabic_text(f'{h_middle_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
-    axs[0].text(34, 87.5, reshape_arabic_text(f'{h_right_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    # إضافة النصوص للفريق المضيف (نسبة النجاح وعدد التمريرات الناجحة)
+    axs[0].text(34, 17.5, reshape_arabic_text(f'{h_left_success_rate:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    axs[0].text(34, 52.5, reshape_arabic_text(f'{h_middle_success_rate:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    axs[0].text(34, 87.5, reshape_arabic_text(f'{h_right_success_rate:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
     axs[0].text(34, 115, reshape_arabic_text(f'{hteamName}'), fontsize=16, ha='center', va='center', color=hcol, fontweight='bold')
 
-    # إضافة عدد الفرص
-    axs[0].text(34, 10, reshape_arabic_text(f'{h_left_count} فرص'), fontsize=12, ha='center', va='center', color='white')
-    axs[0].text(34, 45, reshape_arabic_text(f'{h_middle_count} فرص'), fontsize=12, ha='center', va='center', color='white')
-    axs[0].text(34, 80, reshape_arabic_text(f'{h_right_count} فرص'), fontsize=12, ha='center', va='center', color='white')
+    # إضافة عدد التمريرات الناجحة
+    axs[0].text(34, 10, reshape_arabic_text(f'{h_left_success_count} تمريرات'), fontsize=12, ha='center', va='center', color='white')
+    axs[0].text(34, 45, reshape_arabic_text(f'{h_middle_success_count} تمريرات'), fontsize=12, ha='center', va='center', color='white')
+    axs[0].text(34, 80, reshape_arabic_text(f'{h_right_success_count} تمريرات'), fontsize=12, ha='center', va='center', color='white')
 
     # تلوين الثلثات
     axs[0].fill_between(x=[0, 68], y1=0, y2=35, color=hcol, alpha=0.3)
@@ -1527,16 +1545,16 @@ elif an_tp == 'Attacking Thirds':
     axs[1].annotate('', xy=(34, 70), xytext=(34, 35), arrowprops=dict(arrowstyle='->', **arrowprops))
     axs[1].annotate('', xy=(34, 105), xytext=(34, 70), arrowprops=dict(arrowstyle='->', **arrowprops))
 
-    # إضافة النصوص للفريق الضيف
-    axs[1].text(34, 17.5, reshape_arabic_text(f'{a_left_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
-    axs[1].text(34, 52.5, reshape_arabic_text(f'{a_middle_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
-    axs[1].text(34, 87.5, reshape_arabic_text(f'{a_right_pct:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    # إضافة النصوص للفريق الضيف (نسبة النجاح وعدد التمريرات الناجحة)
+    axs[1].text(34, 17.5, reshape_arabic_text(f'{a_left_success_rate:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    axs[1].text(34, 52.5, reshape_arabic_text(f'{a_middle_success_rate:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
+    axs[1].text(34, 87.5, reshape_arabic_text(f'{a_right_success_rate:.1f}%'), fontsize=18, ha='center', va='center', color='white', fontweight='bold')
     axs[1].text(34, 115, reshape_arabic_text(f'{ateamName}'), fontsize=16, ha='center', va='center', color=acol, fontweight='bold')
 
-    # إضافة عدد الفرص
-    axs[1].text(34, 10, reshape_arabic_text(f'{a_left_count} فرص'), fontsize=12, ha='center', va='center', color='white')
-    axs[1].text(34, 45, reshape_arabic_text(f'{a_middle_count} فرص'), fontsize=12, ha='center', va='center', color='white')
-    axs[1].text(34, 80, reshape_arabic_text(f'{a_right_count} فرص'), fontsize=12, ha='center', va='center', color='white')
+    # إضافة عدد التمريرات الناجحة
+    axs[1].text(34, 10, reshape_arabic_text(f'{a_left_success_count} تمريرات'), fontsize=12, ha='center', va='center', color='white')
+    axs[1].text(34, 45, reshape_arabic_text(f'{a_middle_success_count} تمريرات'), fontsize=12, ha='center', va='center', color='white')
+    axs[1].text(34, 80, reshape_arabic_text(f'{a_right_success_count} تمريرات'), fontsize=12, ha='center', va='center', color='white')
 
     # تلوين الثلثات
     axs[1].fill_between(x=[0, 68], y1=0, y2=35, color=acol, alpha=0.3)
@@ -1555,7 +1573,7 @@ elif an_tp == 'Attacking Thirds':
              path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
 
     # إضافة وصف
-    fig.text(0.5, 0.05, reshape_arabic_text(f'نسبة الفرص المخلقة من كل ثلث (تمريرات ناجحة وتسديدات) - {time_option}'), fontsize=12, ha='center', va='center', color='white')
+    fig.text(0.5, 0.05, reshape_arabic_text(f'نسبة نجاح التمريرات وعدد التمريرات الناجحة في كل ثلث - {time_option}'), fontsize=12, ha='center', va='center', color='white')
 
     # إضافة شعارات الفريقين
     try:
@@ -1574,18 +1592,20 @@ elif an_tp == 'Attacking Thirds':
     # عرض البيانات في جدول
     col1, col2 = st.columns(2)
     with col1:
-        st.write(reshape_arabic_text(f'تفاصيل فرص {hteamName} ({time_option}):'))
+        st.write(reshape_arabic_text(f'تفاصيل تمريرات {hteamName} ({time_option}):'))
         h_data = pd.DataFrame({
             'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
-            'عدد الفرص': [h_left_count, h_middle_count, h_right_count],
-            'النسبة (%)': [f'{h_left_pct:.1f}', f'{h_middle_pct:.1f}', f'{h_right_pct:.1f}']
+            'التمريرات الناجحة': [h_left_success_count, h_middle_success_count, h_right_success_count],
+            'إجمالي التمريرات': [h_left_total_count, h_middle_total_count, h_right_total_count],
+            'نسبة النجاح (%)': [f'{h_left_success_rate:.1f}', f'{h_middle_success_rate:.1f}', f'{h_right_success_rate:.1f}']
         })
         st.dataframe(h_data, hide_index=True)
     with col2:
-        st.write(reshape_arabic_text(f'تفاصيل فرص {ateamName} ({time_option}):'))
+        st.write(reshape_arabic_text(f'تفاصيل تمريرات {ateamName} ({time_option}):'))
         a_data = pd.DataFrame({
             'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
-            'عدد الفرص': [a_left_count, a_middle_count, a_right_count],
-            'النسبة (%)': [f'{a_left_pct:.1f}', f'{a_middle_pct:.1f}', f'{a_right_pct:.1f}']
+            'التمريرات الناجحة': [a_left_success_count, a_middle_success_count, a_right_success_count],
+            'إجمالي التمريرات': [a_left_total_count, a_middle_total_count, a_right_total_count],
+            'نسبة النجاح (%)': [f'{a_left_success_rate:.1f}', f'{a_middle_success_rate:.1f}', f'{a_right_success_rate:.1f}']
         })
         st.dataframe(a_data, hide_index=True)
