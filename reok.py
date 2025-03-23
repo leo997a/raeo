@@ -2841,8 +2841,51 @@ if an_tp == 'Pass Target Zones':
 
     st.pyplot(fig)
 
+import streamlit as st
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import patches
+import seaborn as sns
+from urllib.request import urlopen
+from PIL import Image
+from mplsoccer import VerticalPitch
+from scipy.spatial import ConvexHull
+
+# تعريف الألوان
+bg_color = '#f5f5f5'
+line_color = '#000000'
+acol = '#1f77b4'  # لون أزرق
+hcol = '#ff7f0e'  # لون برتقالي
+violet = '#9467bd'  # لون بنفسجي
+
+# دالة مساعدة لـ ax_text (بديل لـ highlight_textprops)
+def ax_text(x, y, s, fontsize, highlight_textprops=None, ax=None, **kwargs):
+    text = ax.text(x, y, s, fontsize=fontsize, **kwargs)
+    if highlight_textprops:
+        for h in highlight_textprops:
+            start = s.find('<')
+            end = s.find('>')
+            if start != -1 and end != -1:
+                # محاكاة تلوين النص (قد تحتاج إلى تعديل حسب التنسيق)
+                pass
+    return text
+
+# دالة مساعدة لإضافة الصور
+def add_image(image, fig, left, bottom, width, height):
+    ax = fig.add_axes([left, bottom, width, height])
+    ax.imshow(image)
+    ax.axis('off')
+
+# التأكد من أن df ليس فارغًا ويحتوي على الأعمدة المطلوبة
+required_columns = ['name', 'x', 'y', 'endX', 'endY', 'type', 'outcomeType', 'qualifiers', 'isTouch']
+if 'df' not in globals() or df.empty or not all(col in df.columns for col in required_columns):
+    st.error("خطأ: البيانات غير متوفرة أو الأعمدة المطلوبة مفقودة في df.")
+    st.stop()
+
 with tab2:
-    team_player = st.pills(" ", [f"{hteamName} Players", f"{ateamName} Players", f'{hteamName} GK', f'{ateamName} GK'], selection_mode='single', default=f"{hteamName} Players", key='selecting_team_for_player_analysis')
+    team_player = st.pills(" ", [f"{hteamName} Players", f"{ateamName} Players", f'{hteamName} GK', f'{ateamName} GK'], 
+                           selection_mode='single', default=f"{hteamName} Players", key='selecting_team_for_player_analysis')
 
     def offensive_actions(ax, pname):
         # Viz Dfs:
@@ -2895,13 +2938,13 @@ with tab2:
         pitch.scatter(-20, 68, c='orange', edgecolors=line_color, marker='h', s=300, alpha=0.75, zorder=7, ax=ax)
         pitch.scatter(-25, 68, c=bg_color, edgecolors='orange', marker='h', lw=1.2, hatch='//////', s=300, alpha=0.85, zorder=7, ax=ax)
         if len(owngoal) > 0:
-            ax_text(64, -4.5, f'Goals: {len(goal)} | <OwnGoal: {len(owngoal)}>', fontsize=12, highlight_textprops=[{'color': 'orange'}], ax=ax)
+            ax.text(64, -4.5, f'Goals: {len(goal)} | OwnGoal: {len(owngoal)}', fontsize=12, color='black', ha='left', va='center')
         else:
-            ax.text(64, -5.5, f'Goals: {len(goal)}', fontsize=12)
-        ax.text(64, -10.5, f'Shots on Target: {len(ontr)}', fontsize=12)
-        ax.text(64, -15.5, f'Shots off Target: {len(oftr)}', fontsize=12)
-        ax.text(64, -20.5, f'TakeOn (Succ.): {len(takeOns)}', fontsize=12)
-        ax.text(64, -25.5, f'TakeOn (Unsucc.): {len(takeOnu)}', fontsize=12)
+            ax.text(64, -5.5, f'Goals: {len(goal)}', fontsize=12, color='black', ha='left', va='center')
+        ax.text(64, -10.5, f'Shots on Target: {len(ontr)}', fontsize=12, color='black', ha='left', va='center')
+        ax.text(64, -15.5, f'Shots off Target: {len(oftr)}', fontsize=12, color='black', ha='left', va='center')
+        ax.text(64, -20.5, f'TakeOn (Succ.): {len(takeOns)}', fontsize=12, color='black', ha='left', va='center')
+        ax.text(64, -25.5, f'TakeOn (Unsucc.): {len(takeOnu)}', fontsize=12, color='black', ha='left', va='center')
 
         pitch.lines(-5, 34, -5, 24, color='gray', comet=True, lw=2, alpha=0.65, zorder=1, ax=ax)
         pitch.scatter(-5, 24, color=bg_color, ec='gray', s=20, zorder=2, ax=ax)
@@ -2915,13 +2958,13 @@ with tab2:
         pitch.lines(-25, 34, -25, 24, color='green', comet=True, lw=4, zorder=4, ax=ax)
         pitch.scatter(-25, 24, color=bg_color, ec='green', s=60, lw=2, zorder=5, ax=ax)
 
-        ax.text(21, -5.5, f'Successful Pass: {len(succ_passdf)}', fontsize=12)
-        ax.text(21, -10.5, f'Progressive Pass: {len(prg_pass)}', fontsize=12)
-        ax.text(21, -15.5, f'Progressive Carry: {len(prg_carry)}', fontsize=12)
-        ax.text(21, -20.5, f'Key Passes: {len(cc)}', fontsize=12)
-        ax.text(21, -25.5, f'Assists: {len(ga)}', fontsize=12)
+        ax.text(21, -5.5, f'Successful Pass: {len(succ_passdf)}', fontsize=12, color='black', ha='left', va='center')
+        ax.text(21, -10.5, f'Progressive Pass: {len(prg_pass)}', fontsize=12, color='black', ha='left', va='center')
+        ax.text(21, -15.5, f'Progressive Carry: {len(prg_carry)}', fontsize=12, color='black', ha='left', va='center')
+        ax.text(21, -20.5, f'Key Passes: {len(cc)}', fontsize=12, color='black', ha='left', va='center')
+        ax.text(21, -25.5, f'Assists: {len(ga)}', fontsize=12, color='black', ha='left', va='center')
 
-        ax.text(34, 110, 'Offensive Actions', fontsize=20, fontweight='bold', ha='center', va='center')
+        ax.text(34, 110, 'Offensive Actions', fontsize=20, fontweight='bold', ha='center', va='center', color='black')
         return
 
     def defensive_actions(ax, pname):
@@ -2987,7 +3030,6 @@ with tab2:
         playerdf = df[df['name'] == pname]
         touch_df = playerdf[(playerdf['x'] > 0) & (playerdf['y'] > 0)]
         pass_rec = df[(df['type'] == 'Pass') & (df['outcomeType'] == 'Successful') & (df['name'].shift(-1) == pname)]
-        # touch_df = pd.concat([acts_df, pass_rec], ignore_index=True)
         actual_touch = playerdf[playerdf['isTouch'] == 1]
 
         fthd_tch = actual_touch[actual_touch['x'] >= 70]
@@ -3001,60 +3043,34 @@ with tab2:
 
         ax.scatter(touch_df.y, touch_df.x, marker='o', s=30, c='None', edgecolor=acol, lw=2)
         if len(touch_df) > 3:
-            # Calculate mean point
             mean_point = np.mean(touch_df[['y', 'x']].values, axis=0)
-
-            # Calculate distances from the mean point
             distances = np.linalg.norm(touch_df[['y', 'x']].values - mean_point[None, :], axis=1)
-
-            # Compute the interquartile range (IQR)
-            q1, q3 = np.percentile(distances, [20, 80])  # Middle 75%: 12.5th to 87.5th percentile
+            q1, q3 = np.percentile(distances, [20, 80])
             iqr_mask = (distances >= q1) & (distances <= q3)
-
-            # Filter points within the IQR
             points_within_iqr = touch_df[['y', 'x']].values[iqr_mask]
-
-            # Check if we have enough points for a convex hull
             if len(points_within_iqr) >= 3:
                 hull = ConvexHull(points_within_iqr)
                 for simplex in hull.simplices:
                     ax.plot(points_within_iqr[simplex, 0], points_within_iqr[simplex, 1], color=acol, linestyle='--')
                 ax.fill(points_within_iqr[hull.vertices, 0], points_within_iqr[hull.vertices, 1], 
                         facecolor='none', edgecolor=acol, alpha=0.3, hatch='/////', zorder=1)
-            else:
-                pass
-        else:
-            pass
 
         ax.scatter(pass_rec.endY, pass_rec.endX, marker='o', s=30, c='None', edgecolor=hcol, lw=2)
-        if len(touch_df) > 4:
-            # Calculate mean point
+        if len(pass_rec) > 4:
             mean_point = np.mean(pass_rec[['endY', 'endX']].values, axis=0)
-
-            # Calculate distances from the mean point
             distances = np.linalg.norm(pass_rec[['endY', 'endX']].values - mean_point[None, :], axis=1)
-
-            # Compute the interquartile range (IQR)
-            q1, q3 = np.percentile(distances, [25, 75])  # Middle 75%: 12.5th to 87.5th percentile
+            q1, q3 = np.percentile(distances, [25, 75])
             iqr_mask = (distances >= q1) & (distances <= q3)
-
-            # Filter points within the IQR
             points_within_iqr = pass_rec[['endY', 'endX']].values[iqr_mask]
-
-            # Check if we have enough points for a convex hull
             if len(points_within_iqr) >= 3:
                 hull = ConvexHull(points_within_iqr)
                 for simplex in hull.simplices:
                     ax.plot(points_within_iqr[simplex, 0], points_within_iqr[simplex, 1], color=hcol, linestyle='--')
                 ax.fill(points_within_iqr[hull.vertices, 0], points_within_iqr[hull.vertices, 1], 
                         facecolor='none', edgecolor=hcol, alpha=0.3, hatch='/////', zorder=1)
-            else:
-                pass
-        else:
-            pass
 
         ax_text(34, 110, '<Touches> & <Pass Receiving> Points', fontsize=20, fontweight='bold', ha='center', va='center', 
-                highlight_textprops=[{'color': acol}, {'color': hcol}])
+                highlight_textprops=[{'color': acol}, {'color': hcol}], ax=ax)
         ax.text(34, -5, f'Total Touches: {len(actual_touch)} | at Final Third: {len(fthd_tch)} | at Penalty Box: {len(penbox_tch)}', color=acol, fontsize=13, ha='center', va='center')
         ax.text(34, -9, f'Total Pass Received: {len(pass_rec)} | at Final Third: {len(fthd_rec)} | at Penalty Box: {len(penbox_rec)}', color=hcol, fontsize=13, ha='center', va='center')
         ax.text(34, -17, '*blue area = middle 75% touches area', color=acol, fontsize=13, fontstyle='italic', ha='center', va='center')
@@ -3070,7 +3086,6 @@ with tab2:
         pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, linewidth=2, pad_bottom=15)
         pitch.draw(ax=ax)
 
-        # gk_name = df_gk['shortName'].unique()[0]
         op_succ = sp_succ = 0
         for index, row in op_pass.iterrows():
             if row['outcomeType'] == 'Successful':
@@ -3098,7 +3113,6 @@ with tab2:
         ax.text(34, -10, f'Avg. Passing Length: {avg_len}m  |  Avg. Goalkick Length: {avg_hgh}m', color=line_color, fontsize=13, ha='center', va='center')
         ax_text(34, -5, s=f'<Open-play Pass (Acc.): {len(op_pass)} ({op_succ})>  |  <GoalKick/Freekick (Acc.): {len(sp_pass)} ({sp_succ})>', 
                 fontsize=13, highlight_textprops=[{'color': hcol}, {'color': violet}], ha='center', va='center', ax=ax)
-
         return
 
     def gk_def_acts(ax, pname):
@@ -3152,35 +3166,23 @@ with tab2:
         return
 
     def playing_time(pname):
-        # Filter player data
         df_player = df[df['name'] == pname]
         df_player['isFirstEleven'] = df_player['isFirstEleven'].fillna(0)
-
-        # Identify substitution events
         df_sub_off = df_player[df_player['type'] == 'SubstitutionOff']
         df_sub_on = df_player[df_player['type'] == 'SubstitutionOn']
-
-        # Get maximum match minute and extra time
         max_min = df['minute'].max()
-        extra_time = max(0, max_min - 90)  # Ensure extra_time is non-negative
-
-        # Initialize minutes played
+        extra_time = max(0, max_min - 90)
         mins_played = 0
 
-        # Case 1: Started the game and was not substituted off
         if df_player['isFirstEleven'].unique()[0] == 1 and len(df_sub_off) == 0:
             subs_text = None
             mins_played = 90
-
-        # Case 2: Started the game and was substituted off
         elif df_player['isFirstEleven'].unique()[0] == 1 and len(df_sub_off) == 1:
             subs_text = 'Substituted Out'
             sub_off_min = df_sub_off['minute'].unique()[0]
             mins_played = min(90, sub_off_min)
             if sub_off_min > 90:
-                mins_played = int((sub_off_min * 90) / max_min)  # Proportional adjustment for extra time
-
-        # Case 3: Substituted on before or at the 80th minute
+                mins_played = int((sub_off_min * 90) / max_min)
         elif df_player['isFirstEleven'].unique()[0] == 0 and len(df_sub_on) > 0:
             subs_text = 'Substituted In'
             sub_on_min = df_sub_on['minute'].unique()[0]
@@ -3189,7 +3191,6 @@ with tab2:
             else:
                 mins_played = max_min - sub_on_min
 
-        # Adjust for red cards
         df_red = df_player[(df_player['type'] == 'Card') & (df_player['qualifiers'].str.contains('SecondYellow|Red', na=False))]
         if len(df_red) == 1:
             subs_text = 'Got Red Card'
@@ -3198,388 +3199,350 @@ with tab2:
 
         return int(mins_played), subs_text
 
-def generate_gk_dashboard(pname, ftmb_tid):
-    fig, axs = plt.subplots(1, 2, figsize=(16, 15), facecolor='#f5f5f5')
+    def generate_gk_dashboard(pname, ftmb_tid):
+        fig, axs = plt.subplots(1, 2, figsize=(16, 15), facecolor='#f5f5f5')
+        mins_played, subs_text = playing_time(pname)
+        gk_passmap(axs[0], pname)
+        gk_def_acts(axs[1], pname)
+        fig.subplots_adjust(wspace=0.025)
 
-    # Calculate minutes played
-    mins_played, subs_text = playing_time(pname)
+        fig.text(0.22, 0.98, f'{pname}', fontsize=40, fontweight='bold', ha='left', va='center')
+        if subs_text is None:
+            fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played}', 
+                     fontsize=25, ha='left', va='center')
+        else:
+            fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played} ({subs_text})', 
+                     fontsize=25, ha='left', va='center')
+        fig.text(0.87, 0.995, '@adnaaan433', fontsize=15, ha='right', va='center')
 
-    # Generate individual plots
-    gk_passmap(axs[0], pname)
-    gk_def_acts(axs[1], pname)
-    fig.subplots_adjust(wspace=0.025)
+        himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{ftmb_tid}.png")
+        himage = Image.open(himage)
+        add_image(himage, fig, left=0.1, bottom=0.91, width=0.1, height=0.1)
 
-    # Add text and images to the figure
-    fig.text(0.22, 0.98, f'{pname}', fontsize=40, fontweight='bold', ha='left', va='center')
-    if subs_text is None:
-        fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played}', 
-                 fontsize=25, ha='left', va='center')
-    else:
-        fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played} ({subs_text})', 
-                 fontsize=25, ha='left', va='center')
-    fig.text(0.87, 0.995, '@adnaaan433', fontsize=15, ha='right', va='center')
+        st.pyplot(fig)
 
-    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{ftmb_tid}.png")
-    himage = Image.open(himage)
-    add_image(himage, fig, left=0.1, bottom=0.91, width=0.1, height=0.1)
+    def generate_player_dashboard(pname, ftmb_tid):
+        fig, axs = plt.subplots(1, 3, figsize=(24, 15), facecolor='#f5f5f5')
+        mins_played, subs_text = playing_time(pname)
+        offensive_actions(axs[0], pname)
+        defensive_actions(axs[1], pname)
+        pass_receiving_and_touchmap(axs[2], pname)
+        fig.subplots_adjust(wspace=0.025)
 
-    st.pyplot(fig)
-def generate_player_dashboard(pname, ftmb_tid):
-    fig, axs = plt.subplots(1, 3, figsize=(24, 15), facecolor='#f5f5f5')
+        fig.text(0.22, 0.98, f'{pname}', fontsize=40, fontweight='bold', ha='left', va='center')
+        if subs_text is None:
+            fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played}', 
+                     fontsize=25, ha='left', va='center')
+        else:
+            fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played} ({subs_text})', 
+                     fontsize=25, ha='left', va='center')
+        fig.text(0.87, 0.995, '@adnaaan433', fontsize=15, ha='right', va='center')
 
-    # Calculate minutes played
-    mins_played, subs_text = playing_time(pname)
+        himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{ftmb_tid}.png")
+        himage = Image.open(himage)
+        add_image(himage, fig, left=0.1, bottom=0.91, width=0.1, height=0.1)
 
-    # Generate individual plots
-    passmap(axs[0], pname)  # خريطة التمريرات
-    shotmap(axs[1], pname)  # خريطة التسديدات
-    touches(axs[2], pname)  # خريطة اللمسات
-    fig.subplots_adjust(wspace=0.025)
+        st.pyplot(fig)
 
-    # Add text and images to the figure
-    fig.text(0.22, 0.98, f'{pname}', fontsize=40, fontweight='bold', ha='left', va='center')
-    if subs_text is None:
-        fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played}', 
-                 fontsize=25, ha='left', va='center')
-    else:
-        fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played} ({subs_text})', 
-                 fontsize=25, ha='left', va='center')
-    fig.text(0.87, 0.995, '@adnaaan433', fontsize=15, ha='right', va='center')
+    def player_detailed_data(pname):
+        df_filt = df[~df['type'].str.contains('Carry|TakeOn|Challenge')].reset_index(drop=True)
+        df_flt = df[~df['type'].str.contains('TakeOn|Challenge')].reset_index(drop=True)
+        dfp = df[df['name'] == pname]
 
-    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{ftmb_tid}.png")
-    himage = Image.open(himage)
-    add_image(himage, fig, left=0.1, bottom=0.91, width=0.1, height=0.1)
+        # Shooting
+        pshots = dfp[(dfp['type'].isin(['Goal', 'SavedShot', 'MissedShots', 'ShotOnPost'])) & (~dfp['qualifiers'].str.contains('OwnGoal'))]
+        goals = pshots[pshots['type'] == 'Goal']
+        saved = pshots[(pshots['type'] == 'SavedShot') & (~pshots['qualifiers'].str.contains(': 82'))]
+        block = pshots[(pshots['type'] == 'SavedShot') & (pshots['qualifiers'].str.contains(': 82'))]
+        missd = pshots[pshots['type'] == 'MissedShots']
+        postd = pshots[pshots['type'] == 'ShotOnPost']
+        big_c = pshots[pshots['qualifiers'].str.contains('BigChance')]
+        big_cmis = big_c[big_c['type'] != 'Goal']
+        op_shots = pshots[pshots['qualifiers'].str.contains('RegularPlay')]
+        out_b = pshots[pshots['qualifiers'].str.contains('OutOfBox')]
+        og = dfp[dfp['qualifiers'].str.contains('OwnGoal')]
+        pen_t = pshots[pshots['qualifiers'].str.contains('Penalty')]
+        pen_m = pen_t[pen_t['type'] != 'Goal']
+        frk_shots = pshots[pshots['qualifiers'].str.contains('DirectFreekick')]
+        frk_goals = frk_shots[frk_shots['type'] == 'Goal']
+        pshots['shots_distance'] = np.sqrt((pshots['x'] - 105)**2 + (pshots['y'] - 34)**2)
+        avg_shots_dist = round(pshots['shots_distance'].median(), 2) if len(pshots) != 0 else 'N/A'
 
-    st.pyplot(fig)
-def player_detailed_data(pname):
-    df_filt = df[~df['type'].str.contains('Carry|TakeOn|Challenge')].reset_index(drop=True)
-    df_flt = df[~df['type'].str.contains('TakeOn|Challenge')].reset_index(drop=True)
-    dfp = df[df['name'] == pname]
+        # Pass
+        passdf = dfp[dfp['type'] == 'Pass']
+        accpass = passdf[passdf['outcomeType'] == 'Successful']
+        pass_accuracy = round((len(accpass) / len(passdf)) * 100, 2) if len(passdf) != 0 else 0
+        pro_pass = accpass[(accpass['prog_pass'] > 9.144) & (~accpass['qualifiers'].str.contains('Freekick|Corner')) & (accpass['x'] > 35)]
+        cc = dfp[dfp['qualifiers'].str.contains('KeyPass')]
+        bcc = dfp[dfp['qualifiers'].str.contains('BigChanceCreated')]
+        ass = dfp[dfp['qualifiers'].str.contains('GoalAssist')]
+        preas = df_filt[(df_filt['name'] == pname) & (df_filt['type'] == 'Pass') & (df_filt['outcomeType'] == 'Successful') & (df_filt['qualifiers'].shift(-1).str.contains('GoalAssist'))]
+        buildup_s = df_filt[(df_filt['name'] == pname) & (df_filt['type'] == 'Pass') & (df_filt['outcomeType'] == 'Successful') & (df_filt['qualifiers'].shift(-1).str.contains('KeyPass'))]
+        fthird_pass = passdf[passdf['endX'] > 70]
+        fthird_succ = fthird_pass[fthird_pass['outcomeType'] == 'Successful']
+        penbox_pass = passdf[(passdf['endX'] >= 88.5) & (passdf['endY'] >= 13.6) & (passdf['endY'] <= 54.4)]
+        penbox_succ = penbox_pass[penbox_pass['outcomeType'] == 'Successful']
+        crs = passdf[(passdf['qualifiers'].str.contains('Cross')) & (~passdf['qualifiers'].str.contains('Freekick|Corner'))]
+        crs_s = crs[crs['outcomeType'] == 'Successful']
+        long = passdf[(passdf['qualifiers'].str.contains('Longball')) & (~passdf['qualifiers'].str.contains('Freekick|Corner'))]
+        long_s = long[long['outcomeType'] == 'Successful']
+        corner = passdf[passdf['qualifiers'].str.contains('Corner')]
+        corners = corner[corner['outcomeType'] == 'Successful']
+        throw_in = passdf[passdf['qualifiers'].str.contains('ThrowIn')]
+        throw_ins = throw_in[throw_in['outcomeType'] == 'Successful']
+        xT_df = accpass[accpass['xT'] > 0]
+        xT_ip = round(xT_df['xT'].sum(), 2)
+        pass_to = df[(df['type'].shift(1) == 'Pass') & (df['outcomeType'].shift(1) == 'Successful') & (df['name'].shift(1) == pname)]
+        most_to = pass_to['name'].value_counts().idxmax() if not pass_to.empty else None
+        most_count = pass_to['name'].value_counts().max() if not pass_to.empty else None
+        forward_pass = passdf[(passdf['endX'] - passdf['x']) > 2]
+        forward_pass_s = forward_pass[forward_pass['outcomeType'] == 'Successful']
+        back_pass = passdf[(passdf['x'] - passdf['endX']) > 2]
+        back_pass_s = back_pass[back_pass['outcomeType'] == 'Successful']
+        side_pass = len(passdf) - len(forward_pass) - len(back_pass)
+        side_pass_s = len(accpass) - len(forward_pass_s) - len(back_pass_s)
 
-    # Shooting
-    pshots = dfp[(dfp['type'].isin(['Goal', 'SavedShot', 'MissedShots', 'ShotOnPost'])) & (~dfp['qualifiers'].str.contains('OwnGoal'))]
-    goals = pshots[pshots['type'] == 'Goal']
-    saved = pshots[(pshots['type'] == 'SavedShot') & (~pshots['qualifiers'].str.contains(': 82'))]
-    block = pshots[(pshots['type'] == 'SavedShot') & (pshots['qualifiers'].str.contains(': 82'))]
-    missd = pshots[pshots['type'] == 'MissedShots']
-    postd = pshots[pshots['type'] == 'ShotOnPost']
-    big_c = pshots[pshots['qualifiers'].str.contains('BigChance')]
-    big_cmis = big_c[big_c['type'] != 'Goal']
-    op_shots = pshots[pshots['qualifiers'].str.contains('RegularPlay')]
-    out_b = pshots[pshots['qualifiers'].str.contains('OutOfBox')]
-    og = dfp[dfp['qualifiers'].str.contains('OwnGoal')]
-    pen_t = pshots[pshots['qualifiers'].str.contains('Penalty')]
-    pen_m = pen_t[pen_t['type'] != 'Goal']
-    frk_shots = pshots[pshots['qualifiers'].str.contains('DirectFreekick')]
-    frk_goals = frk_shots[frk_shots['type'] == 'Goal']
-    pshots['shots_distance'] = np.sqrt((pshots['x'] - 105)**2 + (pshots['y'] - 34)**2)
-    avg_shots_dist = round(pshots['shots_distance'].median(), 2) if len(pshots) != 0 else 'N/A'
+        # Carry
+        carrydf = dfp[dfp['type'] == 'Carry']
+        pro_carry = carrydf[(carrydf['prog_carry'] > 9.144) & (carrydf['endX'] > 35)]
+        led_shot1 = df_flt[(df_flt['type'] == 'Carry') & (df_flt['name'] == pname) & (df_flt['qualifiers'].shift(-1).str.contains('KeyPass'))]
+        led_shot2 = df_flt[(df_flt['type'] == 'Carry') & (df_flt['name'] == pname) & (df_flt['type'].shift(-1).str.contains('Shot'))]
+        led_shot = pd.concat([led_shot1, led_shot2])
+        led_goal1 = df_flt[(df_flt['type'] == 'Carry') & (df_flt['name'] == pname) & (df_flt['qualifiers'].shift(-1).str.contains('GoalAssist'))]
+        led_goal2 = df_flt[(df_flt['type'] == 'Carry') & (df_flt['name'] == pname) & (df_flt['type'].shift(-1) == 'Goal')]
+        led_goal = pd.concat([led_goal1, led_goal2])
+        fth_carry = carrydf[(carrydf['x'] < 70) & (carrydf['endX'] >= 70)]
+        box_carry = carrydf[(carrydf['endX'] >= 88.5) & (carrydf['endY'] >= 13.6) & (carrydf['endY'] <= 54.4) &
+                            ~((carrydf['x'] >= 88.5) & (carrydf['y'] >= 13.6) & (carrydf['y'] <= 54.6))]
+        carrydf['carry_len'] = np.sqrt((carrydf['x'] - carrydf['endX'])**2 + (carrydf['y'] - carrydf['endY'])**2)
+        avg_carry_len = round(carrydf['carry_len'].mean(), 2)
+        carry_xT = carrydf[carrydf['xT'] > 0]
+        xT_ic = round(carry_xT['xT'].sum(), 2)
+        forward_carry = carrydf[(carrydf['endX'] - carrydf['x']) > 2]
+        back_carry = carrydf[(carrydf['x'] - carrydf['endX']) > 2]
+        side_carry = len(carrydf) - len(forward_carry) - len(back_carry)
+        t_on = dfp[dfp['type'] == 'TakeOn']
+        t_ons = t_on[t_on['outcomeType'] == 'Successful']
+        t_on_rate = round((len(t_ons) / len(t_on)) * 100, 2) if len(t_on) != 0 else 0
 
-    # Pass
-    passdf = dfp[dfp['type'] == 'Pass']
-    accpass = passdf[passdf['outcomeType'] == 'Successful']
-    pass_accuracy = round((len(accpass) / len(passdf)) * 100, 2) if len(passdf) != 0 else 0
-    pro_pass = accpass[(accpass['prog_pass'] > 9.144) & (~accpass['qualifiers'].str.contains('Freekick|Corner')) & (accpass['x'] > 35)]
-    cc = dfp[dfp['qualifiers'].str.contains('KeyPass')]
-    bcc = dfp[dfp['qualifiers'].str.contains('BigChanceCreated')]
-    ass = dfp[dfp['qualifiers'].str.contains('GoalAssist')]
-    preas = df_filt[(df_filt['name'] == pname) & (df_filt['type'] == 'Pass') & (df_filt['outcomeType'] == 'Successful') & (df_filt['qualifiers'].shift(-1).str.contains('GoalAssist'))]
-    buildup_s = df_filt[(df_filt['name'] == pname) & (df_filt['type'] == 'Pass') & (df_filt['outcomeType'] == 'Successful') & (df_filt['qualifiers'].shift(-1).str.contains('KeyPass'))]
-    fthird_pass = passdf[passdf['endX'] > 70]
-    fthird_succ = fthird_pass[fthird_pass['outcomeType'] == 'Successful']
-    penbox_pass = passdf[(passdf['endX'] >= 88.5) & (passdf['endY'] >= 13.6) & (passdf['endY'] <= 54.4)]
-    penbox_succ = penbox_pass[penbox_pass['outcomeType'] == 'Successful']
-    crs = passdf[(passdf['qualifiers'].str.contains('Cross')) & (~passdf['qualifiers'].str.contains('Freekick|Corner'))]
-    crs_s = crs[crs['outcomeType'] == 'Successful']
-    long = passdf[(passdf['qualifiers'].str.contains('Longball')) & (~passdf['qualifiers'].str.contains('Freekick|Corner'))]
-    long_s = long[long['outcomeType'] == 'Successful']
-    corner = passdf[passdf['qualifiers'].str.contains('Corner')]
-    corners = corner[corner['outcomeType'] == 'Successful']
-    throw_in = passdf[passdf['qualifiers'].str.contains('ThrowIn')]
-    throw_ins = throw_in[throw_in['outcomeType'] == 'Successful']
-    xT_df = accpass[accpass['xT'] > 0]
-    xT_ip = round(xT_df['xT'].sum(), 2)
-    pass_to = df[(df['type'].shift(1) == 'Pass') & (df['outcomeType'].shift(1) == 'Successful') & (df['name'].shift(1) == pname)]
-    most_to = pass_to['name'].value_counts().idxmax() if not pass_to.empty else None
-    most_count = pass_to['name'].value_counts().max() if not pass_to.empty else None
-    forward_pass = passdf[(passdf['endX'] - passdf['x']) > 2]
-    forward_pass_s = forward_pass[forward_pass['outcomeType'] == 'Successful']
-    back_pass = passdf[(passdf['x'] - passdf['endX']) > 2]
-    back_pass_s = back_pass[back_pass['outcomeType'] == 'Successful']
-    side_pass = len(passdf) - len(forward_pass) - len(back_pass)
-    side_pass_s = len(accpass) - len(forward_pass_s) - len(back_pass_s)
+        # Pass Receiving
+        df_rec = df[(df['type'] == 'Pass') & (df['outcomeType'] == 'Successful') & (df['name'].shift(-1) == pname)]
+        kp_rec = df_rec[df_rec['qualifiers'].str.contains('KeyPass')]
+        as_rec = df_rec[df_rec['qualifiers'].str.contains('GoalAssist')]
+        fthd_rec = df_rec[df_rec['endX'] >= 70]
+        pen_rec = df_rec[(df_rec['endX'] >= 87.5) & (df_rec['endY'] >= 13.6) & (df_rec['endY'] <= 54.6)]
+        pro_rec = df_rec[(df_rec['x'] >= 35) & (df_rec['prog_pass'] >= 9.11) & (~df_rec['qualifiers'].str.contains('CornerTaken|Frerkick'))]
+        crs_rec = df_rec[(df_rec['qualifiers'].str.contains('Cross')) & (~df_rec['qualifiers'].str.contains('CornerTaken|Frerkick'))]
+        xT_rec = round(df_rec['xT'].sum(), 2)
+        long_rec = df_rec[(df_rec['qualifiers'].str.contains('Longball'))]
+        next_act = df[(df['name'] == pname) & (df['type'].shift(1) == 'Pass') & (df['outcomeType'].shift(1) == 'Successful')]
+        ball_retain = next_act[(next_act['outcomeType'] == 'Successful') & ((next_act['type'] != 'Foul') & (next_act['type'] != 'Dispossessed'))]
+        ball_retention = round((len(ball_retain) / len(next_act)) * 100, 2) if len(next_act) != 0 else 0
+        most_from = df_rec['name'].value_counts().idxmax() if not df_rec.empty else None
+        most_from_count = df_rec['name'].value_counts().max() if not df_rec.empty else 0
 
-    # Carry
-    carrydf = dfp[dfp['type'] == 'Carry']
-    pro_carry = carrydf[(carrydf['prog_carry'] > 9.144) & (carrydf['endX'] > 35)]
-    led_shot1 = df_flt[(df_flt['type'] == 'Carry') & (df_flt['name'] == pname) & (df_flt['qualifiers'].shift(-1).str.contains('KeyPass'))]
-    led_shot2 = df_flt[(df_flt['type'] == 'Carry') & (df_flt['name'] == pname) & (df_flt['type'].shift(-1).str.contains('Shot'))]
-    led_shot = pd.concat([led_shot1, led_shot2])
-    led_goal1 = df_flt[(df_flt['type'] == 'Carry') & (df_flt['name'] == pname) & (df_flt['qualifiers'].shift(-1).str.contains('GoalAssist'))]
-    led_goal2 = df_flt[(df_flt['type'] == 'Carry') & (df_flt['name'] == pname) & (df_flt['type'].shift(-1) == 'Goal')]
-    led_goal = pd.concat([led_goal1, led_goal2])
-    fth_carry = carrydf[(carrydf['x'] < 70) & (carrydf['endX'] >= 70)]
-    box_carry = carrydf[(carrydf['endX'] >= 88.5) & (carrydf['endY'] >= 13.6) & (carrydf['endY'] <= 54.4) &
-                        ~((carrydf['x'] >= 88.5) & (carrydf['y'] >= 13.6) & (carrydf['y'] <= 54.6))]
-    carrydf['carry_len'] = np.sqrt((carrydf['x'] - carrydf['endX'])**2 + (carrydf['y'] - carrydf['endY'])**2)
-    avg_carry_len = round(carrydf['carry_len'].mean(), 2)
-    carry_xT = carrydf[carrydf['xT'] > 0]
-    xT_ic = round(carry_xT['xT'].sum(), 2)
-    forward_carry = carrydf[(carrydf['endX'] - carrydf['x']) > 2]
-    back_carry = carrydf[(carrydf['x'] - carrydf['endX']) > 2]
-    side_carry = len(carrydf) - len(forward_carry) - len(back_carry)
-    t_on = dfp[dfp['type'] == 'TakeOn']
-    t_ons = t_on[t_on['outcomeType'] == 'Successful']
-    t_on_rate = round((len(t_ons) / len(t_on)) * 100, 2) if len(t_on) != 0 else 0
+        # Defensive 
+        ball_wins = dfp[dfp['type'].isin(['Interception', 'BallRecovery'])]
+        f_third = ball_wins[ball_wins['x'] >= 70]
+        p_tk = dfp[(dfp['type'] == 'Tackle')]
+        p_tk_s = dfp[(dfp['type'] == 'Tackle') & (dfp['outcomeType'] == 'Successful')]
+        p_intc = dfp[(dfp['type'] == 'Interception')]
+        p_br = dfp[dfp['type'] == 'BallRecovery']
+        p_cl = dfp[dfp['type'] == 'Clearance']
+        p_fl = dfp[(dfp['type'] == 'Foul') & (dfp['outcomeType'] == 'Unsuccessful')]
+        p_fls = dfp[(dfp['type'] == 'Foul') & (dfp['outcomeType'] == 'Successful')]
+        fls_fthd = p_fls[p_fls['x'] >= 70]
+        pen_won = p_fls[(p_fls['qualifiers'].str.contains('Penalty'))]
+        pen_con = p_fl[(p_fl['qualifiers'].str.contains('Penalty'))]
+        p_ard = dfp[(dfp['type'] == 'Aerial') & (dfp['qualifiers'].str.contains('Defensive'))]
+        p_ard_s = p_ard[p_ard['outcomeType'] == 'Successful']
+        p_ard_rate = round((len(p_ard_s) / len(p_ard)) * 100, 2) if len(p_ard) != 0 else 0
+        p_aro = dfp[(dfp['type'] == 'Aerial') & (dfp['qualifiers'].str.contains('Offensive'))]
+        p_aro_s = p_aro[p_aro['outcomeType'] == 'Successful']
+        p_aro_rate = round((len(p_aro_s) / len(p_aro)) * 100, 2) if len(p_aro) != 0 else 0
+        pass_bl = dfp[dfp['type'] == 'BlockedPass']
+        shot_bl = dfp[dfp['type'] == 'Save']
+        drb_pst = dfp[dfp['type'] == 'Challenge']
+        err_lat = dfp[dfp['qualifiers'].str.contains('LeadingToAttempt')]
+        err_lgl = dfp[dfp['qualifiers'].str.contains('LeadingToGoal')]
+        prbr = df[(df['name'] == pname) & (df['type'].isin(['BallRecovery', 'Interception'])) & (df['name'].shift(-1) == pname) & 
+                  (df['outcomeType'].shift(-1) == 'Successful') & (df['type'].shift(-1) != 'Dispossessed')]
+        post_rec_ball_retention = round((len(prbr) / (len(p_br) + len(p_intc))) * 100, 2) if (len(p_br) + len(p_intc)) != 0 else 0
 
-    # Pass Receiving
-    df_rec = df[(df['type'] == 'Pass') & (df['outcomeType'] == 'Successful') & (df['name'].shift(-1) == pname)]
-    kp_rec = df_rec[df_rec['qualifiers'].str.contains('KeyPass')]
-    as_rec = df_rec[df_rec['qualifiers'].str.contains('GoalAssist')]
-    fthd_rec = df_rec[df_rec['endX'] >= 70]
-    pen_rec = df_rec[(df_rec['endX'] >= 87.5) & (df_rec['endY'] >= 13.6) & (df_rec['endY'] <= 54.6)]
-    pro_rec = df_rec[(df_rec['x'] >= 35) & (df_rec['prog_pass'] >= 9.11) & (~df_rec['qualifiers'].str.contains('CornerTaken|Frerkick'))]
-    crs_rec = df_rec[(df_rec['qualifiers'].str.contains('Cross')) & (~df_rec['qualifiers'].str.contains('CornerTaken|Frerkick'))]
-    xT_rec = round(df_rec['xT'].sum(), 2)
-    long_rec = df_rec[(df_rec['qualifiers'].str.contains('Longball'))]
-    next_act = df[(df['name'] == pname) & (df['type'].shift(1) == 'Pass') & (df['outcomeType'].shift(1) == 'Successful')]
-    ball_retain = next_act[(next_act['outcomeType'] == 'Successful') & ((next_act['type'] != 'Foul') & (next_act['type'] != 'Dispossessed'))]
-    ball_retention = round((len(ball_retain) / len(next_act)) * 100, 2) if len(next_act) != 0 else 0
-    most_from = df_rec['name'].value_counts().idxmax() if not df_rec.empty else None
-    most_from_count = df_rec['name'].value_counts().max() if not df_rec.empty else 0
+        # Miscellaneous
+        player_id = str(int(dfp['playerId'].max()))
+        off_df = df[df['type'] == 'OffsidePass']
+        off_caught = off_df[off_df['qualifiers'].str.contains(player_id)]
+        disps = dfp[dfp['type'] == 'Dispossessed']
+        pos_lost_ptb = dfp[(dfp['type'].isin(['Pass', 'TakeOn', 'BallTouch'])) & (dfp['outcomeType'] == 'Unsuccessful')]
+        pos_lost_edo = dfp[dfp['type'].isin(['Error', 'Dispossessed', 'OffsidePass'])]
+        pos_lost = pd.concat([pos_lost_ptb, pos_lost_edo])
+        touches = dfp[dfp['isTouch'] == 1]
+        fth_touches = touches[touches['x'] >= 70]
+        pen_touches = touches[(touches['x'] >= 88.5) & (touches['y'] >= 13.6) & (touches['y'] <= 54.4)]
+        ycard = dfp[(dfp['type'] == 'Card') & (dfp['qualifiers'].str.contains('Yellow'))]
+        rcard = dfp[(dfp['type'] == 'Card') & (dfp['qualifiers'].str.contains('Red'))]
 
-    # Defensive 
-    ball_wins = dfp[dfp['type'].isin(['Interception', 'BallRecovery'])]
-    f_third = ball_wins[ball_wins['x'] >= 70]
-    p_tk = dfp[(dfp['type'] == 'Tackle')]
-    p_tk_s = dfp[(dfp['type'] == 'Tackle') & (dfp['outcomeType'] == 'Successful')]
-    p_intc = dfp[(dfp['type'] == 'Interception')]
-    p_br = dfp[dfp['type'] == 'BallRecovery']
-    p_cl = dfp[dfp['type'] == 'Clearance']
-    p_fl = dfp[(dfp['type'] == 'Foul') & (dfp['outcomeType'] == 'Unsuccessful')]
-    p_fls = dfp[(dfp['type'] == 'Foul') & (dfp['outcomeType'] == 'Successful')]
-    fls_fthd = p_fls[p_fls['x'] >= 70]
-    pen_won = p_fls[(p_fls['qualifiers'].str.contains('Penalty'))]
-    pen_con = p_fl[(p_fl['qualifiers'].str.contains('Penalty'))]
-    p_ard = dfp[(dfp['type'] == 'Aerial') & (dfp['qualifiers'].str.contains('Defensive'))]
-    p_ard_s = p_ard[p_ard['outcomeType'] == 'Successful']
-    p_ard_rate = round((len(p_ard_s) / len(p_ard)) * 100, 2) if len(p_ard) != 0 else 0
-    p_aro = dfp[(dfp['type'] == 'Aerial') & (dfp['qualifiers'].str.contains('Offensive'))]
-    p_aro_s = p_aro[p_aro['outcomeType'] == 'Successful']
-    p_aro_rate = round((len(p_aro_s) / len(p_aro)) * 100, 2) if len(p_aro) != 0 else 0
-    pass_bl = dfp[dfp['type'] == 'BlockedPass']
-    shot_bl = dfp[dfp['type'] == 'Save']
-    drb_pst = dfp[dfp['type'] == 'Challenge']
-    err_lat = dfp[dfp['qualifiers'].str.contains('LeadingToAttempt')]
-    err_lgl = dfp[dfp['qualifiers'].str.contains('LeadingToGoal')]
-    prbr = df[(df['name'] == pname) & (df['type'].isin(['BallRecovery', 'Interception'])) & (df['name'].shift(-1) == pname) & 
-              (df['outcomeType'].shift(-1) == 'Successful') & (df['type'].shift(-1) != 'Dispossessed')]
-    post_rec_ball_retention = round((len(prbr) / (len(p_br) + len(p_intc))) * 100, 2) if (len(p_br) + len(p_intc)) != 0 else 0
+        shooting_stats_dict = {
+            'Total Shots': len(pshots),
+            'Goal': len(goals),
+            'Shots On Target': len(saved) + len(goals),
+            'Shots Off Target': len(missd) + len(postd),
+            'Blocked Shots': len(block),
+            'Big Chances': len(big_c),
+            'Big Chances Missed': len(big_cmis),
+            'Hit Woodwork': len(postd),
+            'Open Play Shots': len(op_shots),
+            'Shots from Inside the Box': len(pshots) - len(out_b),
+            'Shots from Outside the Box': len(out_b),
+            'Avg. Shot Distance': f'{avg_shots_dist}m',
+            'Penalties Taken': len(pen_t),
+            'Penalties Missed': len(pen_m),
+            'Shots from Freekick': len(frk_shots),
+            'Goals from Freekick': len(frk_goals),
+            'Own Goal': len(og)
+        }
 
-    # Miscellaneous
-    player_id = str(int(dfp['playerId'].max()))
-    off_df = df[df['type'] == 'OffsidePass']
-    off_caught = off_df[off_df['qualifiers'].str.contains(player_id)]
-    disps = dfp[dfp['type'] == 'Dispossessed']
-    pos_lost_ptb = dfp[(dfp['type'].isin(['Pass', 'TakeOn', 'BallTouch'])) & (dfp['outcomeType'] == 'Unsuccessful')]
-    pos_lost_edo = dfp[dfp['type'].isin(['Error', 'Dispossessed', 'OffsidePass'])]
-    pos_lost = pd.concat([pos_lost_ptb, pos_lost_edo])
-    touches = dfp[dfp['isTouch'] == 1]
-    fth_touches = touches[touches['x'] >= 70]
-    pen_touches = touches[(touches['x'] >= 88.5) & (touches['y'] >= 13.6) & (touches['y'] <= 54.4)]
-    ycard = dfp[(dfp['type'] == 'Card') & (dfp['qualifiers'].str.contains('Yellow'))]
-    rcard = dfp[(dfp['type'] == 'Card') & (dfp['qualifiers'].str.contains('Red'))]
+        passing_stats_dict = {
+            'Accurate Passes': f'{len(accpass)}/{len(passdf)} ({pass_accuracy}%)',
+            'Progressive Passes': len(pro_pass),
+            'Chances Created': len(cc),
+            'Big Chances Created': len(bcc),
+            'Assists': len(ass),
+            'Pre-Assists': len(preas),
+            'BuildUp to Shot': len(buildup_s),
+            'Final 1/3 Passes (Acc.)': f'{len(fthird_pass)} ({len(fthird_succ)})',
+            'Passes in Penalty Box (Acc.)': f'{len(penbox_pass)} ({len(penbox_succ)})',
+            'Crosses (Acc.)': f'{len(crs)} ({len(crs_s)})',
+            'Longballs (Acc.)': f'{len(long)} ({len(long_s)})',
+            'Corners Taken (Acc.)': f'{len(corner)} ({len(corners)})',
+            'Throw-Ins Taken (Acc.)': f'{len(throw_in)} ({len(throw_ins)})',
+            'Forward Pass (Acc.)': f'{len(forward_pass)} ({len(forward_pass_s)})',
+            'Side Pass (Acc.)': f'{side_pass} ({side_pass_s})',
+            'Back Pass (Acc.)': f'{len(back_pass)} ({len(back_pass_s)})',
+            'xT from Pass': xT_ip,
+            'Most Passes to': f'{most_to} ({most_count})'
+        }
 
-    shooting_stats_dict = {
-        'Total Shots': len(pshots),
-        'Goal': len(goals),
-        'Shots On Target': len(saved) + len(goals),
-        'Shots Off Target': len(missd) + len(postd),
-        'Blocked Shots': len(block),
-        'Big Chances': len(big_c),
-        'Big Chances Missed': len(big_cmis),
-        'Hit Woodwork': len(postd),
-        'Open Play Shots': len(op_shots),
-        'Shots from Inside the Box': len(pshots) - len(out_b),
-        'Shots from Outside the Box': len(out_b),
-        'Avg. Shot Distance': f'{avg_shots_dist}m',
-        'Penalties Taken': len(pen_t),
-        'Penalties Missed': len(pen_m),
-        'Shots from Freekick': len(frk_shots),
-        'Goals from Freekick': len(frk_goals),
-        'Own Goal': len(og)
-    }
+        carry_stats_dict = {
+            'Total Carries': len(carrydf),
+            'Progressive Carries': len(pro_carry),
+            'Carries Led to Shot': len(led_shot),
+            'Carries Led to Goal': len(led_goal),
+            'Carries into Final Third': len(fth_carry),
+            'Carries into Penalty Box': len(box_carry),
+            'Avg. Carry Length': f'{avg_carry_len}m',
+            'xT from Carry': xT_ic,
+            'Ball Carry Forward': len(forward_carry),
+            'Ball Carry Sidewise': side_carry,
+            'Ball Carry Back': len(back_carry),
+            'Take-On Attempts': len(t_on),
+            'Successful Take-Ons': len(t_ons),
+            'Take-On Success Rate': f'{t_on_rate}%'
+        }
 
-    passing_stats_dict = {
-        'Accurate Passes': f'{len(accpass)}/{len(passdf)} ({pass_accuracy}%)',
-        'Progressive Passes': len(pro_pass),
-        'Chances Created': len(cc),
-        'Big Chances Created': len(bcc),
-        'Assists': len(ass),
-        'Pre-Assists': len(preas),
-        'BuildUp to Shot': len(buildup_s),
-        'Final 1/3 Passes (Acc.)': f'{len(fthird_pass)} ({len(fthird_succ)})',
-        'Passes in Penalty Box (Acc.)': f'{len(penbox_pass)} ({len(penbox_succ)})',
-        'Crosses (Acc.)': f'{len(crs)} ({len(crs_s)})',
-        'Longballs (Acc.)': f'{len(long)} ({len(long_s)})',
-        'Corners Taken (Acc.)': f'{len(corner)} ({len(corners)})',
-        'Throw-Ins Taken (Acc.)': f'{len(throw_in)} ({len(throw_ins)})',
-        'Forward Pass (Acc.)': f'{len(forward_pass)} ({len(forward_pass_s)})',
-        'Side Pass (Acc.)': f'{side_pass} ({side_pass_s})',
-        'Back Pass (Acc.)': f'{len(back_pass)} ({len(back_pass_s)})',
-        'xT from Pass': xT_ip,
-        'Most Passes to': f'{most_to} ({most_count})'
-    }
+        pass_receiving_stats_dict = {
+            'Total Passes Received': len(df_rec),
+            'Key Passes Received': len(kp_rec),
+            'Assists Received': len(as_rec),
+            'Passes Received in Final 1/3': len(fthd_rec),
+            'Passes Received in Penalty Box': len(pen_rec),
+            'Progressive Passes Received': len(pro_rec),
+            'Crosses Received': len(crs_rec),
+            'Longball Received': len(long_rec),
+            'xT Received': xT_rec,
+            'Ball Retention': f'{ball_retention}%',
+            'Most Passes Received From': f'{most_from} ({most_from_count})'
+        }
 
-    carry_stats_dict = {
-        'Total Carries': len(carrydf),
-        'Progressive Carries': len(pro_carry),
-        'Carries Led to Shot': len(led_shot),
-        'Carries Led to Goal': len(led_goal),
-        'Carries into Final Third': len(fth_carry),
-        'Carries into Penalty Box': len(box_carry),
-        'Avg. Carry Length': f'{avg_carry_len}m',
-        'xT from Carry': xT_ic,
-        'Ball Carry Forward': len(forward_carry),
-        'Ball Carry Sidewise': side_carry,
-        'Ball Carry Back': len(back_carry),
-        'Take-On Attempts': len(t_on),
-        'Successful Take-Ons': len(t_ons),
-        'Take-On Success Rate': f'{t_on_rate}%'
-    }
+        defensive_stats_dict = {
+            'Tackles (Won)': f'{len(p_tk)} ({len(p_tk_s)})',
+            'Interceptions': len(p_intc),
+            'Passes Blocked': len(pass_bl),
+            'Shots Blocked': len(shot_bl),
+            'Ball Recoveries': len(p_br),
+            'Post Recovery Ball Retention': f'{post_rec_ball_retention}%',
+            'Possession Won at Final 1/3': len(f_third),
+            'Clearances': len(p_cl),
+            'Fouls Committed': len(p_fl),
+            'Fouls Won': len(p_fls),
+            'Fouls Won at Final Third': len(fls_fthd),
+            'Penalties Won': len(pen_won),
+            'Penalties Conceded': len(pen_con),
+            'Defensive Aerial Duels Won': f'{len(p_ard_s)}/{len(p_ard)} ({p_ard_rate}%)',
+            'Offensive Aerial Duels Won': f'{len(p_aro_s)}/{len(p_aro)} ({p_aro_rate}%)',
+            'Dribble Past': len(drb_pst),
+            'Errors Leading To Shot': len(err_lat),
+            'Errors Leading To Goal': len(err_lgl)
+        }
 
-    pass_receiving_stats_dict = {
-        'Total Passes Received': len(df_rec),
-        'Key Passes Received': len(kp_rec),
-        'Assists Received': len(as_rec),
-        'Passes Received in Final 1/3': len(fthd_rec),
-        'Passes Received in Penalty Box': len(pen_rec),
-        'Progressive Passes Received': len(pro_rec),
-        'Crosses Received': len(crs_rec),
-        'Longball Received': len(long_rec),
-        'xT Received': xT_rec,
-        'Ball Retention': f'{ball_retention}%',
-        'Most Passes Received From': f'{most_from} ({most_from_count})'
-    }
+        other_stats_dict = {
+            'Caught Offside': len(off_caught),
+            'Dispossessed': len(disps),
+            'Possession Lost': len(pos_lost),
+            'Total Touches': len(touches),
+            'Touches at Final Third': len(fth_touches),
+            'Touches at Penalty Box': len(pen_touches),
+            'Yellow Cards': len(ycard),
+            'Red Cards': len(rcard)
+        }
 
-    defensive_stats_dict = {
-        'Tackles (Won)': f'{len(p_tk)} ({len(p_tk_s)})',
-        'Interceptions': len(p_intc),
-        'Passes Blocked': len(pass_bl),
-        'Shots Blocked': len(shot_bl),
-        'Ball Recoveries': len(p_br),
-        'Post Recovery Ball Retention': f'{post_rec_ball_retention}%',
-        'Possession Won at Final 1/3': len(f_third),
-        'Clearances': len(p_cl),
-        'Fouls Committed': len(p_fl),
-        'Fouls Won': len(p_fls),
-        'Fouls Won at Final Third': len(fls_fthd),
-        'Penalties Won': len(pen_won),
-        'Penalties Conceded': len(pen_con),
-        'Defensive Aerial Duels Won': f'{len(p_ard_s)}/{len(p_ard)} ({p_ard_rate}%)',
-        'Offensive Aerial Duels Won': f'{len(p_aro_s)}/{len(p_aro)} ({p_aro_rate}%)',
-        'Dribble Past': len(drb_pst),
-        'Errors Leading To Shot': len(err_lat),
-        'Errors Leading To Goal': len(err_lgl)
-    }
+        return shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict
 
-    other_stats_dict = {
-        'Caught Offside': len(off_caught),
-        'Dispossessed': len(disps),
-        'Possession Lost': len(pos_lost),
-        'Total Touches': len(touches),
-        'Touches at Final Third': len(fth_touches),
-        'Touches at Penalty Box': len(pen_touches),
-        'Yellow Cards': len(ycard),
-        'Red Cards': len(rcard)
-    }
+    if team_player == f"{hteamName} Players":
+        home_pname_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] != 'GK')]
+        hpname = st.selectbox('Select a Player:', home_pname_df.name.unique(), index=None, key='home_player_analysis')
+        if st.session_state.home_player_analysis and hpname:
+            st.header(f'{hpname} Performance Dashboard')
+            generate_player_dashboard(f'{hpname}', hftmb_tid)
 
-    return shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict
+            shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(hpname)
+            col1, col2, col3 = st.columns(3)
 
-if team_player == f"{hteamName} Players":
-    home_pname_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] != 'GK')]
-    hpname = st.selectbox('Select a Player:', home_pname_df.name.unique(), index=None, key='home_player_analysis')
-    if st.session_state.home_player_analysis:
-        st.header(f'{hpname} Performance Dashboard')
-        generate_player_dashboard(f'{hpname}', hftmb_tid)
+            with col1:
+                st.subheader('Shooting Stats')
+                for key, value in shooting_stats_dict.items():
+                    st.text(f"{key}: {value}")
+            with col2:
+                st.subheader('Passing Stats')
+                for key, value in passing_stats_dict.items():
+                    st.write(f"{key}: {value}")
+            with col3:
+                st.subheader('Carry Stats')
+                for key, value in carry_stats_dict.items():
+                    st.write(f"{key}: {value}")
+            st.divider()
+            col4, col5, col6 = st.columns(3)
+            with col4:
+                st.subheader('Pass Receiving Stats')
+                for key, value in pass_receiving_stats_dict.items():
+                    st.write(f"{key}: {value}")
+            with col5:
+                st.subheader('Defensive Stats')
+                for key, value in defensive_stats_dict.items():
+                    st.write(f"{key}: {value}")
+            with col6:
+                st.subheader('Other Stats')
+                for key, value in other_stats_dict.items():
+                    st.write(f"{key}: {value}")
 
-        shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(hpname)
-        col1, col2, col3 = st.columns(3)
+    if team_player == f"{ateamName} Players":
+        away_pname_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] != 'GK')]
+        apname = st.selectbox('Select a Player:', away_pname_df.name.unique(), index=None, key='away_player_analysis')
+        if st.session_state.away_player_analysis and apname:
+            st.header(f'{apname} Performance Dashboard')
+            generate_player_dashboard(f'{apname}', aftmb_tid)
 
-        with col1:
-            st.subheader('Shooting Stats')
-            for key, value in shooting_stats_dict.items():
-                st.text(f"{key}: {value}")
-        with col2:
-            st.subheader('Passing Stats')
-            for key, value in passing_stats_dict.items():
-                st.write(f"{key}: {value}")
-        with col3:
-            st.subheader('Carry Stats')
-            for key, value in carry_stats_dict.items():
-                st.write(f"{key}: {value}")
-        st.divider()
-        col4, col5, col6 = st.columns(3)
-        with col4:
-            st.subheader('Pass Receiving Stats')
-            for key, value in pass_receiving_stats_dict.items():
-                st.write(f"{key}: {value}")
-        with col5:
-            st.subheader('Defensive Stats')
-            for key, value in defensive_stats_dict.items():
-                st.write(f"{key}: {value}")
-        with col6:
-            st.subheader('Other Stats')
-            for key, value in other_stats_dict.items():
-                st.write(f"{key}: {value}")
+            shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(apname)
+            col1, col2, col3 = st.columns(3)
 
-if team_player == f"{ateamName} Players":
-    away_pname_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] != 'GK')]
-    apname = st.selectbox('Select a Player:', away_pname_df.name.unique(), index=None, key='away_player_analysis')
-    if st.session_state.away_player_analysis:
-        st.header(f'{apname} Performance Dashboard')
-        generate_player_dashboard(f'{apname}', aftmb_tid)
-
-        shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(apname)
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.subheader('Shooting Stats')
-            for key, value in shooting_stats_dict.items():
-                st.text(f"{key}: {value}")
-        with col2:
-            st.subheader('Passing Stats')
-            for key, value in passing_stats_dict.items():
-                st.write(f"{key}: {value}")
-        with col3:
-            st.subheader('Carry Stats')
-            for key, value in carry_stats_dict.items():
-                st.write(f"{key}: {value}")
-        st.divider()
-        col4, col5, col6 = st.columns(3)
-        with col4:
-            st.subheader('Pass Receiving Stats')
-            for key, value in pass_receiving_stats_dict.items():
-                st.write(f"{key}: {value}")
-        with col5:
-            st.subheader('Defensive Stats')
-            for key, value in defensive_stats_dict.items():
-                st.write(f"{key}: {value}")
-        with col6:
-            st.subheader('Other Stats')
-            for key, value in other_stats_dict.items():
-                st.write(f"{key}: {value}")
-
-if team_player == f'{hteamName} GK':
-    home_gk_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] == 'GK')]
-    pname = st.selectbox('Select a Goal-Keeper:', home_gk_df.name.unique(), index=None, key='home_gk_analysis')
-    if st.session_state.home_gk_analysis:
-        st.header(f'{pname} Performance Dashboard')
-        generate_gk_dashboard(f'{pname}', hftmb_tid)
-
-if team_player == f'{ateamName} GK':
-    away_gk_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] == 'GK')]
-    pname = st.selectbox('Select a Goal-Keeper:', away_gk_df.name.unique(), index=None, key='away_gk_analysis')
-    if st.session_state.away_gk_analysis:
-        st.header(f'{pname} Performance Dashboard')
-        generate_gk_dashboard(f'{pname}', aftmb_tid)
+            with col1:
+                st.subheader('Shooting Stats')
+                for key, value in shooting_stats_dict.items():
+                    st.text(f"{key}: {value}")
+            with col2:
+                st.subheader('Passing Stats')
+                for key, value in passing_stats_dict.items():
+                    st.write(f"{key}: {value}")
+            with col3:
+                st.subheaderSorry about that, something didn't go as planned. Please try again, and if you're still seeing this message, go ahead and restart the app.
