@@ -3198,34 +3198,32 @@ with tab2:
 
         return int(mins_played), subs_text
 
-    def generate_player_dahsboard(pname, ftmb_tid):
-        fig, axs = plt.subplots(1, 3, figsize=(27, 15), facecolor='#f5f5f5')
+def generate_gk_dahsboard(pname, ftmb_tid):
+    fig, axs = plt.subplots(1, 2, figsize=(16, 15), facecolor='#f5f5f5')
 
-        # Calculate minutes played
-        mins_played, subs_text = playing_time(pname)
+    # Calculate minutes played
+    mins_played, subs_text = playing_time(pname)
 
-        # Generate individual plots
-        offensive_actions(axs[0], pname)
-        defensive_actions(axs[1], pname)
-        pass_receiving_and_touchmap(axs[2], pname)
-        fig.subplots_adjust(wspace=0.025)
+    # Generate individual plots
+    gk_passmap(axs[0], pname)
+    gk_def_acts(axs[1], pname)
+    fig.subplots_adjust(wspace=0.025)
 
-        # Add text and images to the figure
-        fig.text(0.21, 1.02, f'{pname}', fontsize=50, fontweight='bold', ha='left', va='center')
-        if subs_text is None:
-            fig.text(0.21, 0.97, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played}', 
-                     fontsize=30, ha='left', va='center')
-        else:
-        fig.text(0.21, 0.97, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played} ({subs_text})', 
-                     fontsize=30, ha='left', va='center')
-        fig.text(0.87, 0.995, '@adnaaan433', fontsize=20, ha='right', va='center')
+    # Add text and images to the figure
+    fig.text(0.22, 0.98, f'{pname}', fontsize=40, fontweight='bold', ha='left', va='center')
+    if subs_text is None:
+        fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played}', 
+                 fontsize=25, ha='left', va='center')
+    else:
+        fig.text(0.22, 0.94, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played} ({subs_text})', 
+                 fontsize=25, ha='left', va='center')
+    fig.text(0.87, 0.995, '@adnaaan433', fontsize=15, ha='right', va='center')
 
-        himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{ftmb_tid}.png")
-        himage = Image.open(himage)
-        add_image(himage, fig, left=0.095, bottom=0.935, width=0.125, height=0.125)
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{ftmb_tid}.png")
+    himage = Image.open(himage)
+    add_image(himage, fig, left=0.1, bottom=0.91, width=0.1, height=0.1)
 
-        st.pyplot(fig)
-
+    st.pyplot(fig)
     def generate_gk_dahsboard(pname, ftmb_tid):
     fig, axs = plt.subplots(1, 2, figsize=(16, 15), facecolor='#f5f5f5')
 
