@@ -405,7 +405,7 @@ if league and htn and atn and st.session_state.confirmed:
                         ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
                     ax.text(34, -5, reshape_arabic_text(f"الأفعال الدفاعية\nالتماسك العمودي: {v_comp}%"), color=col, fontsize=12, ha='center', va='center')
                     
-                    return df_def_show  # إرجاع بيانات الأفعال الدفاعية
+                return df_def_show  # إرجاع بيانات الأفعال الدفاعية
 
                 # اختيار فترة المباراة باستخدام أداة الراديو
                 dah_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), 
