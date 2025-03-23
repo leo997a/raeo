@@ -697,7 +697,7 @@ with tab1:
         'Progressive Passes', 
         'Progressive Carries', 
         'Shotmap', 
-        'GK Saves', 
+        'احصائيات الحراس', 
         'Match Momentum',
         reshape_arabic_text('Zone14 & Half-Space Passes'), 
         reshape_arabic_text('Final Third Entries'), 
