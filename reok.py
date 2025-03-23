@@ -1195,7 +1195,7 @@ def progressive_carry(ax, team_name, col, phase_tag):
         st.header(reshape_arabic_text('خريطة التسديدات'))
         st.header(f'{an_tp}')
 
-    def plot_ShotsMap(ax, team_name, col, phase_tag):
+    def plot_ShotsMap(ax, team_name, col, phase_tag, violet_color='#800080'):
         if phase_tag == 'Full Time':
             shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal'))]
         elif phase_tag == 'First Half':
