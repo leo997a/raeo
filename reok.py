@@ -3445,12 +3445,12 @@ with tab2:
         return shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict
 
 
-if team_player == f"{hteamName} Players":
+    if team_player == f"{hteamName} Players":
         home_pname_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] != 'GK')]
-        hpname = st.selectbox('Select a Player:', home_pname_df.name.unique(), index=None, key='home_player_analysis')
-        if st.session_state.home_player_analysis and hpname:  # التأكد من أن hpname ليس None
+        hpname = st.selectbox('Select a Player:', home_pname_df.name.unique(), index=None, key='home_team_players')
+        if hpname:  # التحقق مباشرة من hpname
             st.header(f'{hpname} Performance Dashboard')
-            generate_player_dashboard(f'{hpname}', hftmb_tid)  # تصحيح اسم الدالة
+            generate_player_dashboard(f'{hpname}', hftmb_tid)
             
             shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(hpname)
             col1, col2, col3 = st.columns(3)
@@ -3482,12 +3482,12 @@ if team_player == f"{hteamName} Players":
                 for key, value in other_stats_dict.items():
                     st.write(f"{key}: {value}")
 
-elif team_player == f"{ateamName} Players":
+    elif team_player == f"{ateamName} Players":
         away_pname_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] != 'GK')]
-        apname = st.selectbox('Select a Player:', away_pname_df.name.unique(), index=None, key='away_player_analysis')
-if st.session_state.away_player_analysis and apname:  # التأكد من أن apname ليس None
+        apname = st.selectbox('Select a Player:', away_pname_df.name.unique(), index=None, key='away_team_players')
+        if apname:  # التحقق مباشرة من apname
             st.header(f'{apname} Performance Dashboard')
-            generate_player_dashboard(f'{apname}', aftmb_tid)  # تصحيح اسم الدالة
+            generate_player_dashboard(f'{apname}', aftmb_tid)
             
             shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict = player_detailed_data(apname)
             col1, col2, col3 = st.columns(3)
@@ -3519,17 +3519,17 @@ if st.session_state.away_player_analysis and apname:  # التأكد من أن a
                 for key, value in other_stats_dict.items():
                     st.write(f"{key}: {value}")
 
-elif team_player == f'{hteamName} GK':
+    elif team_player == f'{hteamName} GK':
         home_gk_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] == 'GK')]
-        gk_hname = st.selectbox('Select a Goal-Keeper:', home_gk_df.name.unique(), index=None, key='home_player_analysis')
-if st.session_state.home_player_analysis and gk_hname:  # استخدام gk_hname هنا
+        gk_hname = st.selectbox('Select a Goal-Keeper:', home_gk_df.name.unique(), index=None, key='home_team_gk')
+        if gk_hname:  # التحقق مباشرة من gk_hname
             st.header(f'{gk_hname} Performance Dashboard')
             generate_gk_dashboard(f'{gk_hname}', hftmb_tid)
 
-elif team_player == f'{ateamName} GK':
+    elif team_player == f'{ateamName} GK':
         away_gk_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] == 'GK')]
-        gk_aname = st.selectbox('Select a Goal-Keeper:', away_gk_df.name.unique(), index=None, key='home_player_analysis')
-if st.session_state.home_player_analysis and gk_aname:  # استخدام gk_aname هنا
+        gk_aname = st.selectbox('Select a Goal-Keeper:', away_gk_df.name.unique(), index=None, key='away_team_gk')
+        if gk_aname:  # التحقق مباشرة من gk_aname
             st.header(f'{gk_aname} Performance Dashboard')
             generate_gk_dashboard(f'{gk_aname}', aftmb_tid)
             
