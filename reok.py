@@ -825,13 +825,13 @@ def def_acts_hm(ax, team_name, col, phase_tag):
 
     if phase_tag == 'Full Time':
         ax.text(34, 112, 'الوقت الكامل: 0-90 دقيقة', color=col, fontsize=15, ha='center', va='center')
-        ax.text(34, 108, f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}', color=col, fontsize=12, ha='center', va='center')
+        ax.text(34, 108, f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}', color=col, fontsize=15, ha='center', va='center')
     elif phase_tag == 'First Half':
         ax.text(34, 112, 'الشوط الأول: 0-45 دقيقة', color=col, fontsize=15, ha='center', va='center')
-        ax.text(34, 108, f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}', color=col, fontsize=12, ha='center', va='center')
+        ax.text(34, 108, f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}', color=col, fontsize=16, ha='center', va='center')
     elif phase_tag == 'Second Half':
         ax.text(34, 112, 'الشوط الثاني: 45-90 دقيقة', color=col, fontsize=15, ha='center', va='center')
-        ax.text(34, 108, f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}', color=col, fontsize=12, ha='center', va='center')
+        ax.text(34, 108, f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}', color=col, fontsize=16, ha='center', va='center')
 
     ax.text(34, -5, f"الأفعال الدفاعية\nالتماسك العمودي: {v_comp}%", color=violet, fontsize=12, ha='center', va='center')
     if team_name == hteamName:
@@ -860,7 +860,7 @@ def def_acts_hm(ax, team_name, col, phase_tag):
 
         fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
         fig.text(0.5, 1.01, 'الخريطة الحرارية للأفعال الدفاعية', fontsize=20, ha='center', va='center')
-        fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
+        fig.text(0.5, 0.97, '@REO_SHOW', fontsize=15, ha='center', va='center')
 
         fig.text(0.5, 0.05, '*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان', fontsize=10, fontstyle='italic', ha='center', va='center')
         fig.text(0.5, 0.03, '*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية للاعبي الميدان', fontsize=10, fontstyle='italic', ha='center', va='center')
