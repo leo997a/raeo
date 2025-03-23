@@ -157,8 +157,8 @@ if season:
         except:
             st.session_state['confirmed'] = False
             st.sidebar.write('Match not found')
-    if league and htn and atn and st.session_state.confirmed:
-    pass
+        if league and htn and atn and st.session_state.confirmed:
+        pass
 
 @st.cache_data
 def get_event_data(season, league, stage, htn, atn):
