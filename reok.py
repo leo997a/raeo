@@ -1748,303 +1748,301 @@ def plot_match_momentm(ax, phase_tag):
             
                 st.header('Cumulative xT')
             
-def plot_xT_momentum(ax, phase_tag):
-                hxt_df = df[(df['teamName']==hteamName) & (df['xT']>0)]
-                axt_df = df[(df['teamName']==ateamName) & (df['xT']>0)]
-            
-                hcm_xt = hxt_df.groupby(['period', 'minute'])['xT'].sum().reset_index()
-                hcm_xt['cumulative_xT'] = hcm_xt['xT'].cumsum()
-                htop_xt = hcm_xt['cumulative_xT'].max()
-                hcm_xt = hcm_xt[hcm_xt['period']==phase_tag]
-                htop_mint = hcm_xt['minute'].max()
-                h_max_cum = hcm_xt.cumulative_xT.iloc[-1]
-            
-                acm_xt = axt_df.groupby(['period', 'minute'])['xT'].sum().reset_index()
-                acm_xt['cumulative_xT'] = acm_xt['xT'].cumsum()
-                atop_xt = acm_xt['cumulative_xT'].max()
-                acm_xt = acm_xt[acm_xt['period']==phase_tag]
-                atop_mint = acm_xt['minute'].max()
-                a_max_cum = acm_xt.cumulative_xT.iloc[-1]
-            
-                if htop_mint > atop_mint:
-                    add_last = {'period': phase_tag, 'minute': htop_mint, 'xT':0, 'cumulative_xT': a_max_cum}
-                    acm_xt = pd.concat([acm_xt, pd.DataFrame([add_last])], ignore_index=True)
-                if atop_mint > htop_mint:
-                    add_last = {'period': phase_tag, 'minute': atop_mint, 'xT':0, 'cumulative_xT': h_max_cum}
-                    hcm_xt = pd.concat([hcm_xt, pd.DataFrame([add_last])], ignore_index=True)
-            
-                
-                ax.step(hcm_xt['minute'], hcm_xt['cumulative_xT'], where='pre', color=hcol)
-                ax.fill_between(hcm_xt['minute'], hcm_xt['cumulative_xT'], step='pre', color=hcol, alpha=0.25)
-            
-                
-                ax.step(acm_xt['minute'], acm_xt['cumulative_xT'], where='pre', color=acol)
-                ax.fill_between(acm_xt['minute'], acm_xt['cumulative_xT'], step='pre', color=acol, alpha=0.25)
-                
-                top_xT_list = [htop_xt, atop_xt]
-                top_mn_list = [htop_mint, atop_mint]
-                ax.set_ylim(0, max(top_xT_list))
-                
-                if phase_tag == 'FirstHalf':
-                    ax.set_xlim(-1, max(top_mn_list)+1)
-                    ax.set_title('First Half', fontsize=20)
-                    ax.set_ylabel('Cumulative Expected Threat (CxT)', color=line_color, fontsize=20)
-                else:
-                    ax.set_xlim(44, max(top_mn_list)+1)
-                    ax.set_title('Second Half', fontsize=20)
-                    ax.text(htop_mint+0.5, h_max_cum, f"{hteamName}\nCxT: {h_max_cum:.2f}", fontsize=15, color=hcol)
-                    ax.text(atop_mint+0.5, a_max_cum, f"{ateamName}\nCxT: {a_max_cum:.2f}", fontsize=15, color=acol)
-            
-                 # ax.set_xticks(False)
-                ax.set_facecolor('#ededed')
-                # Hide spines
-                ax.spines['top'].set_visible(False)
-                ax.spines['right'].set_visible(False)
-                ax.spines['left'].set_visible(False)
-                ax.spines['bottom'].set_visible(False)
-                # # Hide ticks
-                ax.tick_params(axis='both', which='both', length=0)
-                ax.tick_params(axis='x', colors=line_color)
-                ax.tick_params(axis='y', colors='None')
-                # Add labels and title
-                ax.set_xlabel('Minute', color=line_color, fontsize=20)
-                ax.grid(True, ls='dotted')
-            
-                return hcm_xt, acm_xt
-            
-            fig,axs=plt.subplots(1,2, figsize=(20,10), facecolor=bg_color)
-            h_fh, a_fh = plot_xT_momentum(axs[0], 'FirstHalf')
-            h_sh, a_sh = plot_xT_momentum(axs[1], 'SecondHalf')
-            fig.subplots_adjust(wspace=0.025)
-            
-            fig_text(0.5, 1.1, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=40, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.04, 'Cumulative Expected Threat (CxT)', fontsize=30, ha='center', va='center')
-            fig.text(0.5, 0.98, '@adnaaan433', fontsize=15, ha='center', va='center')
-            
-            fig.text(0.5, -0.01, '*Cumulative xT is the sum of the consecutive xT from Open-Play Pass and Carries', fontsize=15, fontstyle='italic', ha='center', va='center')
-            
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=1.02, width=0.125, height=0.125)
-            
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=1.02, width=0.125, height=0.125)
-            
-            st.pyplot(fig)
-            
-        if an_tp == 'Zone14 & Half-Space Passes':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header('Passes Into Zone14 & Half-Spaces')
-            
-            def plot_zone14i(ax, team_name, col, phase_tag):
-                if phase_tag == 'Full Time':
-                    pass_df = df[(df['teamName']==team_name) & (df['type']=='Pass') & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner'))]
-                elif phase_tag == 'First Half':
-                    pass_df = df[(df['teamName']==team_name) & (df['type']=='Pass') & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period']=='FirstHalf')]
-                elif phase_tag == 'Second Half':
-                    pass_df = df[(df['teamName']==team_name) & (df['type']=='Pass') & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period']=='SecondHalf')]
-            
-                pitch = VerticalPitch(pitch_type='uefa', pitch_color=bg_color, line_color=line_color, linewidth=2, corner_arcs=True)
-                pitch.draw(ax=ax)
-                
-                z14_x = [68/3, 68/3, 136/3, 136/3]
-                z14_y = [70, 88, 88, 70]
-                ax.fill(z14_x, z14_y, color='orange', edgecolor='None', alpha=0.3)
-                lhs_x = [136/3, 136/3, 272/5, 272/5]
-                lhs_y = [70, 105, 105, 70]
-                ax.fill(lhs_x, lhs_y, color=col, edgecolor='None', alpha=0.3)
-                rhs__x = [68/5, 68/5, 68/3, 68/3]
-                rhs__y = [70, 105, 105, 70]
-                ax.fill(rhs__x, rhs__y, color=col, edgecolor='None', alpha=0.3)
-            
-                z14_pass = pass_df[(pass_df['endX']>=70) & (pass_df['endX']<=88) & (pass_df['endY']>=68/3) & (pass_df['endY']<=136/3)]
-                pitch.lines(z14_pass.x, z14_pass.y, z14_pass.endX, z14_pass.endY, comet=True, lw=4, color='orange', zorder=4, ax=ax)
-                pitch.scatter(z14_pass.endX, z14_pass.endY, s=75, color=bg_color, ec='orange', lw=2, zorder=5, ax=ax)
-                z14_kp = z14_pass[z14_pass['qualifiers'].str.contains('KeyPass')]
-                z14_as = z14_pass[z14_pass['qualifiers'].str.contains('GoalAssist')]
-            
-                lhs_pass = pass_df[(pass_df['endX']>=70) & (pass_df['endY']>=136/3) & (pass_df['endY']<=272/5)]
-                pitch.lines(lhs_pass.x, lhs_pass.y, lhs_pass.endX, lhs_pass.endY, comet=True, lw=4, color=col, zorder=4, ax=ax)
-                pitch.scatter(lhs_pass.endX, lhs_pass.endY, s=75, color=bg_color, ec=col, lw=2, zorder=5, ax=ax)
-                lhs_kp = lhs_pass[lhs_pass['qualifiers'].str.contains('KeyPass')]
-                lhs_as = lhs_pass[lhs_pass['qualifiers'].str.contains('GoalAssist')]
-            
-                rhs_pass = pass_df[(pass_df['endX']>=70) & (pass_df['endY']>=68/5) & (pass_df['endY']<=68/3)]
-                pitch.lines(rhs_pass.x, rhs_pass.y, rhs_pass.endX, rhs_pass.endY, comet=True, lw=4, color=col, zorder=4, ax=ax)
-                pitch.scatter(rhs_pass.endX, rhs_pass.endY, s=75, color=bg_color, ec=col, lw=2, zorder=5, ax=ax)
-                rhs_kp = rhs_pass[rhs_pass['qualifiers'].str.contains('KeyPass')]
-                rhs_as = rhs_pass[rhs_pass['qualifiers'].str.contains('GoalAssist')]
-            
-                pitch.scatter(17, 34, s=12000, color='orange', ec=line_color, lw=2, marker='h', zorder=7, ax=ax)
-                pitch.scatter(35, 68/3, s=12000, color=col, ec=line_color, lw=2, marker='h', zorder=7, alpha=0.8, ax=ax)
-                pitch.scatter(35, 136/3, s=12000, color=col, ec=line_color, lw=2, marker='h', zorder=7, alpha=0.8, ax=ax)
-                
-                ax.text(34, 21, 'Zone14', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
-                ax.text(34, 16, f' \nTotal:{len(z14_pass)}\nKeyPass:{len(z14_kp)}\nAssist:{len(z14_as)}', size=13, color='k', ha='center', va='center', zorder=10)
-                
-                ax.text(136/3, 39, 'Left H.S.', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
-                ax.text(136/3, 34, f' \nTotal:{len(lhs_pass)}\nKeyPass:{len(lhs_kp)}\nAssist:{len(lhs_as)}', size=13, color='k', ha='center', va='center', zorder=10)
-                
-                ax.text(68/3, 39, 'Right H.S.', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
-                ax.text(68/3, 34, f' \nTotal:{len(rhs_pass)}\nKeyPass:{len(rhs_kp)}\nAssist:{len(rhs_as)}', size=13, color='k', ha='center', va='center', zorder=10)
-                
-                if phase_tag == 'Full Time':
-                    ax.text(34, 110, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'First Half':
-                    ax.text(34, 110, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'Second Half':
-                    ax.text(34, 110, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-            
-                z14_pass['zone'] = 'Zone 14'
-                lhs_pass['zone'] = 'Left Half Space'
-                rhs_pass['zone'] = 'Right Half Space'
-                total_df = pd.concat([z14_pass, lhs_pass, rhs_pass], ignore_index=True)
-                total_df = total_df[['name', 'zone']]
-                stats = total_df.groupby(['name', 'zone']).size().unstack(fill_value=0)
-                stats['Total'] = stats.sum(axis=1)
-                stats = stats.sort_values(by='Total', ascending=False)
-                return stats
-            
-            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-            zhsi_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='Into')
-            if zhsi_time_phase=='Full Time':
-                home_z14hsi_stats = plot_zone14i(axs[0], hteamName, hcol, 'Full Time')
-                away_z14hsi_stats = plot_zone14i(axs[1], ateamName, acol, 'Full Time')
-            if zhsi_time_phase=='First Half':
-                home_z14hsi_stats = plot_zone14i(axs[0], hteamName, hcol, 'First Half')
-                away_z14hsi_stats = plot_zone14i(axs[1], ateamName, acol, 'First Half')
-            if zhsi_time_phase=='Second Half':
-                home_z14hsi_stats = plot_zone14i(axs[0], hteamName, hcol, 'Second Half')
-                away_z14hsi_stats = plot_zone14i(axs[1], ateamName, acol, 'Second Half')
-            
-            fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, 'Passes into Zone14 and Half-Spaces', fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center')
-            
-            fig.text(0.5, 0.1, '*Open-Play Successful Passes which ended inside Zone14 and Half-Spaces area', fontsize=10, fontstyle='italic', ha='center', va='center')
-            
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-            
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-            
-            st.pyplot(fig)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Passers into Zone14 & Half-Spaces:')
-                st.dataframe(home_z14hsi_stats)
-            with col2:
-                st.write(f'{ateamName} Passers into Zone14 & Half-Spaces:')
-                st.dataframe(away_z14hsi_stats)
-                
-            st.header('Passes From Zone14 & Half-Spaces')
-            
-            def plot_zone14f(ax, team_name, col, phase_tag):
-                if phase_tag == 'Full Time':
-                    pass_df = df[(df['teamName']==team_name) & (df['type']=='Pass') & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner'))]
-                elif phase_tag == 'First Half':
-                    pass_df = df[(df['teamName']==team_name) & (df['type']=='Pass') & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period']=='FirstHalf')]
-                elif phase_tag == 'Second Half':
-                    pass_df = df[(df['teamName']==team_name) & (df['type']=='Pass') & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period']=='SecondHalf')]
-            
-                pitch = VerticalPitch(pitch_type='uefa', pitch_color=bg_color, line_color=line_color, linewidth=2, corner_arcs=True)
-                pitch.draw(ax=ax)
-                
-                z14_x = [68/3, 68/3, 136/3, 136/3]
-                z14_y = [70, 88, 88, 70]
-                ax.fill(z14_x, z14_y, color='orange', edgecolor='None', alpha=0.3)
-                lhs_x = [136/3, 136/3, 272/5, 272/5]
-                lhs_y = [70, 105, 105, 70]
-                ax.fill(lhs_x, lhs_y, color=col, edgecolor='None', alpha=0.3)
-                rhs__x = [68/5, 68/5, 68/3, 68/3]
-                rhs__y = [70, 105, 105, 70]
-                ax.fill(rhs__x, rhs__y, color=col, edgecolor='None', alpha=0.3)
-            
-                z14_pass = pass_df[(pass_df['x']>=70) & (pass_df['x']<=88) & (pass_df['y']>=68/3) & (pass_df['y']<=136/3)]
-                pitch.lines(z14_pass.x, z14_pass.y, z14_pass.endX, z14_pass.endY, comet=True, lw=4, color='orange', zorder=4, ax=ax)
-                pitch.scatter(z14_pass.endX, z14_pass.endY, s=75, color=bg_color, ec='orange', lw=2, zorder=5, ax=ax)
-                z14_kp = z14_pass[z14_pass['qualifiers'].str.contains('KeyPass')]
-                z14_as = z14_pass[z14_pass['qualifiers'].str.contains('GoalAssist')]
-            
-                lhs_pass = pass_df[(pass_df['x']>=70) & (pass_df['y']>=136/3) & (pass_df['y']<=272/5)]
-                pitch.lines(lhs_pass.x, lhs_pass.y, lhs_pass.endX, lhs_pass.endY, comet=True, lw=4, color=col, zorder=4, ax=ax)
-                pitch.scatter(lhs_pass.endX, lhs_pass.endY, s=75, color=bg_color, ec=col, lw=2, zorder=5, ax=ax)
-                lhs_kp = lhs_pass[lhs_pass['qualifiers'].str.contains('KeyPass')]
-                lhs_as = lhs_pass[lhs_pass['qualifiers'].str.contains('GoalAssist')]
-            
-                rhs_pass = pass_df[(pass_df['x']>=70) & (pass_df['y']>=68/5) & (pass_df['y']<=68/3)]
-                pitch.lines(rhs_pass.x, rhs_pass.y, rhs_pass.endX, rhs_pass.endY, comet=True, lw=4, color=col, zorder=4, ax=ax)
-                pitch.scatter(rhs_pass.endX, rhs_pass.endY, s=75, color=bg_color, ec=col, lw=2, zorder=5, ax=ax)
-                rhs_kp = rhs_pass[rhs_pass['qualifiers'].str.contains('KeyPass')]
-                rhs_as = rhs_pass[rhs_pass['qualifiers'].str.contains('GoalAssist')]
-            
-                pitch.scatter(17, 34, s=12000, color='orange', ec=line_color, lw=2, marker='h', zorder=7, ax=ax)
-                pitch.scatter(35, 68/3, s=12000, color=col, ec=line_color, lw=2, marker='h', zorder=7, alpha=0.8, ax=ax)
-                pitch.scatter(35, 136/3, s=12000, color=col, ec=line_color, lw=2, marker='h', zorder=7, alpha=0.8, ax=ax)
-                
-                ax.text(34, 21, 'Zone14', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
-                ax.text(34, 16, f' \nTotal:{len(z14_pass)}\nKeyPass:{len(z14_kp)}\nAssist:{len(z14_as)}', size=13, color='k', ha='center', va='center', zorder=10)
-                
-                ax.text(136/3, 39, 'Left H.S.', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
-                ax.text(136/3, 34, f' \nTotal:{len(lhs_pass)}\nKeyPass:{len(lhs_kp)}\nAssist:{len(lhs_as)}', size=13, color='k', ha='center', va='center', zorder=10)
-                
-                ax.text(68/3, 39, 'Right H.S.', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
-                ax.text(68/3, 34, f' \nTotal:{len(rhs_pass)}\nKeyPass:{len(rhs_kp)}\nAssist:{len(rhs_as)}', size=13, color='k', ha='center', va='center', zorder=10)
-                
-                if phase_tag == 'Full Time':
-                    ax.text(34, 110, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'First Half':
-                    ax.text(34, 110, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'Second Half':
-                    ax.text(34, 110, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                
-                z14_pass['zone'] = 'Zone 14'
-                lhs_pass['zone'] = 'Left Half Space'
-                rhs_pass['zone'] = 'Right Half Space'
-                total_df = pd.concat([z14_pass, lhs_pass, rhs_pass], ignore_index=True)
-                total_df = total_df[['name', 'zone']]
-                stats = total_df.groupby(['name', 'zone']).size().unstack(fill_value=0)
-                stats['Total'] = stats.sum(axis=1)
-                stats = stats.sort_values(by='Total', ascending=False)
-                return stats
-            
-            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-            zhsf_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='From')
-            if zhsf_time_phase=='Full Time':
-                home_z14hsf_stats = plot_zone14f(axs[0], hteamName, hcol, 'Full Time')
-                away_z14hsf_stats = plot_zone14f(axs[1], ateamName, acol, 'Full Time')
-            if zhsf_time_phase=='First Half':
-                home_z14hsf_stats = plot_zone14f(axs[0], hteamName, hcol, 'First Half')
-                away_z14hsf_stats = plot_zone14f(axs[1], ateamName, acol, 'First Half')
-            if zhsf_time_phase=='Second Half':
-                home_z14hsf_stats = plot_zone14f(axs[0], hteamName, hcol, 'Second Half')
-                away_z14hsf_stats = plot_zone14f(axs[1], ateamName, acol, 'Second Half')
-            
-            fig_text(0.5, 1.03, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 0.99, 'Passes from Zone14 and Half-Spaces', fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.95, '@adnaaan433', fontsize=10, ha='center', va='center')
-            
-            fig.text(0.5, 0.1, '*Open-Play Successful Passes which initiated inside Zone14 and Half-Spaces area', fontsize=10, fontstyle='italic', ha='center', va='center')
-            
-            st.pyplot(fig)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Passers from Zone14 & Half-Spaces:')
-                st.dataframe(home_z14hsf_stats)
-            with col2:
-                st.write(f'{ateamName} Passers from Zone14 & Half-Spaces:')
-                st.dataframe(away_z14hsf_stats)
-            
-        if an_tp == 'Final Third Entries':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
-            
+if an_tp == 'xT Momentum':
+    st.header('xT Momentum')
+
+    def plot_xT_momentum(ax, phase_tag):
+        hxt_df = df[(df['teamName'] == hteamName) & (df['xT'] > 0)]
+        axt_df = df[(df['teamName'] == ateamName) & (df['xT'] > 0)]
+        
+        hcm_xt = hxt_df.groupby(['period', 'minute'])['xT'].sum().reset_index()
+        hcm_xt['cumulative_xT'] = hcm_xt['xT'].cumsum()
+        htop_xt = hcm_xt['cumulative_xT'].max()
+        hcm_xt = hcm_xt[hcm_xt['period'] == phase_tag]
+        htop_mint = hcm_xt['minute'].max()
+        h_max_cum = hcm_xt.cumulative_xT.iloc[-1]
+        
+        acm_xt = axt_df.groupby(['period', 'minute'])['xT'].sum().reset_index()
+        acm_xt['cumulative_xT'] = acm_xt['xT'].cumsum()
+        atop_xt = acm_xt['cumulative_xT'].max()
+        acm_xt = acm_xt[acm_xt['period'] == phase_tag]
+        atop_mint = acm_xt['minute'].max()
+        a_max_cum = acm_xt.cumulative_xT.iloc[-1]
+        
+        if htop_mint > atop_mint:
+            add_last = {'period': phase_tag, 'minute': htop_mint, 'xT': 0, 'cumulative_xT': a_max_cum}
+            acm_xt = pd.concat([acm_xt, pd.DataFrame([add_last])], ignore_index=True)
+        if atop_mint > htop_mint:
+            add_last = {'period': phase_tag, 'minute': atop_mint, 'xT': 0, 'cumulative_xT': h_max_cum}
+            hcm_xt = pd.concat([hcm_xt, pd.DataFrame([add_last])], ignore_index=True)
+        
+        ax.step(hcm_xt['minute'], hcm_xt['cumulative_xT'], where='pre', color=hcol)
+        ax.fill_between(hcm_xt['minute'], hcm_xt['cumulative_xT'], step='pre', color=hcol, alpha=0.25)
+        
+        ax.step(acm_xt['minute'], acm_xt['cumulative_xT'], where='pre', color=acol)
+        ax.fill_between(acm_xt['minute'], acm_xt['cumulative_xT'], step='pre', color=acol, alpha=0.25)
+        
+        top_xT_list = [htop_xt, atop_xt]
+        top_mn_list = [htop_mint, atop_mint]
+        ax.set_ylim(0, max(top_xT_list))
+        
+        if phase_tag == 'FirstHalf':
+            ax.set_xlim(-1, max(top_mn_list) + 1)
+            ax.set_title('First Half', fontsize=20)
+            ax.set_ylabel('Cumulative Expected Threat (CxT)', color=line_color, fontsize=20)
+        else:
+            ax.set_xlim(44, max(top_mn_list) + 1)
+            ax.set_title('Second Half', fontsize=20)
+            ax.text(htop_mint + 0.5, h_max_cum, f"{hteamName}\nCxT: {h_max_cum:.2f}", fontsize=15, color=hcol)
+            ax.text(atop_mint + 0.5, a_max_cum, f"{ateamName}\nCxT: {a_max_cum:.2f}", fontsize=15, color=acol)
+        
+        ax.set_facecolor('#ededed')
+        # Hide spines
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        # Hide ticks
+        ax.tick_params(axis='both', which='both', length=0)
+        ax.tick_params(axis='x', colors=line_color)
+        ax.tick_params(axis='y', colors='None')
+        # Add labels and title
+        ax.set_xlabel('Minute', color=line_color, fontsize=20)
+        ax.grid(True, ls='dotted')
+        
+        return hcm_xt, acm_xt
+
+    # إعداد الرسم
+    fig, axs = plt.subplots(1, 2, figsize=(20, 10), facecolor=bg_color)
+    h_fh, a_fh = plot_xT_momentum(axs[0], 'FirstHalf')
+    h_sh, a_sh = plot_xT_momentum(axs[1], 'SecondHalf')
+    fig.subplots_adjust(wspace=0.025)
+    
+    fig_text(0.5, 1.1, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=40, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.04, 'Cumulative Expected Threat (CxT)', fontsize=30, ha='center', va='center')
+    fig.text(0.5, 0.98, '@adnaaan433', fontsize=15, ha='center', va='center')
+    
+    fig.text(0.5, -0.01, '*Cumulative xT is the sum of the consecutive xT from Open-Play Pass and Carries', fontsize=15, fontstyle='italic', ha='center', va='center')
+    
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.085, bottom=1.02, width=0.125, height=0.125)
+    
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.815, bottom=1.02, width=0.125, height=0.125)
+    
+    st.pyplot(fig)
+
+elif an_tp == 'Zone14 & Half-Space Passes':
+    st.header('Passes Into Zone14 & Half-Spaces')
+
+    def plot_zone14i(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            pass_df = df[(df['teamName'] == team_name) & (df['type'] == 'Pass') & (df['outcomeType'] == 'Successful') & (~df['qualifiers'].str.contains('Freekick|Corner'))]
+        elif phase_tag == 'First Half':
+            pass_df = df[(df['teamName'] == team_name) & (df['type'] == 'Pass') & (df['outcomeType'] == 'Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period'] == 'FirstHalf')]
+        elif phase_tag == 'Second Half':
+            pass_df = df[(df['teamName'] == team_name) & (df['type'] == 'Pass') & (df['outcomeType'] == 'Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period'] == 'SecondHalf')]
+        
+        pitch = VerticalPitch(pitch_type='uefa', pitch_color=bg_color, line_color=line_color, linewidth=2, corner_arcs=True)
+        pitch.draw(ax=ax)
+        
+        z14_x = [68/3, 68/3, 136/3, 136/3]
+        z14_y = [70, 88, 88, 70]
+        ax.fill(z14_x, z14_y, color='orange', edgecolor='None', alpha=0.3)
+        lhs_x = [136/3, 136/3, 272/5, 272/5]
+        lhs_y = [70, 105, 105, 70]
+        ax.fill(lhs_x, lhs_y, color=col, edgecolor='None', alpha=0.3)
+        rhs__x = [68/5, 68/5, 68/3, 68/3]
+        rhs__y = [70, 105, 105, 70]
+        ax.fill(rhs__x, rhs__y, color=col, edgecolor='None', alpha=0.3)
+        
+        z14_pass = pass_df[(pass_df['endX'] >= 70) & (pass_df['endX'] <= 88) & (pass_df['endY'] >= 68/3) & (pass_df['endY'] <= 136/3)]
+        pitch.lines(z14_pass.x, z14_pass.y, z14_pass.endX, z14_pass.endY, comet=True, lw=4, color='orange', zorder=4, ax=ax)
+        pitch.scatter(z14_pass.endX, z14_pass.endY, s=75, color=bg_color, ec='orange', lw=2, zorder=5, ax=ax)
+        z14_kp = z14_pass[z14_pass['qualifiers'].str.contains('KeyPass')]
+        z14_as = z14_pass[z14_pass['qualifiers'].str.contains('GoalAssist')]
+        
+        lhs_pass = pass_df[(pass_df['endX'] >= 70) & (pass_df['endY'] >= 136/3) & (pass_df['endY'] <= 272/5)]
+        pitch.lines(lhs_pass.x, lhs_pass.y, lhs_pass.endX, lhs_pass.endY, comet=True, lw=4, color=col, zorder=4, ax=ax)
+        pitch.scatter(lhs_pass.endX, lhs_pass.endY, s=75, color=bg_color, ec=col, lw=2, zorder=5, ax=ax)
+        lhs_kp = lhs_pass[lhs_pass['qualifiers'].str.contains('KeyPass')]
+        lhs_as = lhs_pass[lhs_pass['qualifiers'].str.contains('GoalAssist')]
+        
+        rhs_pass = pass_df[(pass_df['endX'] >= 70) & (pass_df['endY'] >= 68/5) & (pass_df['endY'] <= 68/3)]
+        pitch.lines(rhs_pass.x, rhs_pass.y, rhs_pass.endX, rhs_pass.endY, comet=True, lw=4, color=col, zorder=4, ax=ax)
+        pitch.scatter(rhs_pass.endX, rhs_pass.endY, s=75, color=bg_color, ec=col, lw=2, zorder=5, ax=ax)
+        rhs_kp = rhs_pass[rhs_pass['qualifiers'].str.contains('KeyPass')]
+        rhs_as = rhs_pass[rhs_pass['qualifiers'].str.contains('GoalAssist')]
+        
+        pitch.scatter(17, 34, s=12000, color='orange', ec=line_color, lw=2, marker='h', zorder=7, ax=ax)
+        pitch.scatter(35, 68/3, s=12000, color=col, ec=line_color, lw=2, marker='h', zorder=7, alpha=0.8, ax=ax)
+        pitch.scatter(35, 136/3, s=12000, color=col, ec=line_color, lw=2, marker='h', zorder=7, alpha=0.8, ax=ax)
+        
+        ax.text(34, 21, 'Zone14', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
+        ax.text(34, 16, f' \nTotal:{len(z14_pass)}\nKeyPass:{len(z14_kp)}\nAssist:{len(z14_as)}', size=13, color='k', ha='center', va='center', zorder=10)
+        
+        ax.text(136/3, 39, 'Left H.S.', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
+        ax.text(136/3, 34, f' \nTotal:{len(lhs_pass)}\nKeyPass:{len(lhs_kp)}\nAssist:{len(lhs_as)}', size=13, color='k', ha='center', va='center', zorder=10)
+        
+        ax.text(68/3, 39, 'Right H.S.', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
+        ax.text(68/3, 34, f' \nTotal:{len(rhs_pass)}\nKeyPass:{len(rhs_kp)}\nAssist:{len(rhs_as)}', size=13, color='k', ha='center', va='center', zorder=10)
+        
+        if phase_tag == 'Full Time':
+            ax.text(34, 110, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 110, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 110, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
+        
+        z14_pass['zone'] = 'Zone 14'
+        lhs_pass['zone'] = 'Left Half Space'
+        rhs_pass['zone'] = 'Right Half Space'
+        total_df = pd.concat([z14_pass, lhs_pass, rhs_pass], ignore_index=True)
+        total_df = total_df[['name', 'zone']]
+        stats = total_df.groupby(['name', 'zone']).size().unstack(fill_value=0)
+        stats['Total'] = stats.sum(axis=1)
+        stats = stats.sort_values(by='Total', ascending=False)
+        return stats
+
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    zhsi_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='Into')
+    if zhsi_time_phase == 'Full Time':
+        home_z14hsi_stats = plot_zone14i(axs[0], hteamName, hcol, 'Full Time')
+        away_z14hsi_stats = plot_zone14i(axs[1], ateamName, acol, 'Full Time')
+    if zhsi_time_phase == 'First Half':
+        home_z14hsi_stats = plot_zone14i(axs[0], hteamName, hcol, 'First Half')
+        away_z14hsi_stats = plot_zone14i(axs[1], ateamName, acol, 'First Half')
+    if zhsi_time_phase == 'Second Half':
+        home_z14hsi_stats = plot_zone14i(axs[0], hteamName, hcol, 'Second Half')
+        away_z14hsi_stats = plot_zone14i(axs[1], ateamName, acol, 'Second Half')
+    
+    fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, 'Passes into Zone14 and Half-Spaces', fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center')
+    
+    fig.text(0.5, 0.1, '*Open-Play Successful Passes which ended inside Zone14 and Half-Spaces area', fontsize=10, fontstyle='italic', ha='center', va='center')
+    
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+    
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+    
+    st.pyplot(fig)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f'{hteamName} Passers into Zone14 & Half-Spaces:')
+        st.dataframe(home_z14hsi_stats)
+    with col2:
+        st.write(f'{ateamName} Passers into Zone14 & Half-Spaces:')
+        st.dataframe(away_z14hsi_stats)
+    
+    st.header('Passes From Zone14 & Half-Spaces')
+    
+    def plot_zone14f(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            pass_df = df[(df['teamName'] == team_name) & (df['type'] == 'Pass') & (df['outcomeType'] == 'Successful') & (~df['qualifiers'].str.contains('Freekick|Corner'))]
+        elif phase_tag == 'First Half':
+            pass_df = df[(df['teamName'] == team_name) & (df['type'] == 'Pass') & (df['outcomeType'] == 'Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period'] == 'FirstHalf')]
+        elif phase_tag == 'Second Half':
+            pass_df = df[(df['teamName'] == team_name) & (df['type'] == 'Pass') & (df['outcomeType'] == 'Successful') & (~df['qualifiers'].str.contains('Freekick|Corner')) & (df['period'] == 'SecondHalf')]
+        
+        pitch = VerticalPitch(pitch_type='uefa', pitch_color=bg_color, line_color=line_color, linewidth=2, corner_arcs=True)
+        pitch.draw(ax=ax)
+        
+        z14_x = [68/3, 68/3, 136/3, 136/3]
+        z14_y = [70, 88, 88, 70]
+        ax.fill(z14_x, z14_y, color='orange', edgecolor='None', alpha=0.3)
+        lhs_x = [136/3, 136/3, 272/5, 272/5]
+        lhs_y = [70, 105, 105, 70]
+        ax.fill(lhs_x, lhs_y, color=col, edgecolor='None', alpha=0.3)
+        rhs__x = [68/5, 68/5, 68/3, 68/3]
+        rhs__y = [70, 105, 105, 70]
+        ax.fill(rhs__x, rhs__y, color=col, edgecolor='None', alpha=0.3)
+        
+        z14_pass = pass_df[(pass_df['x'] >= 70) & (pass_df['x'] <= 88) & (pass_df['y'] >= 68/3) & (pass_df['y'] <= 136/3)]
+        pitch.lines(z14_pass.x, z14_pass.y, z14_pass.endX, z14_pass.endY, comet=True, lw=4, color='orange', zorder=4, ax=ax)
+        pitch.scatter(z14_pass.endX, z14_pass.endY, s=75, color=bg_color, ec='orange', lw=2, zorder=5, ax=ax)
+        z14_kp = z14_pass[z14_pass['qualifiers'].str.contains('KeyPass')]
+        z14_as = z14_pass[z14_pass['qualifiers'].str.contains('GoalAssist')]
+        
+        lhs_pass = pass_df[(pass_df['x'] >= 70) & (pass_df['y'] >= 136/3) & (pass_df['y'] <= 272/5)]
+        pitch.lines(lhs_pass.x, lhs_pass.y, lhs_pass.endX, lhs_pass.endY, comet=True, lw=4, color=col, zorder=4, ax=ax)
+        pitch.scatter(lhs_pass.endX, lhs_pass.endY, s=75, color=bg_color, ec=col, lw=2, zorder=5, ax=ax)
+        lhs_kp = lhs_pass[lhs_pass['qualifiers'].str.contains('KeyPass')]
+        lhs_as = lhs_pass[lhs_pass['qualifiers'].str.contains('GoalAssist')]
+        
+        rhs_pass = pass_df[(pass_df['x'] >= 70) & (pass_df['y'] >= 68/5) & (pass_df['y'] <= 68/3)]
+        pitch.lines(rhs_pass.x, rhs_pass.y, rhs_pass.endX, rhs_pass.endY, comet=True, lw=4, color=col, zorder=4, ax=ax)
+        pitch.scatter(rhs_pass.endX, rhs_pass.endY, s=75, color=bg_color, ec=col, lw=2, zorder=5, ax=ax)
+        rhs_kp = rhs_pass[rhs_pass['qualifiers'].str.contains('KeyPass')]
+        rhs_as = rhs_pass[rhs_pass['qualifiers'].str.contains('GoalAssist')]
+        
+        pitch.scatter(17, 34, s=12000, color='orange', ec=line_color, lw=2, marker='h', zorder=7, ax=ax)
+        pitch.scatter(35, 68/3, s=12000, color=col, ec=line_color, lw=2, marker='h', zorder=7, alpha=0.8, ax=ax)
+        pitch.scatter(35, 136/3, s=12000, color=col, ec=line_color, lw=2, marker='h', zorder=7, alpha=0.8, ax=ax)
+        
+        ax.text(34, 21, 'Zone14', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
+        ax.text(34, 16, f' \nTotal:{len(z14_pass)}\nKeyPass:{len(z14_kp)}\nAssist:{len(z14_as)}', size=13, color='k', ha='center', va='center', zorder=10)
+        
+        ax.text(136/3, 39, 'Left H.S.', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
+        ax.text(136/3, 34, f' \nTotal:{len(lhs_pass)}\nKeyPass:{len(lhs_kp)}\nAssist:{len(lhs_as)}', size=13, color='k', ha='center', va='center', zorder=10)
+        
+        ax.text(68/3, 39, 'Right H.S.', size=15, color='k', fontweight='bold', ha='center', va='center', zorder=10)
+        ax.text(68/3, 34, f' \nTotal:{len(rhs_pass)}\nKeyPass:{len(rhs_kp)}\nAssist:{len(rhs_as)}', size=13, color='k', ha='center', va='center', zorder=10)
+        
+        if phase_tag == 'Full Time':
+            ax.text(34, 110, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 110, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 110, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
+        
+        z14_pass['zone'] = 'Zone 14'
+        lhs_pass['zone'] = 'Left Half Space'
+        rhs_pass['zone'] = 'Right Half Space'
+        total_df = pd.concat([z14_pass, lhs_pass, rhs_pass], ignore_index=True)
+        total_df = total_df[['name', 'zone']]
+        stats = total_df.groupby(['name', 'zone']).size().unstack(fill_value=0)
+        stats['Total'] = stats.sum(axis=1)
+        stats = stats.sort_values(by='Total', ascending=False)
+        return stats
+
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    zhsf_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='From')
+    if zhsf_time_phase == 'Full Time':
+        home_z14hsf_stats = plot_zone14f(axs[0], hteamName, hcol, 'Full Time')
+        away_z14hsf_stats = plot_zone14f(axs[1], ateamName, acol, 'Full Time')
+    if zhsf_time_phase == 'First Half':
+        home_z14hsf_stats = plot_zone14f(axs[0], hteamName, hcol, 'First Half')
+        away_z14hsf_stats = plot_zone14f(axs[1], ateamName, acol, 'First Half')
+    if zhsf_time_phase == 'Second Half':
+        home_z14hsf_stats = plot_zone14f(axs[0], hteamName, hcol, 'Second Half')
+        away_z14hsf_stats = plot_zone14f(axs[1], ateamName, acol, 'Second Half')
+    
+    fig_text(0.5, 1.03, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 0.99, 'Passes from Zone14 and Half-Spaces', fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.95, '@adnaaan433', fontsize=10, ha='center', va='center')
+    
+    fig.text(0.5, 0.1, '*Open-Play Successful Passes which initiated inside Zone14 and Half-Spaces area', fontsize=10, fontstyle='italic', ha='center', va='center')
+    
+    st.pyplot(fig)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f'{hteamName} Passers from Zone14 & Half-Spaces:')
+        st.dataframe(home_z14hsf_stats)
+    with col2:
+        st.write(f'{ateamName} Passers from Zone14 & Half-Spaces:')
+        st.dataframe(away_z14hsf_stats)
+
+elif an_tp == 'Final Third Entries':
+    st.header(f'{an_tp}')
             def final_third_entry(ax, team_name, col, phase_tag):
                 if phase_tag == 'Full Time':
                     fentry = df[(df['teamName']==team_name) & (df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner'))]
