@@ -2,22 +2,43 @@ import json
 import re
 import pandas as pd
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
-from mplsoccer import VerticalPitch
+from matplotlib.colors import to_rgba, LinearSegmentedColormap
+import seaborn as sns
 import requests
-import streamlit as st
-import plotly.graph_objects as go
-from urllib.request import urlopen
+from mplsoccer import Pitch, VerticalPitch, add_image
+from matplotlib import rcParams
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+import matplotlib.patheffects as path_effects
+from highlight_text import ax_text, fig_text
 from PIL import Image
+from urllib.request import urlopen
+from unidecode import unidecode
+from scipy.spatial import ConvexHull
+import streamlit as st
+import os
+import arabic_reshaper
+from bidi.algorithm import get_display
 
-# إضافة CSS محسّن لدعم RTL في Streamlit مع استثناءات للرسومات
+# تهيئة matplotlib لدعم العربية
+mpl.rcParams['text.usetex'] = False
+mpl.rcParams['font.family'] = 'sans-serif'
+mpl.rcParams['font.sans-serif'] = ['Amiri', 'Noto Sans Arabic', 'Arial', 'Tahoma']
+mpl.rcParams['axes.unicode_minus'] = False
+
+# دالة لتحويل النص العربي
+def reshape_arabic_text(text):
+    reshaped_text = arabic_reshaper.reshape(text)
+    return get_display(reshaped_text)
+
+# إضافة CSS محسّن لدعم RTL في Streamlit
 st.markdown("""
     <style>
     @font-face {
         font-family: 'Noto Sans Arabic';
         src: url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&display=swap');
     }
-    /* تطبيق RTL فقط على العناصر النصية */
     body, .stApp {
         font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
@@ -26,51 +47,15 @@ st.markdown("""
         text-align: right !important;
         font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
-    .stSelectbox, .stSelectbox div, .stSelectbox label, .stSelectbox select, .stSelectbox option {
+    .stSelectbox, .stRadio, .stTabs, .stDataFrame, .stSidebar, .stButton {
         direction: rtl !important;
         text-align: right !important;
-        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
     }
-    .stRadio, .stRadio div, .stRadio label, .stRadio input {
-        direction: rtl !important;
-        text-align: right !important;
-        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
-    }
-    .stTabs, .stTabs div, .stTabs button {
-        direction: rtl !important;
-        text-align: right !important;
-        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
-    }
-    .stDataFrame, .dataframe, table, th, td {
-        direction: rtl !important;
-        text-align: right !important;
-        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
-    }
-    .stSidebar, .stSidebar div, .stSidebar label, .stSidebar select, .stSidebar option {
-        direction: rtl !important;
-        text-align: right !important;
-        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
-    }
-    [data-testid="stMarkdownContainer"], [data-testid="stText"] {
-        direction: rtl !important;
-        text-align: right !important;
-        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
-    }
-    .stButton, .stButton button {
-        direction: rtl !important;
-        text-align: right !important;
-        font-family: 'Noto Sans Arabic', 'Amiri', 'DejaVu Sans', 'Arial', sans-serif !important;
-    }
-    /* استثناء الرسومات والصور من RTL */
     canvas, img, .stImage, [data-testid="stImage"], .stPlotlyChart, .stPyplot {
         direction: ltr !important;
     }
     </style>
     """, unsafe_allow_html=True)
-
-# تعريف الدالة reset_confirmed قبل استخدامها
-def reset_confirmed():
-    st.session_state['confirmed'] = False
 
 # تعريف القيم الافتراضية للألوان
 default_hcol = '#d00000'
@@ -88,562 +73,472 @@ gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradie
 gradient_colors = [gradient_start, gradient_end]
 line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker')
 
-# تعريف دالة get_event_data في المستوى الأعلى
+# دالة لإعادة تعيين حالة التأكيد
+def reset_confirmed():
+    st.session_state['confirmed'] = False
+
+# تعريف دالة get_event_data الكاملة
 @st.cache_data
-def get_event_data(season, league, stage, hteam, ateam):
-    try:
-        match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{stage}/{hteam}_vs_{ateam}.html"
-        match_html_path = match_html_path.replace(" ", "%20")
-        response = requests.get(match_html_path)
-        response.raise_for_status()  # التحقق من نجاح الطلب
-        match_html = response.text
-        match_json = re.search(r'var matchCentreData = ({.*});', match_html)
-        if match_json is None:
-            st.error(f"لم يتم العثور على 'matchCentreData' في الملف: {match_html_path}")
-            return None, None, None
-        match_data = json.loads(match_json.group(1))
-        events = match_data["events"]
-        teams = match_data["teamsData"]
-        players_list = []
-        for p in match_data["playerIdNameDictionary"].items():
-            players_list.append({"playerId": p[0], "name": p[1]})
-        df = pd.DataFrame(events)
-        teams_dict = teams
-        players_df = pd.DataFrame(players_list)
-        return df, teams_dict, players_df
-    except requests.exceptions.HTTPError as e:
-        st.error(f"خطأ في جلب البيانات من الرابط: {e}")
-        return None, None, None
-    except json.JSONDecodeError as e:
-        st.error(f"خطأ في تحليل JSON: {e}")
-        return None, None, None
-    except Exception as e:
-        st.error(f"حدث خطأ غير متوقع: {e}")
-        return None, None, None
+def get_event_data(season, league, stage, htn, atn):
+    league_en = {
+        'الدوري الإسباني': 'La_Liga',
+        'الدوري الإنجليزي الممتاز': 'Premier_League',
+        'الدوري الإيطالي': 'Serie_A',
+        'دوري أبطال أوروبا': 'UEFA_Champions_League'
+    }.get(league, league)
+    stage_mapping = {
+        'مرحلة الدوري': 'League Phase',
+        'الملحق التأهيلي': 'Knockout Playoff',
+        'دور الـ 16': 'Round of 16',
+        'ربع النهائي': 'Quarter Final',
+        'نصف النهائي': 'Semi Final',
+        'النهائي': 'Final'
+    }
+    stage_en = stage_mapping.get(stage, stage) if stage else ''
+    
+    if league == 'دوري أبطال أوروبا':
+        match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league_en}/refs/heads/main/{stage_en}/{htn}_vs_{atn}.html"
+    else:
+        match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league_en}/refs/heads/main/{htn}_vs_{atn}.html"
+    match_html_path = match_html_path.replace(' ', '%20')
 
+    def extract_json_from_html(html_path):
+        response = requests.get(html_path)
+        response.raise_for_status()
+        html = response.text
+        regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
+        data_txt = re.findall(regex_pattern, html)[0]
+        data_txt = data_txt.replace('matchId', '"matchId"').replace('matchCentreData', '"matchCentreData"')
+        data_txt = data_txt.replace('matchCentreEventTypeJson', '"matchCentreEventTypeJson"')
+        data_txt = data_txt.replace('formationIdNameMappings', '"formationIdNameMappings"').replace('};', '}')
+        return data_txt
+
+    def extract_data_from_dict(data):
+        events_dict = data["matchCentreData"]["events"]
+        teams_dict = {data["matchCentreData"]['home']['teamId']: data["matchCentreData"]['home']['name'],
+                      data["matchCentreData"]['away']['teamId']: data["matchCentreData"]['away']['name']}
+        players_home_df = pd.DataFrame(data["matchCentreData"]['home']['players'])
+        players_home_df["teamId"] = data["matchCentreData"]['home']['teamId']
+        players_away_df = pd.DataFrame(data["matchCentreData"]['away']['players'])
+        players_away_df["teamId"] = data["matchCentreData"]['away']['teamId']
+        players_df = pd.concat([players_home_df, players_away_df])
+        players_df['name'] = players_df['name'].apply(unidecode)
+        return events_dict, players_df, teams_dict
+
+    json_data_txt = extract_json_from_html(match_html_path)
+    data = json.loads(json_data_txt)
+    events_dict, players_df, teams_dict = extract_data_from_dict(data)
+    df = pd.DataFrame(events_dict)
+
+    df['type'] = df['type'].astype(str).str.extract(r"'displayName': '([^']+)")
+    df['outcomeType'] = df['outcomeType'].astype(str).str.extract(r"'displayName': '([^']+)")
+    df['period'] = df['period'].astype(str).str.extract(r"'displayName': '([^']+)")
+    df['period'] = df['period'].replace({'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3, 'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 'PreMatch': 16})
+
+    def cumulative_match_mins(events_df):
+        events_out = pd.DataFrame()
+        match_events = events_df.copy()
+        match_events['cumulative_mins'] = match_events['minute'] + (1/60) * match_events['second']
+        for period in np.arange(1, match_events['period'].max() + 1, 1):
+            if period > 1:
+                t_delta = match_events[match_events['period'] == period - 1]['cumulative_mins'].max() - \
+                          match_events[match_events['period'] == period]['cumulative_mins'].min()
+            else:
+                t_delta = 0
+            match_events.loc[match_events['period'] == period, 'cumulative_mins'] += t_delta
+        events_out = pd.concat([events_out, match_events])
+        return events_out
+
+    df = cumulative_match_mins(df)
+
+    def insert_ball_carries(events_df):
+        events_out = pd.DataFrame()
+        match_events = events_df.reset_index()
+        match_events.loc[match_events['type'] == 'BallRecovery', 'endX'] = match_events.loc[match_events['type'] == 'BallRecovery', 'endX'].fillna(match_events['x'])
+        match_events.loc[match_events['type'] == 'BallRecovery', 'endY'] = match_events.loc[match_events['type'] == 'BallRecovery', 'endY'].fillna(match_events['y'])
+        match_carries = pd.DataFrame()
+        
+        for idx, match_event in match_events.iterrows():
+            if idx < len(match_events) - 1:
+                prev_evt_team = match_event['teamId']
+                next_evt_idx = idx + 1
+                init_next_evt = match_events.loc[next_evt_idx]
+                take_ons = 0
+                incorrect_next_evt = True
+                while incorrect_next_evt and next_evt_idx < len(match_events):
+                    next_evt = match_events.loc[next_evt_idx]
+                    if next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Successful':
+                        take_ons += 1
+                    elif ((next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Unsuccessful') or
+                          (next_evt['teamId'] != prev_evt_team and next_evt['type'] == 'Challenge' and next_evt['outcomeType'] == 'Unsuccessful') or
+                          (next_evt['type'] in ['Foul', 'Card'])):
+                        next_evt_idx += 1
+                        continue
+                    incorrect_next_evt = False
+                
+                same_team = prev_evt_team == next_evt['teamId']
+                not_ball_touch = match_event['type'] != 'BallTouch'
+                dx = 105 * (match_event['endX'] - next_evt['x']) / 100
+                dy = 68 * (match_event['endY'] - next_evt['y']) / 100
+                far_enough = dx ** 2 + dy ** 2 >= 3.0 ** 2
+                not_too_far = dx ** 2 + dy ** 2 <= 100.0 ** 2
+                dt = 60 * (next_evt['cumulative_mins'] - match_event['cumulative_mins'])
+                min_time = dt >= 1.0
+                same_phase = dt < 50.0
+                same_period = match_event['period'] == next_evt['period']
+
+                if same_team & not_ball_touch & far_enough & not_too_far & min_time & same_phase & same_period:
+                    carry = pd.DataFrame([{
+                        'eventId': match_event['eventId'] + 0.5,
+                        'minute': np.floor(((init_next_evt['minute'] * 60 + init_next_evt['second']) + (match_event['minute'] * 60 + match_event['second'])) / (2 * 60)),
+                        'second': (((init_next_evt['minute'] * 60 + init_next_evt['second']) + (match_event['minute'] * 60 + match_event['second'])) / 2) % 60,
+                        'teamId': next_evt['teamId'],
+                        'x': match_event['endX'],
+                        'y': match_event['endY'],
+                        'period': next_evt['period'],
+                        'type': 'Carry',
+                        'outcomeType': 'Successful',
+                        'playerId': next_evt['playerId'],
+                        'endX': next_evt['x'],
+                        'endY': next_evt['y'],
+                        'cumulative_mins': (match_event['cumulative_mins'] + init_next_evt['cumulative_mins']) / 2
+                    }])
+                    match_carries = pd.concat([match_carries, carry], ignore_index=True)
+
+        match_events_and_carries = pd.concat([match_carries, match_events], ignore_index=True).sort_values(['period', 'cumulative_mins']).reset_index(drop=True)
+        events_out = pd.concat([events_out, match_events_and_carries])
+        return events_out
+
+    df = insert_ball_carries(df)
+    df['index'] = range(1, len(df) + 1)
+    
+    # Assign xT values
+    dfxT = df.copy()
+    dfxT['qualifiers'] = dfxT['qualifiers'].astype(str)
+    dfxT = dfxT[(~dfxT['qualifiers'].str.contains('Corner')) & (dfxT['type'].isin(['Pass', 'Carry'])) & (dfxT['outcomeType'] == 'Successful')]
+    xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/refs/heads/main/xT_Grid.csv", header=None)
+    xT = np.array(xT)
+    xT_rows, xT_cols = xT.shape
+
+    dfxT['x1_bin_xT'] = pd.cut(dfxT['x'], bins=xT_cols, labels=False)
+    dfxT['y1_bin_xT'] = pd.cut(dfxT['y'], bins=xT_rows, labels=False)
+    dfxT['x2_bin_xT'] = pd.cut(dfxT['endX'], bins=xT_cols, labels=False)
+    dfxT['y2_bin_xT'] = pd.cut(dfxT['endY'], bins=xT_rows, labels=False)
+    dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]] if pd.notna(x[0]) and pd.notna(x[1]) else 0, axis=1)
+    dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]] if pd.notna(x[0]) and pd.notna(x[1]) else 0, axis=1)
+    dfxT['xT'] = dfxT['end_zone_value_xT'] - dfxT['start_zone_value_xT']
+    df = df.merge(dfxT[['index', 'xT']], on='index', how='left')
+    df['teamName'] = df['teamId'].map(teams_dict)
+
+    # Reshape coordinates
+    df['x'] = df['x'] * 1.05
+    df['y'] = df['y'] * 0.68
+    df['endX'] = df['endX'] * 1.05
+    df['endY'] = df['endY'] * 0.68
+    df['goalMouthY'] = df['goalMouthY'] * 0.68
+
+    df = df.merge(players_df[['playerId', 'name', 'shirtNo', 'position', 'isFirstEleven']], on='playerId', how='left')
+    df['prog_pass'] = np.where(df['type'] == 'Pass', 
+                               np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
+    df['prog_carry'] = np.where(df['type'] == 'Carry', 
+                                np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
+    df['shortName'] = df['name'].apply(lambda x: x.split()[0][0] + ". " + x.split()[-1] if len(x.split()) > 1 else x)
+    df['period'] = df['period'].replace({1: 'FirstHalf', 2: 'SecondHalf', 3: 'FirstPeriodOfExtraTime', 4: 'SecondPeriodOfExtraTime', 5: 'PenaltyShootout', 14: 'PostGame', 16: 'PreMatch'})
+    df = df[df['period'] != 'PenaltyShootout'].reset_index(drop=True)
+    return df, teams_dict, players_df
+
+# واجهة اختيار المباراة
 st.sidebar.title('اختيار المباراة')
-
-season = None
-league = None
-stage = None
-htn = None
-atn = None
-
 if 'confirmed' not in st.session_state:
     st.session_state.confirmed = False
 
 season = st.sidebar.selectbox('اختر الموسم:', ['2024_25'], key='season', index=0, on_change=reset_confirmed)
 if season:
-    league_options = [
-        'الدوري الإسباني',
-        'الدوري الإنجليزي الممتاز',
-        'الدوري الإيطالي',
-        'دوري أبطال أوروبا'
-    ]
+    league_options = ['الدوري الإسباني', 'الدوري الإنجليزي الممتاز', 'الدوري الإيطالي', 'دوري أبطال أوروبا']
     league = st.sidebar.selectbox('اختر الدوري:', league_options, key='league', index=None, on_change=reset_confirmed)
 
     if league == 'الدوري الإسباني':
-        team_list = [
-            'Athletic Club', 'Atletico Madrid', 'Barcelona',
-            'Celta Vigo', 'Deportivo Alaves', 'Espanyol',
-            'Getafe', 'Girona', 'Las Palmas',
-            'Leganes', 'Mallorca', 'Osasuna',
-            'Rayo Vallecano', 'Real Betis', 'Real Madrid',
-            'Real Sociedad', 'Real Valladolid', 'Sevilla',
-            'Valencia', 'Villarreal'
-        ]
+        team_list = ['Athletic Club', 'Atletico Madrid', 'Barcelona', 'Celta Vigo', 'Deportivo Alaves', 'Espanyol', 'Getafe', 'Girona', 'Las Palmas', 'Leganes', 'Mallorca', 'Osasuna', 'Rayo Vallecano', 'Real Betis', 'Real Madrid', 'Real Sociedad', 'Real Valladolid', 'Sevilla', 'Valencia', 'Villarreal']
     elif league == 'الدوري الإنجليزي الممتاز':
-        team_list = [
-            'Arsenal', 'Aston Villa', 'Bournemouth',
-            'Brentford', 'Brighton', 'Chelsea',
-            'Crystal Palace', 'Everton', 'Fulham',
-            'Ipswich', 'Leicester', 'Liverpool',
-            'Manchester City', 'Manchester United', 'Newcastle',
-            'Nottingham Forest', 'Southampton', 'Tottenham',
-            'West Ham', 'Wolves'
-        ]
+        team_list = ['Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton', 'Chelsea', 'Crystal Palace', 'Everton', 'Fulham', 'Ipswich', 'Leicester', 'Liverpool', 'Manchester City', 'Manchester United', 'Newcastle', 'Nottingham Forest', 'Southampton', 'Tottenham', 'West Ham', 'Wolves']
     elif league == 'الدوري الإيطالي':
-        team_list = [
-            'AC Milan', 'Atalanta', 'Bologna',
-            'Cagliari', 'Como', 'Empoli',
-            'Fiorentina', 'Genoa', 'Inter',
-            'Juventus', 'Lazio', 'Lecce',
-            'Monza', 'Napoli', 'Parma Calcio',
-            'Roma', 'Torino', 'Udinese',
-            'Venezia', 'Verona'
-        ]
+        team_list = ['AC Milan', 'Atalanta', 'Bologna', 'Cagliari', 'Como', 'Empoli', 'Fiorentina', 'Genoa', 'Inter', 'Juventus', 'Lazio', 'Lecce', 'Monza', 'Napoli', 'Parma Calcio', 'Roma', 'Torino', 'Udinese', 'Venezia', 'Verona']
     elif league == 'دوري أبطال أوروبا':
-        team_list = [
-            'AC Milan', 'Arsenal', 'Aston Villa',
-            'Atalanta', 'Atletico Madrid', 'BSC Young Boys',
-            'Barcelona', 'Bayer Leverkusen', 'Bayern Munich',
-            'Benfica', 'Bologna', 'Borussia Dortmund',
-            'Brest', 'Celtic', 'Club Brugge',
-            'Dinamo Zagreb', 'FK Crvena Zvezda', 'Feyenoord',
-            'Girona', 'Inter', 'Juventus',
-            'Lille', 'Liverpool', 'Manchester City',
-            'Monaco', 'PSV Eindhoven', 'Paris Saint-Germain',
-            'RB Leipzig', 'Real Madrid', 'Salzburg',
-            'Shakhtar Donetsk', 'Slovan Bratislava', 'Sparta Prague',
-            'Sporting CP', 'Sturm Graz', 'VfB Stuttgart'
-        ]
+        team_list = ['AC Milan', 'Arsenal', 'Aston Villa', 'Atalanta', 'Atletico Madrid', 'BSC Young Boys', 'Barcelona', 'Bayer Leverkusen', 'Bayern Munich', 'Benfica', 'Bologna', 'Borussia Dortmund', 'Brest', 'Celtic', 'Club Brugge', 'Dinamo Zagreb', 'FK Crvena Zvezda', 'Feyenoord', 'Girona', 'Inter', 'Juventus', 'Lille', 'Liverpool', 'Manchester City', 'Monaco', 'PSV Eindhoven', 'Paris Saint-Germain', 'RB Leipzig', 'Real Madrid', 'Salzburg', 'Shakhtar Donetsk', 'Slovan Bratislava', 'Sparta Prague', 'Sporting CP', 'Sturm Graz', 'VfB Stuttgart']
 
     if league and league != 'دوري أبطال أوروبا':
         htn = st.sidebar.selectbox('اختر الفريق المضيف', team_list, key='home_team', index=None, on_change=reset_confirmed)
-        
         if htn:
             atn_options = [team for team in team_list if team != htn]
             atn = st.sidebar.selectbox('اختر الفريق الضيف', atn_options, key='away_team', index=None, on_change=reset_confirmed)
-            
     elif league == 'دوري أبطال أوروبا':
-        stage_options = [
-            'مرحلة الدوري',
-            'الملحق التأهيلي',
-            'دور الـ 16',
-            'ربع النهائي',
-            'نصف النهائي',
-            'النهائي'
-        ]
+        stage_options = ['مرحلة الدوري', 'الملحق التأهيلي', 'دور الـ 16', 'ربع النهائي', 'نصف النهائي', 'النهائي']
         stage = st.sidebar.selectbox('اختر المرحلة', stage_options, key='stage_selection', index=None, on_change=reset_confirmed)
         if stage:
             htn = st.sidebar.selectbox('اختر الفريق المضيف', team_list, key='home_team', index=None, on_change=reset_confirmed)
-            
             if htn:
                 atn_options = [team for team in team_list if team != htn]
                 atn = st.sidebar.selectbox('اختر الفريق الضيف', atn_options, key='away_team', index=None, on_change=reset_confirmed)
 
-    if league and league != 'دوري أبطال أوروبا' and league != 'الدوري الإيطالي' and htn and atn:
-        league_en = {
-            'الدوري الإسباني': 'La Liga',
-            'الدوري الإنجليزي الممتاز': 'Premier League',
-            'الدوري الإيطالي': 'Serie A',
-            'دوري أبطال أوروبا': 'UEFA Champions League'
-        }.get(league, league)
-        league = league_en.replace(' ', '_')
-        match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{htn}_vs_{atn}.html"
-        match_html_path = match_html_path.replace(' ', '%20')
-        try:
-            response = requests.get(match_html_path)
-            response.raise_for_status()
-            match_input = st.sidebar.button('تأكيد الاختيارات', on_click=lambda: st.session_state.update({'confirmed': True}))
-        except:
-            st.session_state['confirmed'] = False
-            st.sidebar.write('لم يتم العثور على المباراة')
-            
-    elif league and league == 'الدوري الإيطالي' and htn and atn:
-        league_en = 'Serie A'
-        league = league_en.replace(' ', '_')
-        match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{htn}_vs_{atn}.html"
-        match_html_path = match_html_path.replace(' ', '%20')
-        try:
-            response = requests.get(match_html_path)
-            response.raise_for_status()
-            match_input = st.sidebar.button('تأكيد الاختيارات', on_click=lambda: st.session_state.update({'confirmed': True}))
-        except:
-            st.session_state['confirmed'] = False
-            st.sidebar.write('مباريات الدوري الإيطالي متاحة حتى الأسبوع 12\nسيتم رفع باقي البيانات قريبًا\nشكرًا لصبرك')
-            
-    elif league and league == 'دوري أبطال أوروبا' and stage and htn and atn:
-        league_en = 'UEFA Champions League'
-        stage_en = stage
-        stage_mapping = {
-            'مرحلة الدوري': 'League Phase',
-            'الملحق التأهيلي': 'Knockout Playoff',
-            'دور الـ 16': 'Round of 16',
-            'ربع النهائي': 'Quarter Final',
-            'نصف النهائي': 'Semi Final',
-            'النهائي': 'Final'
-        }
-        stage_en = stage_mapping[stage]
-        league = league_en.replace(' ', '_')
-        match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{stage_en}/{htn}_vs_{atn}.html"
-        match_html_path = match_html_path.replace(' ', '%20')
-        try:
-            response = requests.get(match_html_path)
-            response.raise_for_status()
-            match_input = st.sidebar.button('تأكيد الاختيارات', on_click=lambda: st.session_state.update({'confirmed': True}))
-        except:
-            st.session_state['confirmed'] = False
-            st.sidebar.write('لم يتم العثور على المباراة')
+    if league and htn and atn:
+        if league != 'دوري أبطال أوروبا':
+            try:
+                match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league.replace(' ', '_')}/refs/heads/main/{htn}_vs_{atn}.html".replace(' ', '%20')
+                response = requests.get(match_html_path)
+                response.raise_for_status()
+                st.sidebar.button('تأكيد الاختيارات', on_click=lambda: st.session_state.update({'confirmed': True}))
+            except:
+                st.session_state['confirmed'] = False
+                st.sidebar.write('لم يتم العثور على المباراة')
+        else:
+            stage_en = {'مرحلة الدوري': 'League Phase', 'الملحق التأهيلي': 'Knockout Playoff', 'دور الـ 16': 'Round of 16', 'ربع النهائي': 'Quarter Final', 'نصف النهائي': 'Semi Final', 'النهائي': 'Final'}[stage]
+            try:
+                match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_UEFA_Champions_League/refs/heads/main/{stage_en}/{htn}_vs_{atn}.html".replace(' ', '%20')
+                response = requests.get(match_html_path)
+                response.raise_for_status()
+                st.sidebar.button('تأكيد الاختيارات', on_click=lambda: st.session_state.update({'confirmed': True}))
+            except:
+                st.session_state['confirmed'] = False
+                st.sidebar.write('لم يتم العثور على المباراة')
 
 if league and htn and atn and st.session_state.confirmed:
-    # استخدام الدالة في الكود الرئيسي
-    season = "2024_25"
-    league = "UEFA_Champions_League"
-    stage = "دور الـ 16"  # تأكد من مطابقة اسم المجلد في GitHub
-    htn = "Barcelona"
-    atn = "Benfica"
-
     df, teams_dict, players_df = get_event_data(season, league, stage, htn, atn)
-    
-    if df is not None and teams_dict is not None and players_df is not None:
+    if df is not None:
         hteamID = list(teams_dict.keys())[0]
         ateamID = list(teams_dict.keys())[1]
-        hteamName = teams_dict[hteamID]["name"]  # تعديل لاستخدام "name" من القاموس
-        ateamName = teams_dict[ateamID]["name"]  # تعديل لاستخدام "name" من القاموس
+        hteamName = teams_dict[hteamID]
+        ateamName = teams_dict[ateamID]
 
-        homedf = df[(df['teamName'] == hteamName)]
-        awaydf = df[(df['teamName'] == ateamName)]
+        homedf = df[df['teamName'] == hteamName]
+        awaydf = df[df['teamName'] == ateamName]
         hxT = homedf['xT'].sum().round(2)
         axT = awaydf['xT'].sum().round(2)
 
-        hgoal_count = len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))])
-        agoal_count = len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))])
-        hgoal_count = hgoal_count + len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
-        agoal_count = agoal_count + len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
+        hgoal_count = len(homedf[(homedf['type'] == 'Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))]) + len(awaydf[(awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
+        agoal_count = len(awaydf[(awaydf['type'] == 'Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))]) + len(homedf[(homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
 
         df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
         hftmb_tid = df_teamNameId[df_teamNameId['teamName'] == hteamName].teamId.to_list()[0]
         aftmb_tid = df_teamNameId[df_teamNameId['teamName'] == ateamName].teamId.to_list()[0]
 
-        league_display_mapping = {
-            'La Liga': 'الدوري الإسباني',
-            'Premier League': 'الدوري الإنجليزي الممتاز',
-            'Serie A': 'الدوري الإيطالي',
-            'UEFA Champions League': 'دوري أبطال أوروبا'
-        }
-        league_display = league_display_mapping.get(league, league)
-
         st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
-        st.text(league_display)
+        st.text(league)
 
-        tab1, tab2 = st.tabs([
-            "تحليل المباراة",
-            "تبويب آخر"
-        ])
-
-        options = [
-            'شبكة التمريرات',
-            'Defensive Actions Heatmap',
-            'Progressive Passes',
-            'Progressive Carries',
-            'Shotmap',
-            'GK Saves',
-            'Match Momentum',
-            'Zone14 & Half-Space Passes',
-            'Final Third Entries',
-            'Box Entries',
-            'High-Turnovers',
-            'Chances Creating Zones',
-            'Crosses',
-            'Team Domination Zones',
-            'Pass Target Zones'
-        ]
-        st.session_state['analysis_type'] = st.selectbox(
-            'نوع التحليل:',
-            options,
-            index=0,
-            key='analysis_type_selectbox'
-        )
-
-        def pass_network(team_name, col, phase_tag):
-            if phase_tag == 'Full Time':
-                df_pass = df.copy()
-                df_pass = df_pass.reset_index(drop=True)
-            elif phase_tag == 'First Half':
-                df_pass = df[df['period'] == 'FirstHalf']
-                df_pass = df_pass.reset_index(drop=True)
-            elif phase_tag == 'Second Half':
-                df_pass = df[df['period'] == 'SecondHalf']
-                df_pass = df_pass.reset_index(drop=True)
-
-            total_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass')]
-            accrt_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
-            
-            if len(total_pass) == 0:
-                return None, "لا توجد بيانات تمريرات متاحة"
-
-            accuracy = round((len(accrt_pass) / len(total_pass)) * 100, 2)
-
-            df_pass['pass_receiver'] = df_pass.loc[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'].shift(-1) == team_name), 'name'].shift(-1)
-            df_pass['pass_receiver'] = df_pass['pass_receiver'].fillna('No')
-
-            off_acts_df = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
-            off_acts_df = off_acts_df[['name', 'x', 'y']].reset_index(drop=True)
-            avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
-            team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
-            avg_locs_df = avg_locs_df.merge(team_pdf, on='name', how='left')
-
-            df_pass = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
-            df_pass = df_pass[['type', 'name', 'pass_receiver']].reset_index(drop=True)
-
-            pass_count_df = df_pass.groupby(['name', 'pass_receiver']).size().reset_index(name='pass_count').sort_values(by='pass_count', ascending=False)
-            pass_count_df = pass_count_df.reset_index(drop=True)
-
-            pass_counts_df = pd.merge(pass_count_df, avg_locs_df, on='name', how='left')
-            pass_counts_df.rename(columns={'avg_x': 'pass_avg_x', 'avg_y': 'pass_avg_y'}, inplace=True)
-            pass_counts_df = pd.merge(pass_counts_df, avg_locs_df, left_on='pass_receiver', right_on='name', how='left', suffixes=('', '_receiver'))
-            pass_counts_df.drop(columns=['name_receiver'], inplace=True)
-            pass_counts_df.rename(columns={'avg_x': 'receiver_avg_x', 'avg_y': 'receiver_avg_y'}, inplace=True)
-            pass_counts_df = pass_counts_df.sort_values(by='pass_count', ascending=False).reset_index(drop=True)
-            pass_counts_df = pass_counts_df.dropna(subset=['shirtNo_receiver'])
-            pass_btn = pass_counts_df[['name', 'shirtNo', 'pass_receiver', 'shirtNo_receiver', 'pass_count']]
-            pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
-
-            MAX_LINE_WIDTH = 8
-            MIN_LINE_WIDTH = 0.5
-            MIN_TRANSPARENCY = 0.2
-            MAX_TRANSPARENCY = 0.9
-
-            pass_counts_df['line_width'] = (pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()) * (MAX_LINE_WIDTH - MIN_LINE_WIDTH) + MIN_LINE_WIDTH
-            c_transparency = pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()
-            c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
-
-            # إنشاء الرسم باستخدام Plotly
-            fig = go.Figure()
-
-            # رسم الملعب (UEFA dimensions: 105m x 68m)
-            fig.add_shape(type="rect", x0=0, y0=0, x1=68, y1=105, line=dict(color=line_color, width=2), fillcolor="rgba(0, 255, 0, 0.1)")
-            fig.add_shape(type="rect", x0=0, y0=0, x1=68, y1=52.5, line=dict(color=line_color, width=1))  # خط المنتصف
-            fig.add_shape(type="rect", x0=0, y0=0, x1=16.5, y1=40.3, line=dict(color=line_color, width=1))  # منطقة الجزاء (الفريق السفلي)
-            fig.add_shape(type="rect", x0=0, y0=64.7, x1=16.5, y1=105, line=dict(color=line_color, width=1))  # منطقة الجزاء (الفريق العلوي)
-            fig.add_shape(type="rect", x0=0, y0=13.8, x1=5.5, y1=91.2, line=dict(color=line_color, width=1))  # منطقة المرمى (الفريق السفلي)
-            fig.add_shape(type="rect", x0=0, y0=75.2, x1=5.5, y1=91.2, line=dict(color=line_color, width=1))  # منطقة المرمى (الفريق العلوي)
-            fig.add_shape(type="circle", x0=34-9.15, y0=52.5-9.15, x1=34+9.15, y1=52.5+9.15, line=dict(color=line_color, width=1))  # دائرة المنتصف
-
-            # إضافة الخطوط بين اللاعبين
-            for idx in range(len(pass_counts_df)):
-                fig.add_trace(go.Scatter(
-                    x=[pass_counts_df['pass_avg_y'].iloc[idx], pass_counts_df['receiver_avg_y'].iloc[idx]],
-                    y=[pass_counts_df['pass_avg_x'].iloc[idx], pass_counts_df['receiver_avg_x'].iloc[idx]],
-                    mode='lines',
-                    line=dict(color=col, width=pass_counts_df['line_width'].iloc[idx], opacity=c_transparency[idx]),
-                    showlegend=False
-                ))
-
-            # إضافة مواقع اللاعبين
-            for index, row in avg_locs_df.iterrows():
-                marker_symbol = 'circle' if row['isFirstEleven'] else 'square'
-                fig.add_trace(go.Scatter(
-                    x=[row['avg_y']],
-                    y=[row['avg_x']],
-                    mode='markers+text',
-                    marker=dict(size=20, color=col, line=dict(color=line_color, width=2), symbol=marker_symbol, opacity=0.9 if row['isFirstEleven'] else 0.7),
-                    text=[str(int(row['shirtNo']))],
-                    textposition='middle center',
-                    textfont=dict(size=12, color='white'),
-                    showlegend=False
-                ))
-
-            # حساب التماسك العمودي
-            avgph = round(avg_locs_df['avg_x'].median(), 2)
-            fig.add_shape(type="line", x0=0, y0=avgph, x1=68, y1=avgph, line=dict(color="white", width=1.5, dash="dash"))
-
-            center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
-            def_line_h = round(center_backs_height['avg_x'].median(), 2)
-            Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == 1].sort_values(by='avg_x', ascending=False).head(2)
-            fwd_line_h = round(Forwards_height['avg_x'].mean(), 2)
-            fig.add_shape(type="rect", x0=0, y0=def_line_h, x1=68, y1=fwd_line_h, fillcolor=col, opacity=0.2, line=dict(width=0))
-
-            v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
-
-            # إضافة النصوص
-            if phase_tag == 'Full Time':
-                title_text = f'الوقت بالكامل: 0-90 دقيقة<br>إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'
-            elif phase_tag == 'First Half':
-                title_text = f'الشوط الأول: 0-45 دقيقة<br>إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'
-            elif phase_tag == 'Second Half':
-                title_text = f'الشوط الثاني: 45-90 دقيقة<br>إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'
-
-            fig.update_layout(
-                title=dict(text=title_text, x=0.5, y=0.95, xanchor='center', yanchor='top', font=dict(size=14, color='white')),
-                xaxis=dict(range=[-5, 73], showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(range=[-5, 110], showgrid=False, zeroline=False, showticklabels=False),
-                plot_bgcolor=bg_color,
-                paper_bgcolor=bg_color,
-                showlegend=False,
-                margin=dict(l=0, r=0, t=50, b=50),
-                annotations=[
-                    dict(
-                        x=34, y=-5,
-                        text=f"على الكرة<br>التماسك العمودي (المنطقة المظللة): {v_comp}%",
-                        showarrow=False,
-                        font=dict(size=12, color='white'),
-                        align='center'
-                    )
-                ]
-            )
-
-            return pass_btn, fig
-
+        tab1, tab2 = st.tabs([reshape_arabic_text("تحليل المباراة"), reshape_arabic_text("تبويب آخر")])
         with tab1:
-            if st.session_state['analysis_type'] == 'شبكة التمريرات':
-                st.header('شبكة التمريرات')
+            an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
+                reshape_arabic_text('شبكة التمريرات'), 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap'
+            ], index=0, key='analysis_type')
+
+            if an_tp == reshape_arabic_text('شبكة التمريرات'):
+                st.header(reshape_arabic_text('شبكة التمريرات'))
+
+                def pass_network(ax, team_name, col, phase_tag):
+                    if phase_tag == 'Full Time':
+                        df_pass = df.copy()
+                    elif phase_tag == 'First Half':
+                        df_pass = df[df['period'] == 'FirstHalf']
+                    elif phase_tag == 'Second Half':
+                        df_pass = df[df['period'] == 'SecondHalf']
+
+                    total_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass')]
+                    accrt_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
+                    accuracy = round((len(accrt_pass) / len(total_pass)) * 100, 2) if len(total_pass) > 0 else 0
+
+                    df_pass['pass_receiver'] = df_pass.loc[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'].shift(-1) == team_name), 'name'].shift(-1)
+                    df_pass['pass_receiver'] = df_pass['pass_receiver'].fillna('No')
+
+                    off_acts_df = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
+                    avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
+                    avg_locs_df = avg_locs_df.merge(players_df[['name', 'shirtNo', 'position', 'isFirstEleven']], on='name', how='left')
+
+                    df_pass = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
+                    pass_count_df = df_pass.groupby(['name', 'pass_receiver']).size().reset_index(name='pass_count').sort_values(by='pass_count', ascending=False)
+                    pass_counts_df = pd.merge(pass_count_df, avg_locs_df, on='name', how='left')
+                    pass_counts_df = pd.merge(pass_counts_df, avg_locs_df, left_on='pass_receiver', right_on='name', how='left', suffixes=('', '_receiver'))
+                    pass_counts_df.drop(columns=['name_receiver'], inplace=True)
+                    pass_counts_df.rename(columns={'avg_x': 'pass_avg_x', 'avg_y': 'pass_avg_y', 'avg_x_receiver': 'receiver_avg_x', 'avg_y_receiver': 'receiver_avg_y'}, inplace=True)
+                    pass_counts_df = pass_counts_df.dropna(subset=['shirtNo_receiver'])
+                    pass_btn = pass_counts_df[['name', 'shirtNo', 'pass_receiver', 'shirtNo_receiver', 'pass_count']]
+                    pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
+
+                    MAX_LINE_WIDTH = 10
+                    MIN_TRANSPARENCY = 0.1
+                    MAX_TRANSPARENCY = 0.9
+                    color = np.array(to_rgba(col))
+                    color = np.tile(color, (len(pass_counts_df), 1))
+                    c_transparency = pass_counts_df.pass_count / pass_counts_df.pass_count.max()
+                    c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
+                    color[:, 3] = c_transparency
+
+                    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, linewidth=1.5, line_color=line_color)
+                    pitch.draw(ax=ax)
+                    gradient = LinearSegmentedColormap.from_list("pitch_gradient", gradient_colors, N=100)
+                    ax.imshow(np.linspace(0, 1, 100)[:, None], extent=[0, 68, 0, 105], cmap=gradient, alpha=0.8, aspect='auto', zorder=0)
+                    pitch.draw(ax=ax)
+
+                    pitch.lines(pass_counts_df.pass_avg_x, pass_counts_df.pass_avg_y, pass_counts_df.receiver_avg_x, pass_counts_df.receiver_avg_y, lw=1, color=color, zorder=1, ax=ax)
+                    for index, row in avg_locs_df.iterrows():
+                        pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='o' if row['isFirstEleven'] else 's', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.9 if row['isFirstEleven'] else 0.7, ax=ax)
+                        pitch.annotate(int(row['shirtNo']), xy=(row.avg_x, row.avg_y), c='white', ha='center', va='center', size=14, weight='bold', ax=ax)
+
+                    avgph = round(avg_locs_df['avg_x'].median(), 2)
+                    ax.axhline(y=avgph, color='white', linestyle='--', alpha=0.5, linewidth=1.5)
+                    center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
+                    def_line_h = round(center_backs_height['avg_x'].median(), 2) if not center_backs_height.empty else avgph
+                    Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == True].sort_values(by='avg_x', ascending=False).head(2)
+                    fwd_line_h = round(Forwards_height['avg_x'].mean(), 2) if not Forwards_height.empty else avgph
+                    ax.fill([0, 0, 68, 68], [def_line_h, fwd_line_h, fwd_line_h, def_line_h], col, alpha=0.2)
+                    v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
+
+                    if phase_tag == 'Full Time':
+                        ax.text(34, 112, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
+                        ax.text(34, 108, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+                    elif phase_tag == 'First Half':
+                        ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
+                        ax.text(34, 108, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+                    elif phase_tag == 'Second Half':
+                        ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
+                        ax.text(34, 108, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+                    ax.text(34, -5, reshape_arabic_text(f"على الكرة\nالتماسك العمودي (المنطقة المظللة): {v_comp}%"), color='white', fontsize=12, ha='center', va='center', weight='bold')
+                    return pass_btn
+
+                pn_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
+                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
                 
-                pn_time_phase = st.radio(
-                    "اختر فترة المباراة:",
-                    ["الوقت الكامل", "الشوط الأول", "الشوط الثاني"],
-                    index=0,
-                    key='pn_time_pill'
-                )
+                if pn_time_phase == reshape_arabic_text('الوقت الكامل'):
+                    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+                    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
+                elif pn_time_phase == reshape_arabic_text('الشوط الأول'):
+                    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
+                    away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
+                elif pn_time_phase == reshape_arabic_text('الشوط الثاني'):
+                    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
+                    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
-                home_pass_btn, home_fig = None, None
-                away_pass_btn, away_fig = None, None
+                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+                fig_text(0.5, 1.05, f"<{home_part}> - <{away_part}>", highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+                fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
+                fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+                fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                fig.text(0.5, 0.03, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-                if pn_time_phase == 'الوقت الكامل':
-                    home_pass_btn, home_fig = pass_network(hteamName, hcol, 'Full Time')
-                    away_pass_btn, away_fig = pass_network(ateamName, acol, 'Full Time')
-                elif pn_time_phase == 'الشوط الأول':
-                    home_pass_btn, home_fig = pass_network(hteamName, hcol, 'First Half')
-                    away_pass_btn, away_fig = pass_network(ateamName, acol, 'First Half')
-                elif pn_time_phase == 'الشوط الثاني':
-                    home_pass_btn, home_fig = pass_network(hteamName, hcol, 'Second Half')
-                    away_pass_btn, away_fig = pass_network(ateamName, acol, 'Second Half')
+                himage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png"))
+                add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+                aimage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png"))
+                add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-                if home_pass_btn is not None and away_pass_btn is not None and home_fig is not None and away_fig is not None:
-                    # عرض الرسومات باستخدام Plotly
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.plotly_chart(home_fig, use_container_width=True)
-                    with col2:
-                        st.plotly_chart(away_fig, use_container_width=True)
-
-                    # عرض الجداول
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write(f'أزواج التمرير لفريق {hteamName}:')
+                st.pyplot(fig)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
+                    if home_pass_btn is not None:
                         st.dataframe(home_pass_btn, hide_index=True)
-                    with col2:
-                        st.write(f'أزواج التمرير لفريق {ateamName}:')
+                with col2:
+                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
+                    if away_pass_btn is not None:
                         st.dataframe(away_pass_btn, hide_index=True)
-                else:
-                    st.write("لا توجد بيانات متاحة لعرض شبكة التمريرات.")
-            # إضافة باقي أنواع التحليل هنا بنفس النمط
-if st.session_state['analysis_type'] == 'Defensive Actions Heatmap':
-    st.header(f'{an_tp}')
-            
-def def_acts_hm(ax, team_name, col, phase_tag):
-    def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
-                           (df['type'] == 'BallRecovery') |
-                           (df['type'] == 'BlockedPass') |
-                           (df['type'] == 'Challenge') |
-                           (df['type'] == 'Clearance') |
-                           ((df['type'] == 'Save') & (df['position'] != 'GK')) |
-                           ((df['type'] == 'Foul') & (df['outcomeType'] == 'Unsuccessful')) |
-                           (df['type'] == 'Interception') |
-                           (df['type'] == 'Tackle')]
-    df_def = df.loc[def_acts_id, ["x", "y", "teamName", "name", "type", "outcomeType", "period"]]
-    if phase_tag == 'Full Time':
-        df_def = df_def.reset_index(drop=True)
-    elif phase_tag == 'First Half':
-        df_def = df_def[df_def['period'] == 'FirstHalf']
-        df_def = df_def.reset_index(drop=True)
-    elif phase_tag == 'Second Half':
-        df_def = df_def[df_def['period'] == 'SecondHalf']
-        df_def = df_def.reset_index(drop=True)
 
-    total_def_acts = df_def[(df_def['teamName'] == team_name)]
+            elif an_tp == 'Defensive Actions Heatmap':
+                st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
 
-    avg_locs_df = total_def_acts.groupby('name').agg({'x': ['median'], 'y': ['median', 'count']}).reset_index('name')
-    avg_locs_df.columns = ['name', 'x', 'y', 'def_acts_count']
-    avg_locs_df = avg_locs_df.sort_values(by='def_acts_count', ascending=False)
-    team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
-    avg_locs_df = avg_locs_df.merge(team_pdf, on='name', how='left')
-    avg_locs_df = avg_locs_df[avg_locs_df['position'] != 'GK']
-    avg_locs_df = avg_locs_df.dropna(subset=['shirtNo'])
-    df_def_show = avg_locs_df[['name', 'def_acts_count', 'shirtNo', 'position']]
+                def def_acts_hm(ax, team_name, col, phase_tag):
+                    def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
+                                           (df['type'] == 'BallRecovery') | (df['type'] == 'BlockedPass') | (df['type'] == 'Challenge') |
+                                           (df['type'] == 'Clearance') | ((df['type'] == 'Save') & (df['position'] != 'GK')) |
+                                           ((df['type'] == 'Foul') & (df['outcomeType'] == 'Unsuccessful')) | (df['type'] == 'Interception') |
+                                           (df['type'] == 'Tackle')]
+                    df_def = df.loc[def_acts_id, ["x", "y", "teamName", "name", "type", "outcomeType", "period"]]
+                    if phase_tag == 'Full Time':
+                        df_def = df_def.reset_index(drop=True)
+                    elif phase_tag == 'First Half':
+                        df_def = df_def[df_def['period'] == 'FirstHalf'].reset_index(drop=True)
+                    elif phase_tag == 'Second Half':
+                        df_def = df_def[df_def['period'] == 'SecondHalf'].reset_index(drop=True)
 
-    MAX_MARKER_SIZE = 3000
-    avg_locs_df['marker_size'] = (avg_locs_df['def_acts_count'] / avg_locs_df['def_acts_count'].max() * MAX_MARKER_SIZE)
-    MIN_TRANSPARENCY = 0.05
-    MAX_TRANSPARENCY = 0.85
-    color = np.array(to_rgba(col))
-    color = np.tile(color, (len(avg_locs_df), 1))
-    c_transparency = avg_locs_df.def_acts_count / avg_locs_df.def_acts_count.max()
-    c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
-    color[:, 3] = c_transparency
+                    total_def_acts = df_def[df_def['teamName'] == team_name]
+                    avg_locs_df = total_def_acts.groupby('name').agg({'x': 'median', 'y': ['median', 'count']}).reset_index()
+                    avg_locs_df.columns = ['name', 'x', 'y', 'def_acts_count']
+                    avg_locs_df = avg_locs_df.merge(players_df[['name', 'shirtNo', 'position', 'isFirstEleven']], on='name', how='left')
+                    avg_locs_df = avg_locs_df[avg_locs_df['position'] != 'GK'].dropna(subset=['shirtNo'])
+                    df_def_show = avg_locs_df[['name', 'def_acts_count', 'shirtNo', 'position']]
 
-    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=2, linewidth=2)
-    pitch.draw(ax=ax)
+                    MAX_MARKER_SIZE = 3000
+                    avg_locs_df['marker_size'] = (avg_locs_df['def_acts_count'] / avg_locs_df['def_acts_count'].max() * MAX_MARKER_SIZE)
+                    color = np.array(to_rgba(col))
+                    color = np.tile(color, (len(avg_locs_df), 1))
+                    c_transparency = avg_locs_df.def_acts_count / avg_locs_df.def_acts_count.max()
+                    c_transparency = (c_transparency * (0.85 - 0.05)) + 0.05
+                    color[:, 3] = c_transparency
 
-    color = np.array(to_rgba(col))
-    flamingo_cmap = LinearSegmentedColormap.from_list("Flamingo - 100 colors", ['#000000', col], N=250)
-    pitch.kdeplot(total_def_acts.x, total_def_acts.y, ax=ax, fill=True, levels=2500, thresh=0.02, cut=4, cmap=flamingo_cmap)
+                    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=2, linewidth=2)
+                    pitch.draw(ax=ax)
+                    flamingo_cmap = LinearSegmentedColormap.from_list("Flamingo", ['#000000', col], N=250)
+                    pitch.kdeplot(total_def_acts.x, total_def_acts.y, ax=ax, fill=True, levels=2500, thresh=0.02, cut=4, cmap=flamingo_cmap)
 
-    for index, row in avg_locs_df.iterrows():
-        if row['isFirstEleven'] == True:
-            pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='o', color=bg_color, edgecolor=line_color, linewidth=2, zorder=3, alpha=1, ax=ax)
-        else:
-            pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='s', color=bg_color, edgecolor=line_color, linewidth=2, zorder=3, alpha=0.75, ax=ax)
+                    for index, row in avg_locs_df.iterrows():
+                        pitch.scatter(row['x'], row['y'], s=row['marker_size'], marker='o' if row['isFirstEleven'] else 's', color=bg_color, edgecolor=line_color, linewidth=2, zorder=3, alpha=1 if row['isFirstEleven'] else 0.75, ax=ax)
+                        pitch.annotate(int(row["shirtNo"]), xy=(row.x, row.y), c=col, ha='center', va='center', size=12, zorder=4, ax=ax)
 
-    for index, row in avg_locs_df.iterrows():
-        player_initials = int(row["shirtNo"])
-        pitch.annotate(player_initials, xy=(row.x, row.y), c=col, ha='center', va='center', size=12, zorder=4, ax=ax)
+                    avgph = round(avg_locs_df['x'].median(), 2)
+                    ax.axhline(y=avgph, color='gray', linestyle='--', alpha=0.75, linewidth=2)
+                    center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
+                    def_line_h = round(center_backs_height['x'].median(), 2) if not center_backs_height.empty else avgph
+                    Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == True].sort_values(by='x', ascending=False).head(2)
+                    fwd_line_h = round(Forwards_height['x'].mean(), 2) if not Forwards_height.empty else avgph
+                    v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
 
-    avgph = round(avg_locs_df['x'].median(), 2)
-    ax.axhline(y=avgph, color='gray', linestyle='--', alpha=0.75, linewidth=2)
+                    if phase_tag == 'Full Time':
+                        ax.text(34, 112, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
+                        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
+                    elif phase_tag == 'First Half':
+                        ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=15, ha='center', va='center')
+                        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
+                    elif phase_tag == 'Second Half':
+                        ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=15, ha='center', va='center')
+                        ax.text(34, 108, reshape_arabic_text(f'إجمالي الأفعال الدفاعية: {len(total_def_acts)}'), color=col, fontsize=12, ha='center', va='center')
+                    ax.text(34, -5, reshape_arabic_text(f"الأفعال الدفاعية\nالتماسك العمودي: {v_comp}%"), color=col, fontsize=12, ha='center', va='center')
+                    return df_def_show
 
-    center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
-    def_line_h = round(center_backs_height['x'].median(), 2)
-    ax.axhline(y=def_line_h, color=violet, linestyle='dotted', alpha=1, linewidth=2)
-    Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == 1]
-    Forwards_height = Forwards_height.sort_values(by='x', ascending=False)
-    Forwards_height = Forwards_height.head(2)
-    fwd_line_h = round(Forwards_height['x'].mean(), 2)
-    ax.axhline(y=fwd_line_h, color=violet, linestyle='dotted', alpha=1, linewidth=2)
+                dah_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='dah_time_pill')
+                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+                
+                if dah_time_phase == reshape_arabic_text('الوقت الكامل'):
+                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
+                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
+                elif dah_time_phase == reshape_arabic_text('الشوط الأول'):
+                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
+                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
+                elif dah_time_phase == reshape_arabic_text('الشوط الثاني'):
+                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
+                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
 
-    v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
+                fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+                fig.text(0.5, 1.01, reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'), fontsize=20, ha='center', va='center', color='white')
+                fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+                fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                fig.text(0.5, 0.03, reshape_arabic_text('*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-    if phase_tag == 'Full Time':
-        ax.text(34, 115, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-        ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
-    elif phase_tag == 'First Half':
-        ax.text(34, 115, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-        ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
-    elif phase_tag == 'Second Half':
-        ax.text(34, 115, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-        ax.text(34, 110, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+                himage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png"))
+                add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+                aimage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png"))
+                add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-    ax.text(34, -5, f"الأفعال الدفاعية\nالتماسك العمودي: {v_comp}%", color=violet, fontsize=12, ha='center', va='center')
-    if team_name == hteamName:
-        ax.text(-5, avgph, f'متوسط ارتفاع الأفعال الدفاعية: {avgph:.2f}م', color='gray', rotation=90, ha='left', va='center')
-    if team_name == ateamName:
-        ax.text(73, avgph, f'متوسط ارتفاع الأفعال الدفاعية: {avgph:.2f}م', color='gray', rotation=-90, ha='right', va='center')
-    return df_def_show
-                    
-    if an_tp == 'Defensive Actions Heatmap':
-        st.header(f'{an_tp}')
-        
-        dah_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='dah_time_pill')
-        
-        if dah_time_phase == 'Full Time':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
-            away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
-        elif dah_time_phase == 'First Half':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
-            away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
-        elif dah_time_phase == 'Second Half':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
-            away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
+                st.pyplot(fig)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {hteamName}:'))
+                    if home_df_def is not None:
+                        st.dataframe(home_df_def, hide_index=True)
+                with col2:
+                    st.write(reshape_arabic_text(f'الأفعال الدفاعية لفريق {ateamName}:'))
+                    if away_df_def is not None:
+                        st.dataframe(away_df_def, hide_index=True)
 
-        fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-        fig.text(0.5, 1.01, 'الخريطة الحرارية للأفعال الدفاعية', fontsize=20, ha='center', va='center')
-        fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
-
-        fig.text(0.5, 0.05, '*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان', fontsize=10, fontstyle='italic', ha='center', va='center')
-        fig.text(0.5, 0.03, '*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية للاعبي الميدان', fontsize=10, fontstyle='italic', ha='center', va='center')
-
-        himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-        himage = Image.open(himage)
-        ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-
-        aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-        aimage = Image.open(aimage)
-        ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-
-        st.pyplot(fig)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write(f'الأفعال الدفاعية للاعبي فريق {hteamName}:')
-            st.dataframe(home_df_def, hide_index=True)
-        with col2:
-            st.write(f'الأفعال الدفاعية للاعبي فريق {ateamName}:')
-            st.dataframe(away_df_def, hide_index=True)
-            
+            # يمكنك إضافة المزيد من دوال التحليل هنا بنفس النمط (Progressive Passes, Shotmap, إلخ)
         if an_tp == 'Progressive Passes':
             # st.header(f'{st.session_state.analysis_type}')
             st.header(f'{an_tp}')
