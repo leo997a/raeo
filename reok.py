@@ -2866,7 +2866,7 @@ from PIL import Image
 from mplsoccer import VerticalPitch
 from scipy.spatial import ConvexHull
 # افترض أن لديك بيانات المباراة
-df_match = pd.read_csv("path_to_match_data.csv")  # استبدل بالمسار الصحيح
+df_match = pd.read_csv('https://raw.githubusercontent.com/mckayjohns/youtube-videos/main/data/xT_Grid.csv', header=None)
 home_team = df_match['home_team'].iloc[0]  # اسم الفريق المضيف
 away_team = df_match['away_team'].iloc[0]  # اسم الفريق الضيف
 
