@@ -1238,23 +1238,23 @@ def plot_ShotsMap(ax, team_name, col, phase_tag):
     player_stats = {'Name': p_list, 'Total Shots': [], 'Goals': [], 'Shots Saved': [], 'Shots Off Target': [], 'Shots Blocked': [], 'Shots On Post': [],
                     'Shots outside the box': [], 'Shots inside the box': [], 'Total Big Chances': [], 'Big Chances Missed': [], 'Open-Play Shots': []}
     for name in p_list:
-        p_df = shots_df[shots_df['name'] == name]
-        player_stats['Total Shots'].append(len(p_df[p_df['type'].isin(['Goal', 'SavedShot', 'MissedShots', 'ShotOnPost'])]))
-        player_stats['Goals'].append(len(p_df[p_df['type'] == 'Goal']))
-        player_stats['Shots Saved'].append(len(p_df[(p_df['type'] == 'SavedShot') & (~p_df['qualifiers'].str.contains(': 82'))]))
-        player_stats['Shots Off Target'].append(len(p_df[p_df['type'] == 'MissedShots']))
-        player_stats['Shots Blocked'].append(len(p_df[(p_df['type'] == 'SavedShot') & (p_df['qualifiers'].str.contains(': 82'))]))
-        player_stats['Shots On Post'].append(len(p_df[p_df['type'] == 'ShotOnPost']))
-        player_stats['Shots outside the box'].append(len(p_df[p_df['qualifiers'].str.contains('OutOfBox')]))
-        player_stats['Shots inside the box'].append(len(p_df[~p_df['qualifiers'].str.contains('OutOfBox')]))
-        player_stats['Total Big Chances'].append(len(p_df[p_df['qualifiers'].str.contains('BigChance')]))
-        player_stats['Big Chances Missed'].append(len(p_df[(p_df['type'] != 'Goal') & (p_df['qualifiers'].str.contains('BigChance'))]))
-        player_stats['Open-Play Shots'].append(len(p_df[p_df['qualifiers'].str.contains('RegularPlay')]))
+                p_df = shots_df[shots_df['name'] == name]
+                player_stats['Total Shots'].append(len(p_df[p_df['type'].isin(['Goal', 'SavedShot', 'MissedShots', 'ShotOnPost'])]))
+                player_stats['Goals'].append(len(p_df[p_df['type'] == 'Goal']))
+                player_stats['Shots Saved'].append(len(p_df[(p_df['type'] == 'SavedShot') & (~p_df['qualifiers'].str.contains(': 82'))]))
+                player_stats['Shots Off Target'].append(len(p_df[p_df['type'] == 'MissedShots']))
+                player_stats['Shots Blocked'].append(len(p_df[(p_df['type'] == 'SavedShot') & (p_df['qualifiers'].str.contains(': 82'))]))
+                player_stats['Shots On Post'].append(len(p_df[p_df['type'] == 'ShotOnPost']))
+                player_stats['Shots outside the box'].append(len(p_df[p_df['qualifiers'].str.contains('OutOfBox')]))
+                player_stats['Shots inside the box'].append(len(p_df[~p_df['qualifiers'].str.contains('OutOfBox')]))
+                player_stats['Total Big Chances'].append(len(p_df[p_df['qualifiers'].str.contains('BigChance')]))
+                player_stats['Big Chances Missed'].append(len(p_df[(p_df['type'] != 'Goal') & (p_df['qualifiers'].str.contains('BigChance'))]))
+                player_stats['Open-Play Shots'].append(len(p_df[p_df['qualifiers'].str.contains('RegularPlay')]))
 
-    player_stats_df = pd.DataFrame(player_stats)
-    player_stats_df = player_stats_df.sort_values(by='Total Shots', ascending=False)
+                player_stats_df = pd.DataFrame(player_stats)
+                player_stats_df = player_stats_df.sort_values(by='Total Shots', ascending=False)
 
-    return player_stats_df
+                return player_stats_df
 
     
             sm_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='sm_time_pill')
