@@ -691,7 +691,7 @@ def pass_network(ax, team_name, col, phase_tag):
 tab1, tab2 = st.tabs([reshape_arabic_text("تحليل المباراة"), reshape_arabic_text("تبويب آخر")])
 
 with tab1:
-    an_tp = st.selectbox'نوع التحليل:', [
+    an_tp = st.selectbox('نوع التحليل:', [
         'شبكة التمريرات', 
         'Defensive Actions Heatmap', 
         'Progressive Passes', 
@@ -708,7 +708,7 @@ with tab1:
         reshape_arabic_text('Team Domination Zones'), 
         reshape_arabic_text('Pass Target Zones')
     ], index=0, key='analysis_type_tab1')
-
+    
     if an_tp == reshape_arabic_text('شبكة التمريرات'):
         st.header(reshape_arabic_text('شبكة التمريرات'))
         
