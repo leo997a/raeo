@@ -3816,14 +3816,14 @@ with tab4:
         fig.text(0.35, 0.97, f'in the match {hteamName} {hgoal_count} - {agoal_count} {ateamName}', color='#1a1a1a', fontsize=50, ha='center', va='center')
         fig.text(0.35, 0.94, '@adnaaan433', fontsize=25, ha='center', va='center')
         st.pyplot(fig)
-else:
-    st.title('Post Match Report')
-    st.text('Data source: Opta,   Made by: Adnan,   twitter: @adnaaan433')
-    st.divider()
+    else:
+        st.title('Post Match Report')
+        st.text('Data source: Opta,   Made by: Adnan,   twitter: @adnaaan433')
+        st.divider()
     
-    st.write('Please Select a Match from the Left Panel and Click Confirm')
-    st.write('  ')
-    st.write('*Click the arrow at the top left corner if the Left Panel is not visible')
+        st.write('Please Select a Match from the Left Panel and Click Confirm')
+        st.write('  ')
+        st.write('*Click the arrow at the top left corner if the Left Panel is not visible')
     
 
 
