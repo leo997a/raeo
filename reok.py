@@ -305,7 +305,7 @@ if season:
 
 hteamID
     # تعريف دالة لرسم الخريطة الحرارية للأفعال الدفاعية
-    def def_acts_hm(ax, team_name, col, phase_tag):
+def def_acts_hm(ax, team_name, col, phase_tag):
         # اختيار الأحداث الدفاعية من قاعدة البيانات
         def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
                                (df['type'] == 'BallRecovery') | (df['type'] == 'BlockedPass') | (df['type'] == 'Challenge') |
