@@ -23,7 +23,20 @@ import streamlit as st
 import os
 import arabic_reshaper
 from bidi.algorithm import get_display
-
+import time
+# تهيئة st.session_state لجميع المفاتيح المستخدمة
+if 'selecting_team_for_player_analysis' not in st.session_state:
+    st.session_state.selecting_team_for_player_analysis = f"{hteamName} Players"
+if 'home_player_analysis' not in st.session_state:
+    st.session_state.home_player_analysis = None
+if 'away_player_analysis' not in st.session_state:
+    st.session_state.away_player_analysis = None
+if 'home_gk_analysis' not in st.session_state:
+    st.session_state.home_gk_analysis = None
+if 'away_gk_analysis' not in st.session_state:
+    st.session_state.away_gk_analysis = None
+if 'analysis_type' not in st.session_state:
+    st.session_state.analysis_type = 'شبكة التمريرات'  # لـ tab1
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
 mpl.rcParams['font.family'] = 'sans-serif'
@@ -701,8 +714,8 @@ with tab1:
         reshape_arabic_text('Crosses'), 
         reshape_arabic_text('Team Domination Zones'), 
         reshape_arabic_text('Pass Target Zones'),
-        'Attacking Thirds'  # خيار جديد
-    ], index=0, key='analysis_type_tab1')
+        'Attacking Thirds'
+    ], index=0, key='analysis_type')
     
     if an_tp == 'شبكة التمريرات':
         st.header('شبكة التمريرات')
@@ -3490,15 +3503,15 @@ with tab2:
         return shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict
 
 with tab2:
+    # استخدام مفتاح ديناميكي لتجنب التكرار
+    unique_pills_key = f"selecting_team_for_player_analysis_{int(time.time())}"
     team_player = st.pills(" ", [f"{hteamName} Players", f"{ateamName} Players", f'{hteamName} GK', f'{ateamName} GK'], 
-                           selection_mode='single', default=f"{hteamName} Players", key='selecting_team_for_player_analysis')
-
-    # ... [الدوال السابقة مثل offensive_actions و defensive_actions تبقى كما هي] ...
+                           selection_mode='single', default=f"{hteamName} Players", key=unique_pills_key)
 
     if team_player == f"{hteamName} Players":
         home_pname_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] != 'GK')]
         hpname = st.selectbox('اختر لاعبًا:', home_pname_df.name.unique(), index=None, key='home_player_analysis')
-        if st.session_state.home_player_analysis and hpname:
+        if hpname:  # التحقق من أن المستخدم اختار لاعبًا
             try:
                 st.header(f'لوحة أداء {hpname}')
                 generate_player_dashboard(f'{hpname}', hftmb_tid)
@@ -3534,12 +3547,12 @@ with tab2:
                         st.write(f"{key}: {value}")
             except Exception as e:
                 st.subheader("عذرًا، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى، وإذا استمر ظهور هذه الرسالة، أعد تشغيل التطبيق.")
-                st.error(f"تفاصيل الخطأ: {str(e)}")  # عرض تفاصيل الخطأ لأغراض التصحيح
+                st.error(f"تفاصيل الخطأ: {str(e)}")
 
     if team_player == f"{ateamName} Players":
         away_pname_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] != 'GK')]
         apname = st.selectbox('اختر لاعبًا:', away_pname_df.name.unique(), index=None, key='away_player_analysis')
-        if st.session_state.away_player_analysis and apname:
+        if apname:
             try:
                 st.header(f'لوحة أداء {apname}')
                 generate_player_dashboard(f'{apname}', aftmb_tid)
@@ -3580,7 +3593,7 @@ with tab2:
     if team_player == f'{hteamName} GK':
         home_gk_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] == 'GK')]
         pname = st.selectbox('اختر حارس مرمى:', home_gk_df.name.unique(), index=None, key='home_gk_analysis')
-        if st.session_state.home_gk_analysis and pname:
+        if pname:
             try:
                 st.header(f'لوحة أداء {pname}')
                 generate_gk_dashboard(f'{pname}', hftmb_tid)
@@ -3591,7 +3604,7 @@ with tab2:
     if team_player == f'{ateamName} GK':
         away_gk_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] == 'GK')]
         pname = st.selectbox('اختر حارس مرمى:', away_gk_df.name.unique(), index=None, key='away_gk_analysis')
-        if st.session_state.away_gk_analysis and pname:
+        if pname:
             try:
                 st.header(f'لوحة أداء {pname}')
                 generate_gk_dashboard(f'{pname}', aftmb_tid)
