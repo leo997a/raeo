@@ -2868,7 +2868,8 @@ plt.rcParams['axes.unicode_minus'] = False
 # تحميل بيانات الفرق
 try:
     df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
-    st.write("أسماء الأعمدة في df_teamNameId:", df_teamNameId.columns.tolist())  # للتحقق
+    st.write("محتوى df_teamNameId:", df_teamNameId.head())  # للتحقق من البيانات
+    st.write("أسماء الأعمدة:", df_teamNameId.columns.tolist())  # للتحقق من الأعمدة
     if 'team_name' in df_teamNameId.columns:
         team_names = df_teamNameId['team_name'].tolist()
     else:
@@ -2893,6 +2894,9 @@ elif st.session_state.selecting_team_for_player_analysis != f"{selected_team} Pl
     st.session_state.selecting_team_for_player_analysis = f"{selected_team} Players"
 
 st.write(f"الفريق المختار للتحليل: {st.session_state.selecting_team_for_player_analysis}")
+
+# استخدام st.pills مع المتغيرات الصحيحة
+team_player = st.pills(" ", [f"{home_team} Players", f"{away_team} Players", f"{home_team} GK", f"{away_team} GK"])
 
 # تعريف الألوان
 bg_color = '#f5f5f5'
