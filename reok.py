@@ -3522,14 +3522,14 @@ if st.session_state.away_player_analysis and apname:  # التأكد من أن a
 elif team_player == f'{hteamName} GK':
         home_gk_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] == 'GK')]
         gk_hname = st.selectbox('Select a Goal-Keeper:', home_gk_df.name.unique(), index=None, key='home_player_analysis')
-    if st.session_state.home_player_analysis and gk_hname:  # استخدام gk_hname هنا
+if st.session_state.home_player_analysis and gk_hname:  # استخدام gk_hname هنا
             st.header(f'{gk_hname} Performance Dashboard')
             generate_gk_dashboard(f'{gk_hname}', hftmb_tid)
 
 elif team_player == f'{ateamName} GK':
         away_gk_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] == 'GK')]
         gk_aname = st.selectbox('Select a Goal-Keeper:', away_gk_df.name.unique(), index=None, key='home_player_analysis')
-    if st.session_state.home_player_analysis and gk_aname:  # استخدام gk_aname هنا
+if st.session_state.home_player_analysis and gk_aname:  # استخدام gk_aname هنا
             st.header(f'{gk_aname} Performance Dashboard')
             generate_gk_dashboard(f'{gk_aname}', aftmb_tid)
             
