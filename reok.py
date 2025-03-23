@@ -673,7 +673,7 @@ tab1, tab2 = st.tabs([reshape_arabic_text("تحليل المباراة"), reshap
 
 with tab1:
     an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
-        reshape_arabic_text('شبكة التمريرات'), 
+        'شبكة التمريرات', 
         'Defensive Actions Heatmap', 
         'Progressive Passes', 
         'Progressive Carries', 
