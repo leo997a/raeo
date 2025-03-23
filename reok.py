@@ -1454,10 +1454,10 @@ elif an_tp == 'Attacking Thirds':
     middle_percentage = (middle_count / total_chances * 100) if total_chances > 0 else 0
     right_percentage = (right_count / total_chances * 100) if total_chances > 0 else 0
 
-    # تلوين الثلثات باستخدام ax بدلاً من pitch
-    ax.fill_between(x=[0, 100], y=[0, 33.33], color='#FF9999', alpha=0.5)  # الثلث الأيسر (y من 0 إلى 33.33)
-    ax.fill_between(x=[0, 100], y=[33.33, 66.66], color='#FFCCCC', alpha=0.5)  # الثلث الأوسط (y من 33.33 إلى 66.66)
-    ax.fill_between(x=[0, 100], y=[66.66, 100], color='#FFCCCC', alpha=0.5)  # الثلث الأيمن (y من 66.66 إلى 100)
+    # تلوين الثلثات باستخدام y1 و y2
+    ax.fill_between(x=[0, 100], y1=0, y2=33.33, color='#FF9999', alpha=0.5)  # الثلث الأيسر (y من 0 إلى 33.33)
+    ax.fill_between(x=[0, 100], y1=33.33, y2=66.66, color='#FFCCCC', alpha=0.5)  # الثلث الأوسط (y من 33.33 إلى 66.66)
+    ax.fill_between(x=[0, 100], y1=66.66, y2=100, color='#FFCCCC', alpha=0.5)  # الثلث الأيمن (y من 66.66 إلى 100)
 
     # إضافة النسب المئوية وعدد الفرص
     # تعديل المواقع لتتناسب مع الاتجاه العمودي
