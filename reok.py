@@ -1431,18 +1431,6 @@ if an_tp == 'Match Momentum':
 elif an_tp == 'Attacking Thirds':
     st.header(reshape_arabic_text('الثلث الهجومي'))
 
-    # تقسيم البيانات حسب الفريقين
-    homedf = df[df['teamName'] == hteamName]
-    awaydf = df[df['teamName'] == ateamName]
-
-    # تصفية الفرص (التسديدات والتمريرات الناجحة)
-    home_chances = homedf[homedf['type'].isin(['Shot', 'Pass']) & (homedf['outcomeType'] == 'Successful')]
-    away_chances = awaydf[awaydf['type'].isin(['Shot', 'Pass']) & (awaydf['outcomeType'] == 'Successful')]
-
-    # تقسيم الملعب إلى ثلاثة أقسام (باستخدام UEFA dimensions: 105x68)
-elif an_tp == 'Attacking Thirds':
-    st.header(reshape_arabic_text('الثلث الهجومي'))
-
     # خيار اختيار الوقت
     time_option = st.selectbox(
         reshape_arabic_text('اختر الوقت:'),
@@ -1490,7 +1478,7 @@ elif an_tp == 'Attacking Thirds':
     # التحقق من وجود بيانات
     if h_total == 0 and a_total == 0:
         st.warning(reshape_arabic_text("لا توجد بيانات متاحة للفرص المخلقة في هذه الفترة."))
-        return
+        st.stop()  # إيقاف التنفيذ في Streamlit
 
     h_left_count, h_middle_count, h_right_count = len(h_left), len(h_middle), len(h_right)
     a_left_count, a_middle_count, a_right_count = len(a_left), len(a_middle), len(a_right)
@@ -1598,6 +1586,6 @@ elif an_tp == 'Attacking Thirds':
         a_data = pd.DataFrame({
             'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
             'عدد الفرص': [a_left_count, a_middle_count, a_right_count],
-            'النسبة (%)': [f'{a_left_pct:.1f}', f'{a_right_pct:.1f}', f'{a_right_pct:.1f}']
+            'النسبة (%)': [f'{a_left_pct:.1f}', f'{a_middle_pct:.1f}', f'{a_right_pct:.1f}']
         })
         st.dataframe(a_data, hide_index=True)
