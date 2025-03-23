@@ -509,7 +509,7 @@ if league and htn and atn and st.session_state.confirmed:
                 else:
                     st.write("لا توجد بيانات متاحة لعرض شبكة التمريرات.")
             # إضافة باقي أنواع التحليل هنا بنفس النمط
-if an_tp == 'Defensive Actions Heatmap':
+if st.session_state['analysis_type'] == 'Defensive Actions Heatmap':
     st.header(f'{an_tp}')
             
 def def_acts_hm(ax, team_name, col, phase_tag):
