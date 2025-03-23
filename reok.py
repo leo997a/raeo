@@ -458,12 +458,12 @@ if league and htn and atn and st.session_state.confirmed:
             st.header(reshape_arabic_text('التمريرات التقدمية'))
                 # أضف كود التمريرات التقدمية هنا إذا لزم الأمر
 
-            elif an_tp == 'Progressive Carries':
-                st.header(reshape_arabic_text('الحملات التقدمية'))
+    elif an_tp == 'Progressive Carries':
+            st.header(reshape_arabic_text('الحملات التقدمية'))
                 # أضف كود الحملات التقدمية هنا (موجود بالفعل في الكود الخاص بك)
 
-            elif an_tp == 'Shotmap':
-                st.header(reshape_arabic_text('خريطة التسديدات'))
+    elif an_tp == 'Shotmap':
+            st.header(reshape_arabic_text('خريطة التسديدات'))
                 # أضف كود خريطة التسديدات هنا إذا لزم الأمر
     if an_tp == 'Progressive Carries':
             # st.header(f'{st.session_state.analysis_type}')
