@@ -3519,14 +3519,14 @@ if team_player == f"{ateamName} Players":
                     for key, value in other_stats_dict.items():
                         st.write(f"{key}: {value}")
                 
-        if team_player == f'{hteamName} GK':
+if team_player == f'{hteamName} GK':
             home_gk_df = homedf[(homedf['name'] != 'nan') & (homedf['position']=='GK')]
             pname = st.selectbox('Select a Goal-Keeper:', home_gk_df.name.unique(), index=None, key='home_player_analysis')
             if st.session_state.home_player_analysis:
                 st.header(f'{pname} Performance Dashboard')
                 generate_gk_dahsboard(f'{pname}', hftmb_tid)
                 
-        if team_player == f'{ateamName} GK':
+if team_player == f'{ateamName} GK':
             away_gk_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position']=='GK')]
             pname = st.selectbox('Select a Goal-Keeper:', away_gk_df.name.unique(), index=None, key='home_player_analysis')
             if st.session_state.home_player_analysis:
