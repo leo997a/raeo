@@ -1429,6 +1429,11 @@ if an_tp == 'Match Momentum':
     # st.header(f'{st.session_state.analysis_type}')
     st.header(f'{an_tp}')
 elif an_tp == 'Attacking Thirds':
+    # التأكد من أن match_data معرف
+    if 'match_data' not in globals() or match_data is None:
+        st.error("لم يتم تحميل بيانات المباراة. الرجاء اختيار مباراة أولاً.")
+        st.stop()
+
     # إعداد الملعب
     pitch = VerticalPitch(pitch_type='opta', pitch_color='#1a2a44', line_color='white', half=False)
     
@@ -1441,8 +1446,8 @@ elif an_tp == 'Attacking Thirds':
     pitch.draw(ax=ax2)
 
     # تحديد الفريقين بناءً على teamId
-    home_team_id = match_data['homeTeam']['teamId']  # تغيير 'home' إلى 'homeTeam'
-    away_team_id = match_data['awayTeam']['teamId']  # تغيير 'away' إلى 'awayTeam'
+    home_team_id = match_data['homeTeam']['teamId']
+    away_team_id = match_data['awayTeam']['teamId']
 
     # تقسيم البيانات حسب الفريق
     home_chances = df[(df['type'].isin(['Shot', 'Pass']) & (df['outcomeType'] == 'Successful')) & (df['teamId'] == home_team_id)]
