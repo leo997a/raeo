@@ -1654,3 +1654,97 @@ elif an_tp == 'Attacking Thirds':
             'التمريرات الطويلة (ناجحة)': [a_left_long_count, a_middle_long_count, a_right_long_count]
         })
         st.dataframe(a_data, hide_index=True)
+def plot_match_momentm(ax, phase_tag):
+                u_df = df[df['period']==phase_tag]
+                u_df = u_df[~u_df['qualifiers'].str.contains('CornerTaken')]
+                u_df = u_df[['x', 'minute', 'type', 'teamName', 'qualifiers']]
+                u_df = u_df[~u_df['type'].isin(['Start', 'OffsidePass', 'OffsideProvoked', 'CornerAwarded', 'End', 
+                                'OffsideGiven', 'SubstitutionOff', 'SubstitutionOn', 'FormationChange', 'FormationSet'])].reset_index(drop=True)
+                u_df.loc[u_df['teamName'] == ateamName, 'x'] = 105 - u_df.loc[u_df['teamName'] == ateamName, 'x']
+            
+                homedf = u_df[u_df['teamName']==hteamName]
+                awaydf = u_df[u_df['teamName']==ateamName]
+                
+                Momentumdf = u_df.groupby('minute')['x'].mean()
+                Momentumdf = Momentumdf.reset_index()
+                Momentumdf.columns = ['minute', 'average_x']
+                Momentumdf['average_x'] = Momentumdf['average_x'] - 52.5
+            
+                # Creating the bar plot
+                ax.bar(Momentumdf['minute'], Momentumdf['average_x'], width=1, color=[hcol if x > 0 else acol for x in Momentumdf['average_x']])
+                
+                ax.axhline(0, color=line_color, linewidth=2)
+                # ax.set_xticks(False)
+                ax.set_facecolor('#ededed')
+                # Hide spines
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.spines['left'].set_visible(False)
+                ax.spines['bottom'].set_visible(False)
+                # # Hide ticks
+                ax.tick_params(axis='both', which='both', length=0)
+                ax.tick_params(axis='x', colors=line_color)
+                ax.tick_params(axis='y', colors=bg_color)
+                # Add labels and title
+                ax.set_xlabel('Minute', color=line_color, fontsize=20)
+                ax.grid(True, ls='dotted')
+            
+                
+                # making a list of munutes when goals are scored
+                hgoal_list = homedf[(homedf['type'] == 'Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))]['minute'].tolist()
+                agoal_list = awaydf[(awaydf['type'] == 'Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))]['minute'].tolist()
+                hog_list = homedf[(homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))]['minute'].tolist()
+                aog_list = awaydf[(awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))]['minute'].tolist()
+                hred_list = homedf[homedf['qualifiers'].str.contains('Red|SecondYellow')]['minute'].tolist()
+                ared_list = awaydf[awaydf['qualifiers'].str.contains('Red|SecondYellow')]['minute'].tolist()
+            
+                ax.scatter(hgoal_list, [60]*len(hgoal_list), s=250, c=bg_color, edgecolor='green', hatch='////', marker='o', zorder=4)
+                ax.vlines(hgoal_list, ymin=0, ymax=60, ls='--',  color='green')
+                ax.scatter(agoal_list, [-60]*len(agoal_list), s=250, c=bg_color, edgecolor='green', hatch='////', marker='o', zorder=4)
+                ax.vlines(agoal_list, ymin=0, ymax=-60, ls='--',  color='green')
+                ax.scatter(hog_list, [-60]*len(hog_list), s=250, c=bg_color, edgecolor='orange', hatch='////', marker='o', zorder=4)
+                ax.vlines(hog_list, ymin=0, ymax=60, ls='--',  color='orange')
+                ax.scatter(aog_list, [60]*len(aog_list), s=250, c=bg_color, edgecolor='orange', hatch='////', marker='o', zorder=4)
+                ax.vlines(aog_list, ymin=0, ymax=60, ls='--',  color='orange')
+                ax.scatter(hred_list, [60]*len(hred_list), s=250, c=bg_color, edgecolor='red', hatch='////', marker='s', zorder=4)
+                ax.scatter(ared_list, [-60]*len(ared_list), s=250, c=bg_color, edgecolor='red', hatch='////', marker='s', zorder=4)
+            
+                ax.set_ylim(-65, 65)
+            
+                if phase_tag=='FirstHalf':
+                    ax.set_xticks(range(0, int(Momentumdf['minute'].max()), 5))
+                    ax.set_title('First Half', fontsize=20)
+                    ax.set_xlim(-1, Momentumdf['minute'].max()+1)
+                    ax.axvline(45, color='gray', linewidth=2, linestyle='dotted')
+                    ax.set_ylabel('Momentum', color=line_color, fontsize=20)
+                else:
+                    ax.set_xticks(range(45, int(Momentumdf['minute'].max()), 5))
+                    ax.set_title('Second Half', fontsize=20)
+                    ax.set_xlim(44, Momentumdf['minute'].max()+1)
+                    ax.axvline(90, color='gray', linewidth=2, linestyle='dotted')
+                return
+            
+            fig,axs=plt.subplots(1,2, figsize=(20,10), facecolor=bg_color)
+            plot_match_momentm(axs[0], 'FirstHalf')
+            plot_match_momentm(axs[1], 'SecondHalf')
+            fig.subplots_adjust(wspace=0.025)
+            
+            fig_text(0.5, 1.1, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=40, fontweight='bold', ha='center', va='center', ax=fig)
+            fig.text(0.5, 1.04, 'Match Momentum', fontsize=30, ha='center', va='center')
+            fig.text(0.5, 0.98, '@adnaaan433', fontsize=15, ha='center', va='center')
+            
+            fig.text(0.5, -0.01, '*Momentum is the measure of the Avg. Open-Play Attacking Threat of a team per minute', fontsize=15, fontstyle='italic', ha='center', va='center')
+            fig.text(0.5, -0.05, '*green circle: Goals, orange circle: own goal', fontsize=15, fontstyle='italic', ha='center', va='center')
+            
+            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+            himage = Image.open(himage)
+            ax_himage = add_image(himage, fig, left=0.085, bottom=1.02, width=0.125, height=0.125)
+            
+            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+            aimage = Image.open(aimage)
+            ax_aimage = add_image(aimage, fig, left=0.815, bottom=1.02, width=0.125, height=0.125)
+            
+            st.pyplot(fig)
+            
+            st.header('Cumulative xT')
+            
