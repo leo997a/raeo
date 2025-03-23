@@ -158,8 +158,8 @@ if season:
             st.session_state['confirmed'] = False
             st.sidebar.write('Match not found')
 if league and htn and atn and st.session_state.confirmed:
-@st.cache_data
-df, teams_dict, players_df, data = get_event_data(season, league, stage, htn, atn)
+    @st.cache_data
+    df, teams_dict, players_df, data = get_event_data(season, league, stage, htn, atn)
     
     # تعيين أسماء الفرق بناءً على البيانات المجلوبة
     hteamID = list(teams_dict.keys())[0]
