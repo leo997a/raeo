@@ -2866,20 +2866,22 @@ from PIL import Image
 from mplsoccer import VerticalPitch
 from scipy.spatial import ConvexHull
 # افترض أن لديك بيانات المباراة
-df_match = pd.read_csv('https://raw.githubusercontent.com/mckayjohns/youtube-videos/main/data/xT_Grid.csv', header=None)
-home_team = df_match['home_team'].iloc[0]  # اسم الفريق المضيف
-away_team = df_match['away_team'].iloc[0]  # اسم الفريق الضيف
+df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
+home_team = st.selectbox("اختر الفريق المضيف", team_names)
+away_team = st.selectbox("اختر الفريق الضيف", team_names, index=1)  # index=1 لاختيار فريق مختلف افتراضيًا
 
 # اختيار الفريق
 team_options = [home_team, away_team]
-selected_team = st.radio("اختر الفريق", team_options)
+selected_team = st.radio("اختر الفريق لتحليل اللاعبين", team_options)
 
+# تهيئة st.session_state
 if 'selecting_team_for_player_analysis' not in st.session_state:
     st.session_state.selecting_team_for_player_analysis = f"{selected_team} Players"
 elif st.session_state.selecting_team_for_player_analysis != f"{selected_team} Players":
     st.session_state.selecting_team_for_player_analysis = f"{selected_team} Players"
 
-st.write(f"الفريق المختار: {st.session_state.selecting_team_for_player_analysis}")
+st.write(f"الفريق المختار للتحليل: {st.session_state.selecting_team_for_player_analysis}")
+
 # تعريف الألوان
 bg_color = '#f5f5f5'
 line_color = '#000000'
