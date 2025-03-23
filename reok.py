@@ -3533,10 +3533,10 @@ if st.session_state.home_player_analysis and pname:  # التأكد من أن pn
             st.header(f'{pname} Performance Dashboard')
             generate_gk_dashboard(f'{pname}', aftmb_tid)  # تصحيح اسم الدالة
 
-    with tab4:
+with tab4:
             top_type = st.selectbox('Select Type', ['Top Ball Progressors', 'Top Shot Sequences Involvements', 'Top Defensive Involvements', 'Top Threat Creating Players'], index=None, key='top_players_selection')
             
-            def top_dfs():
+def top_dfs():
                 # Get unique players
                 unique_players = df['name'].unique()
                 
