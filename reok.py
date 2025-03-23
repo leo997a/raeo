@@ -2843,10 +2843,8 @@ if an_tp == 'Pass Target Zones':
     st.pyplot(fig)
 
 with tab2:
-    team_player = st.pills(" ", [f"{hteamName} Players", f"{ateamName} Players", f'{hteamName} GK', f'{ateamName} GK'], 
-                           selection_mode='single', default=f"{hteamName} Players", key='selecting_team_for_player_analysis')
-
-    def offensive_actions(ax, pname):
+    team_player = st.pills(" ", [f"{hteamName} Players", f"{ateamName} Players", f'{hteamName} GK', f'{ateamName} GK'], selection_mode='single', default=f"{hteamName} Players", key='selecting_team_for_player_analysis')
+        def offensive_actions(ax, pname):
         # Viz Dfs:
         playerdf = df[df['name'] == pname]
         passdf = playerdf[playerdf['type'] == 'Pass']
