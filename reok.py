@@ -3216,7 +3216,7 @@ with tab2:
             fig.text(0.21, 0.97, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played}', 
                      fontsize=30, ha='left', va='center')
         else:
-            fig.text(0.21, 0.97, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played} ({subs_text})', 
+        fig.text(0.21, 0.97, f'in {hteamName} {hgoal_count} - {agoal_count} {ateamName}  |  Minutes played: {mins_played} ({subs_text})', 
                      fontsize=30, ha='left', va='center')
         fig.text(0.87, 0.995, '@adnaaan433', fontsize=20, ha='right', va='center')
 
