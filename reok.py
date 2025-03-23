@@ -435,8 +435,8 @@ if league and htn and atn and st.session_state.confirmed:
                     fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
                 # إضافة شعارات الفريقين
-                himage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png"))
-                add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+            himage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png"))
+            add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
                 aimage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png"))
                 add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
