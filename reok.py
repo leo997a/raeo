@@ -407,40 +407,40 @@ if league and htn and atn and st.session_state.confirmed:
         pn_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
         fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
                 
-            if pn_time_phase == reshape_arabic_text('الوقت الكامل'):
-                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-            elif pn_time_phase == reshape_arabic_text('الشوط الأول'):
-                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-                away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-            elif pn_time_phase == reshape_arabic_text('الشوط الثاني'):
-                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+        if pn_time_phase == reshape_arabic_text('الوقت الكامل'):
+            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
+        elif pn_time_phase == reshape_arabic_text('الشوط الأول'):
+            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
+            away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
+        elif pn_time_phase == reshape_arabic_text('الشوط الثاني'):
+            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
+            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
-                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
-                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
-                fig_text(0.5, 1.05, f"<{home_part}> - <{away_part}>", highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
-                fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
-                fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
-                fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-                fig.text(0.5, 0.03, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+            home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+            away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+            fig_text(0.5, 1.05, f"<{home_part}> - <{away_part}>", highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+            fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
+            fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+            fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+            fig.text(0.5, 0.03, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-                himage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png"))
-                add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-                aimage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png"))
-                add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+            himage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png"))
+            add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+            aimage = Image.open(urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png"))
+            add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-                st.pyplot(fig)
+            st.pyplot(fig)
                 
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
-                    if home_pass_btn is not None:
-                        st.dataframe(home_pass_btn, hide_index=True)
-                with col2:
-                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
-                    if away_pass_btn is not None:
-                        st.dataframe(away_pass_btn, hide_index=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
+                if home_pass_btn is not None:
+                    st.dataframe(home_pass_btn, hide_index=True)
+            with col2:
+                st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
+                if away_pass_btn is not None:
+                    st.dataframe(away_pass_btn, hide_index=True)
 
             elif an_tp == 'Defensive Actions Heatmap':
                 st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
