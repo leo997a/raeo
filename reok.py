@@ -343,24 +343,18 @@ if league and htn and atn and st.session_state.confirmed:
                 # ... (باقي كود شبكة التمريرات كما هو)
 
             elif an_tp == 'Defensive Actions Heatmap':
-                st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
-
-                def def_acts_hm(ax, team_name, col, phase_tag):
-                    # اختيار الأحداث الدفاعية من قاعدة البيانات
-                    def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
-                                           (df['type'] == 'BallRecovery') | (df['type'] == 'BlockedPass') | (df['type'] == 'Challenge') |
-                                           (df['type'] == 'Clearance') | ((df['type'] == 'Save') & (df['position'] != 'GK')) |
-                                           ((df['type'] == 'Foul') & (df['outcomeType'] == 'Unsuccessful')) | (df['type'] == 'Interception') |
-                                           (df['type'] == 'Tackle')]
-                    df_def = df.loc[def_acts_id, ["x", "y", "teamName", "name", "type", "outcomeType", "period"]]
-                    
-                    # تصفية البيانات حسب فترة المباراة
-                    if phase_tag == 'Full Time':
-                        df_def = df_def.reset_index(drop=True)
-                    elif phase_tag == 'First Half':
-                        df_def = df_def[df_def['period'] == 'FirstHalf'].reset_index(drop=True)
-                    elif phase_tag == 'Second Half':
-                        df_def = df_def[df_def['period'] == 'SecondHalf'].reset_index(drop=True)
+                st.header(f'{an_tp}')
+                dah_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='dah_time_pill')
+                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+                if dah_time_phase == 'Full Time':
+                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Full Time')
+                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Full Time')
+                elif dah_time_phase == 'First Half':
+                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'First Half')
+                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'First Half')
+                elif dah_time_phase == 'Second Half':
+                    home_df_def = def_acts_hm(axs[0], hteamName, hcol, 'Second Half')
+                    away_df_def = def_acts_hm(axs[1], ateamName, acol, 'Second Half')
 
                     # اختيار الأفعال الدفاعية للفريق المحدد
                     total_def_acts = df_def[df_def['teamName'] == team_name]
