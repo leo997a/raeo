@@ -24,20 +24,21 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 import time
-# اختيار الفريق من قبل المستخدم
-hteamName = st.selectbox("اختر الفريق المضيف", ["الفريق أ", "الفريق ب"])  # استبدل بالفرق الفعلية
+# اختيار الفريق
+team_options = ["الفريق المضيف", "الفريق الضيف"]
+selected_team = st.radio("اختر الفريق", team_options)
+# تحديد اسم الفريق بناءً على الاختيار
+if selected_team == "الفريق المضيف":
+    team_name = st.selectbox("اختر الفريق المضيف", ["الفريق أ", "الفريق ب"])
+else:
+    team_name = st.selectbox("اختر الفريق الضيف", ["الفريق ج", "الفريق د"])
+
 if 'selecting_team_for_player_analysis' not in st.session_state:
-    st.session_state.selecting_team_for_player_analysis = f"{hteamName} Players"
-if 'home_player_analysis' not in st.session_state:
-    st.session_state.home_player_analysis = None
-if 'away_player_analysis' not in st.session_state:
-    st.session_state.away_player_analysis = None
-if 'home_gk_analysis' not in st.session_state:
-    st.session_state.home_gk_analysis = None
-if 'away_gk_analysis' not in st.session_state:
-    st.session_state.away_gk_analysis = None
-if 'analysis_type' not in st.session_state:
-    st.session_state.analysis_type = 'شبكة التمريرات'  # لـ tab1
+    st.session_state.selecting_team_for_player_analysis = f"{team_name} Players"
+elif st.session_state.selecting_team_for_player_analysis != f"{team_name} Players":
+    st.session_state.selecting_team_for_player_analysis = f"{team_name} Players"
+
+st.write(f"الفريق المختار: {st.session_state.selecting_team_for_player_analysis}")
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
 mpl.rcParams['font.family'] = 'sans-serif'
