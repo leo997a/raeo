@@ -587,8 +587,8 @@ if league and htn and atn and st.session_state.confirmed:
                                  index=0, key='pn_time_pill_pass_network')
 
     elif an_tp == 'Defensive Actions Heatmap':
-        st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
-        dah_time_phase = st.radio(" ", [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
+           st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
+           dah_time_phase = st.radio(" ", [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
                                   index=0, key='dah_time_pill_defensive')
 def pass_network(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
