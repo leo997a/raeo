@@ -571,8 +571,8 @@ if league and htn and atn and st.session_state.confirmed:
     ])
 
     with tab1:
-        analysis_options = [
-            reshape_arabic_text('شبكة التمريرات'), 'Defensive Actions Heatmap', 'Progressive Passes', 
+    analysis_options = [
+        reshape_arabic_text('شبكة التمريرات'), 'Defensive Actions Heatmap', 'Progressive Passes',  
             'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
             reshape_arabic_text('Zone14 & Half-Space Passes'), reshape_arabic_text('Final Third Entries'),
             reshape_arabic_text('Box Entries'), reshape_arabic_text('High-Turnovers'),
@@ -582,8 +582,14 @@ if league and htn and atn and st.session_state.confirmed:
         an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), analysis_options, index=0, key='analysis_type')
 
         if an_tp == reshape_arabic_text('شبكة التمريرات'):
-            st.header(reshape_arabic_text('شبكة التمريرات'))
-            pn_time_phase = st.radio(" ", [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
+        st.header(reshape_arabic_text('شبكة التمريرات'))
+        pn_time_phase = st.radio(" ", [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
+                                 index=0, key='pn_time_pill_pass_network')
+
+    elif an_tp == 'Defensive Actions Heatmap':
+        st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
+        dah_time_phase = st.radio(" ", [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
+                                  index=0, key='dah_time_pill_defensive')
 def pass_network(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
         df_pass = df.copy()
