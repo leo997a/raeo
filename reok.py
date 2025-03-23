@@ -234,35 +234,27 @@ if season:
 if league and htn and atn and st.session_state.confirmed:
     @st.cache_data
     def get_event_data(season, league, stage, hteam, ateam):
-        try:
-        # تكوين رابط الملف
+    try:
         match_html_path = f"https://raw.githubusercontent.com/leo997a/{season}_{league}/refs/heads/main/{stage}/{hteam}_vs_{ateam}.html"
         match_html_path = match_html_path.replace(" ", "%20")
-        
-        # جلب الملف
         response = requests.get(match_html_path)
         response.raise_for_status()  # التحقق من نجاح الطلب
-        
         match_html = response.text
-        
-        # البحث عن البيانات
         match_json = re.search(r'var matchCentreData = ({.*});', match_html)
         if match_json is None:
             st.error(f"لم يتم العثور على 'matchCentreData' في الملف: {match_html_path}")
             return None, None, None
-        
+        match_data = json.loads(match_json.group(1))
         events = match_data["events"]
         teams = match_data["teamsData"]
         players_list = []
         for p in match_data["playerIdNameDictionary"].items():
             players_list.append({"playerId": p[0], "name": p[1]})
-        
         df = pd.DataFrame(events)
         teams_dict = teams
         players_df = pd.DataFrame(players_list)
-        
         return df, teams_dict, players_df
-        except requests.exceptions.HTTPError as e:
+    except requests.exceptions.HTTPError as e:
         st.error(f"خطأ في جلب البيانات من الرابط: {e}")
         return None, None, None
     except json.JSONDecodeError as e:
