@@ -1429,11 +1429,6 @@ if an_tp == 'Match Momentum':
     # st.header(f'{st.session_state.analysis_type}')
     st.header(f'{an_tp}')
 elif an_tp == 'Attacking Thirds':
-    # التأكد من أن match_data معرف
-    if 'match_data' not in globals() or match_data is None:
-        st.error("لم يتم تحميل بيانات المباراة. الرجاء اختيار مباراة أولاً.")
-        st.stop()
-
     # إعداد الملعب
     pitch = VerticalPitch(pitch_type='opta', pitch_color='#1a2a44', line_color='white', half=False)
     
