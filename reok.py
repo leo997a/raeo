@@ -3504,7 +3504,7 @@ with tab2:
 
 with tab2:
     # استخدام مفتاح ديناميكي لتجنب التكرار
-    unique_pills_key = f"selecting_team_for_player_analysis_{int(time.time())}"
+    unique_pills_key = f"selecting_team_for_player_analysis1_{int(time.time())}"
     team_player = st.pills(" ", [f"{hteamName} Players", f"{ateamName} Players", f'{hteamName} GK', f'{ateamName} GK'], 
                            selection_mode='single', default=f"{hteamName} Players", key=unique_pills_key)
 
