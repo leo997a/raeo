@@ -1296,13 +1296,13 @@ def progressive_carry(ax, team_name, col, phase_tag):
 
 if an_tp == 'GK Saves':
     st.header(f'{an_tp}')
-            def plot_goal_post(ax, team_name, col, phase_tag):
-                if phase_tag == 'Full Time':
-                    shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost']))]
-                elif phase_tag == 'First Half':
-                    shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='FirstHalf')]
-                elif phase_tag == 'Second Half':
-                    shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='SecondHalf')]
+    def plot_goal_post(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost']))]
+        elif phase_tag == 'First Half':
+            shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='FirstHalf')]
+        elif phase_tag == 'Second Half':
+            shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='SecondHalf')]
             
                 shots_df['goalMouthZ'] = (shots_df['goalMouthZ']*0.75) + 38
                 shots_df['goalMouthY'] = ((37.66 - shots_df['goalMouthY'])*12.295) + 7.5
