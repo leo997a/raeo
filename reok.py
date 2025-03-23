@@ -550,6 +550,7 @@ if league and htn and atn and st.session_state.confirmed:
     st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
     st.text(f'{league}')
     
+    tab1, tab2, tab3, tab4 = st.tabs(['Team Analysis', 'Player Analysis', 'Match Statistics', 'Top Players'])
     
 # دالة pass_network المعدلة
 def pass_network(ax, team_name, col, phase_tag):
