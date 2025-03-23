@@ -2043,7 +2043,7 @@ elif an_tp == 'Zone14 & Half-Space Passes':
 
 elif an_tp == 'Final Third Entries':
     st.header(f'{an_tp}')
-            def final_third_entry(ax, team_name, col, phase_tag):
+                def final_third_entry(ax, team_name, col, phase_tag):
                 if phase_tag == 'Full Time':
                     fentry = df[(df['teamName']==team_name) & (df['type'].isin(['Pass', 'Carry'])) & (df['outcomeType']=='Successful') & (~df['qualifiers'].str.contains('Freekick|Corner'))]
                 elif phase_tag == 'First Half':
