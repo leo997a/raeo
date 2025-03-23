@@ -3521,18 +3521,18 @@ if st.session_state.away_player_analysis and apname:  # التأكد من أن a
 
 elif team_player == f'{hteamName} GK':
         home_gk_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] == 'GK')]
-        pname = st.selectbox('Select a Goal-Keeper:', home_gk_df.name.unique(), index=None, key='home_player_analysis')
-if st.session_state.home_player_analysis and pname:  # التأكد من أن pname ليس None
-            st.header(f'{pname} Performance Dashboard')
-            generate_gk_dashboard(f'{pname}', hftmb_tid)  # تصحيح اسم الدالة
+        gk_hname = st.selectbox('Select a Goal-Keeper:', home_gk_df.name.unique(), index=None, key='home_player_analysis')
+    if st.session_state.home_player_analysis and gk_hname:  # استخدام gk_hname هنا
+            st.header(f'{gk_hname} Performance Dashboard')
+            generate_gk_dashboard(f'{gk_hname}', hftmb_tid)
 
 elif team_player == f'{ateamName} GK':
         away_gk_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] == 'GK')]
-        pname = st.selectbox('Select a Goal-Keeper:', away_gk_df.name.unique(), index=None, key='home_player_analysis')
-if st.session_state.home_player_analysis and pname:  # التأكد من أن pname ليس None
-            st.header(f'{pname} Performance Dashboard')
-            generate_gk_dashboard(f'{pname}', aftmb_tid)  # تصحيح اسم الدالة
-
+        gk_aname = st.selectbox('Select a Goal-Keeper:', away_gk_df.name.unique(), index=None, key='home_player_analysis')
+    if st.session_state.home_player_analysis and gk_aname:  # استخدام gk_aname هنا
+            st.header(f'{gk_aname} Performance Dashboard')
+            generate_gk_dashboard(f'{gk_aname}', aftmb_tid)
+            
 with tab4:
             top_type = st.selectbox('Select Type', ['Top Ball Progressors', 'Top Shot Sequences Involvements', 'Top Defensive Involvements', 'Top Threat Creating Players'], index=None, key='top_players_selection')
             
