@@ -1453,17 +1453,24 @@ elif an_tp == 'Attacking Thirds':
     homedf = df[df['teamName'] == hteamName]
     awaydf = df[df['teamName'] == ateamName]
 
+    # التحقق من قيم period
+    st.write("قيم عمود period:", df['period'].unique())
+
     # تصفية البيانات حسب الوقت المختار
     if time_option == reshape_arabic_text('الشوط الأول'):
-        homedf = homedf[homedf['period'] == 'FirstHalf']
-        awaydf = awaydf[awaydf['period'] == 'FirstHalf']
+        homedf = homedf[homedf['period'] == 1]  # تعديل بناءً على القيم الفعلية
+        awaydf = awaydf[awaydf['period'] == 1]
     elif time_option == reshape_arabic_text('الشوط الثاني'):
-        homedf = homedf[homedf['period'] == 'SecondHalf']
-        awaydf = awaydf[awaydf['period'] == 'SecondHalf']
+        homedf = homedf[homedf['period'] == 2]
+        awaydf = awaydf[awaydf['period'] == 2]
 
     # تصفية الفرص (التسديدات والتمريرات الناجحة)
     home_chances = homedf[homedf['type'].isin(['Shot', 'Pass']) & (homedf['outcomeType'] == 'Successful')]
     away_chances = awaydf[awaydf['type'].isin(['Shot', 'Pass']) & (awaydf['outcomeType'] == 'Successful')]
+
+    # التحقق من عدد الأحداث
+    st.write("عدد الأحداث للفريق المضيف:", len(home_chances))
+    st.write("عدد الأحداث للفريق الضيف:", len(away_chances))
 
     # تقسيم الملعب إلى ثلاثة أقسام (باستخدام UEFA dimensions: 105x68)
     def split_thirds(df_team):
@@ -1479,6 +1486,11 @@ elif an_tp == 'Attacking Thirds':
     # حساب الإجماليات والنسب
     h_total = len(home_chances)
     a_total = len(away_chances)
+
+    # التحقق من وجود بيانات
+    if h_total == 0 and a_total == 0:
+        st.warning(reshape_arabic_text("لا توجد بيانات متاحة للفرص المخلقة في هذه الفترة."))
+        return
 
     h_left_count, h_middle_count, h_right_count = len(h_left), len(h_middle), len(h_right)
     a_left_count, a_middle_count, a_right_count = len(a_left), len(a_middle), len(a_right)
@@ -1558,13 +1570,16 @@ elif an_tp == 'Attacking Thirds':
     fig.text(0.5, 0.05, reshape_arabic_text(f'نسبة الفرص المخلقة من كل ثلث (تمريرات ناجحة وتسديدات) - {time_option}'), fontsize=12, ha='center', va='center', color='white')
 
     # إضافة شعارات الفريقين
-    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-    himage = Image.open(himage)
-    add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+    try:
+        himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+        himage = Image.open(himage)
+        add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
 
-    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-    aimage = Image.open(aimage)
-    add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+        aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+        aimage = Image.open(aimage)
+        add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+    except Exception as e:
+        st.warning(f"خطأ في تحميل شعارات الفريقين: {e}")
 
     st.pyplot(fig)
 
@@ -1583,6 +1598,6 @@ elif an_tp == 'Attacking Thirds':
         a_data = pd.DataFrame({
             'الثلث': ['دفاعي', 'أوسط', 'هجومي'],
             'عدد الفرص': [a_left_count, a_middle_count, a_right_count],
-            'النسبة (%)': [f'{a_left_pct:.1f}', f'{a_middle_pct:.1f}', f'{a_right_pct:.1f}']
+            'النسبة (%)': [f'{a_left_pct:.1f}', f'{a_right_pct:.1f}', f'{a_right_pct:.1f}']
         })
         st.dataframe(a_data, hide_index=True)
