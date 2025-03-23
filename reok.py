@@ -563,15 +563,27 @@ if league and htn and atn and st.session_state.confirmed:
     st.header(reshape_arabic_text(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}'))
     st.text(reshape_arabic_text(league))
     
-    tab1, tab2, tab3, tab4 = st.tabs(['تحليل الفريق', 'Player Analysis', 'Match Statistics', 'Top Players'])
-    
+    tab1, tab2, tab3, tab4 = st.tabs([
+        reshape_arabic_text('تحليل الفريق'),
+        reshape_arabic_text('تحليل اللاعبين'),
+        reshape_arabic_text('إحصائيات المباراة'),
+        reshape_arabic_text('أفضل اللاعبين')
+    ])
+
     with tab1:
-        an_tp = st.selectbox('Team Analysis Type:', ['شبكة التمريرات', 'Defensive Actions Heatmap', 'Progressive Passes', 'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
-                             'Zone14 & Half-Space Passes', 'Final Third Entries', 'Box Entries', 'High-Turnovers', 'Chances Creating Zones', 'Crosses', 'Team Domination Zones', 'Pass Target Zones'], index=0, key='analysis_type')
-        # if st.session_state.analysis_type:
-        if an_tp == 'شبكة التمريرات':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
+        analysis_options = [
+            reshape_arabic_text('شبكة التمريرات'), 'Defensive Actions Heatmap', 'Progressive Passes', 
+            'Progressive Carries', 'Shotmap', 'GK Saves', 'Match Momentum',
+            reshape_arabic_text('Zone14 & Half-Space Passes'), reshape_arabic_text('Final Third Entries'),
+            reshape_arabic_text('Box Entries'), reshape_arabic_text('High-Turnovers'),
+            reshape_arabic_text('Chances Creating Zones'), reshape_arabic_text('Crosses'),
+            reshape_arabic_text('Team Domination Zones'), reshape_arabic_text('Pass Target Zones')
+        ]
+        an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), analysis_options, index=0, key='analysis_type')
+
+        if an_tp == reshape_arabic_text('شبكة التمريرات'):
+            st.header(reshape_arabic_text('شبكة التمريرات'))
+            pn_time_phase = st.radio(" ", [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
 def pass_network(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
         df_pass = df.copy()
