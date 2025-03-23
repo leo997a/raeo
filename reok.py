@@ -2413,3 +2413,335 @@ elif an_tp == 'High-Turnovers':
 
 elif an_tp == 'Chances Creating Zones':
     st.header(f'{an_tp}')
+if an_tp == 'Chances Creating Zones':
+    st.header(f'{an_tp}')
+
+    def plot_cc_zone(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            dfcc = df[(df['teamName'] == team_name) & (df['qualifiers'].str.contains('KeyPass'))]
+        elif phase_tag == 'First Half':
+            dfcc = df[(df['teamName'] == team_name) & (df['qualifiers'].str.contains('KeyPass')) & (df['period'] == 'FirstHalf')]
+        elif phase_tag == 'Second Half':
+            dfcc = df[(df['teamName'] == team_name) & (df['qualifiers'].str.contains('KeyPass')) & (df['period'] == 'SecondHalf')]
+
+        pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=2, linewidth=2)
+        pitch.draw(ax=ax)
+
+        dfass = dfcc[dfcc['qualifiers'].str.contains('GoalAssist')]
+        opcc = dfcc[~dfcc['qualifiers'].str.contains('Corner|Freekick')]
+
+        pc_map = LinearSegmentedColormap.from_list("Pearl Earring - 10 colors", [bg_color, col], N=20)
+        path_eff = [path_effects.Stroke(linewidth=3, foreground=bg_color), path_effects.Normal()]
+        bin_statistic = pitch.bin_statistic(dfcc.x, dfcc.y, bins=(6, 5), statistic='count', normalize=False)
+        pitch.heatmap(bin_statistic, ax=ax, cmap=pc_map, edgecolors='#ededed')
+        pitch.label_heatmap(bin_statistic, color=line_color, fontsize=25, ax=ax, ha='center', va='center', zorder=5, str_format='{:.0f}', path_effects=path_eff)
+
+        pitch.lines(dfcc.x, dfcc.y, dfcc.endX, dfcc.endY, color=violet, comet=True, lw=4, zorder=3, ax=ax)
+        pitch.scatter(dfcc.endX, dfcc.endY, s=50, linewidth=1, color=bg_color, edgecolor=violet, zorder=4, ax=ax)
+        pitch.lines(dfass.x, dfass.y, dfass.endX, dfass.endY, color=green, comet=True, lw=5, zorder=3, ax=ax)
+        pitch.scatter(dfass.endX, dfass.endY, s=75, linewidth=1, color=bg_color, edgecolor=green, zorder=4, ax=ax)
+
+        all_cc = dfcc.name.to_list()
+        op_cc = opcc.name.to_list()
+        ass_c = dfass.name.to_list()
+        unique_players = set(all_cc + op_cc + ass_c)
+        player_cc_data = {
+            'Name': list(unique_players),
+            'Total_Chances_Created': [all_cc.count(player) for player in unique_players],
+            'OpenPlay_Chances_Created': [op_cc.count(player) for player in unique_players],
+            'Assists': [ass_c.count(player) for player in unique_players]
+        }
+
+        player_cc_stats = pd.DataFrame(player_cc_data)
+        player_cc_stats = player_cc_stats.sort_values(by=['Total_Chances_Created', 'OpenPlay_Chances_Created', 'Assists'], ascending=[False, False, False]).reset_index(drop=True)
+
+        most_by = player_cc_stats.Name.to_list()[0]
+        most_count = player_cc_stats.Total_Chances_Created.to_list()[0]
+
+        if phase_tag == 'Full Time':
+            ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 112, f'Total Chances: {len(dfcc)} | Open-Play Chances: {len(opcc)}', color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 108, f'Most by: {most_by} ({most_count})', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 116, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 112, f'Total Chances: {len(dfcc)} | Open-Play Chances: {len(opcc)}', color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 108, f'Most by: {most_by} ({most_count})', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 116, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 112, f'Total Chances: {len(dfcc)} | Open-Play Chances: {len(opcc)}', color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 108, f'Most by: {most_by} ({most_count})', color=col, fontsize=13, ha='center', va='center')
+
+        return player_cc_stats
+
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    cc_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='cc_time_pill')
+    if cc_time_phase == 'Full Time':
+        home_cc_stats = plot_cc_zone(axs[0], hteamName, hcol, 'Full Time')
+        away_cc_stats = plot_cc_zone(axs[1], ateamName, acol, 'Full Time')
+    if cc_time_phase == 'First Half':
+        home_cc_stats = plot_cc_zone(axs[0], hteamName, hcol, 'First Half')
+        away_cc_stats = plot_cc_zone(axs[1], ateamName, acol, 'First Half')
+    if cc_time_phase == 'Second Half':
+        home_cc_stats = plot_cc_zone(axs[0], hteamName, hcol, 'Second Half')
+        away_cc_stats = plot_cc_zone(axs[1], ateamName, acol, 'Second Half')
+
+    fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, 
+             fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, 'Chances Creating Zones', fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center')
+
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+
+    st.pyplot(fig)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f'{hteamName} Players Crossing Stats:')
+        st.dataframe(home_cc_stats, hide_index=True)
+    with col2:
+        st.write(f'{ateamName} Players Crossing Stats:')
+        st.dataframe(away_cc_stats, hide_index=True)
+
+if an_tp == 'Crosses':
+    st.header(f'{an_tp}')
+
+    def plot_crossed(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            dfcrs = df[(df['teamName'] == team_name) & (df['qualifiers'].str.contains('Cross')) & (~df['qualifiers'].str.contains('Corner|Freekick'))]
+        elif phase_tag == 'First Half':
+            dfcrs = df[(df['teamName'] == team_name) & (df['qualifiers'].str.contains('Cross')) & (~df['qualifiers'].str.contains('Corner|Freekick')) & (df['period'] == 'FirstHalf')]
+        elif phase_tag == 'Second Half':
+            dfcrs = df[(df['teamName'] == team_name) & (df['qualifiers'].str.contains('Cross')) & (~df['qualifiers'].str.contains('Corner|Freekick')) & (df['period'] == 'SecondHalf')]
+
+        pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, linewidth=2, half=True)
+        pitch.draw(ax=ax)
+
+        right_s = dfcrs[(dfcrs['y'] < 34) & (dfcrs['outcomeType'] == 'Successful')]
+        right_u = dfcrs[(dfcrs['y'] < 34) & (dfcrs['outcomeType'] == 'Unsuccessful')]
+        left_s = dfcrs[(dfcrs['y'] > 34) & (dfcrs['outcomeType'] == 'Successful')]
+        left_u = dfcrs[(dfcrs['y'] > 34) & (dfcrs['outcomeType'] == 'Unsuccessful')]
+        right_df = pd.concat([right_s, right_u], ignore_index=True)
+        left_df = pd.concat([left_s, left_u], ignore_index=True)
+        success_ful = pd.concat([right_s, left_s], ignore_index=True)
+        unsuccess_ful = pd.concat([right_u, left_u], ignore_index=True)
+        keypass = dfcrs[dfcrs['qualifiers'].str.contains('KeyPass')]
+        assist = dfcrs[dfcrs['qualifiers'].str.contains('GoalAssist')]
+
+        for index, row in success_ful.iterrows():
+            arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color=col, zorder=4, mutation_scale=20, 
+                                            alpha=0.9, linewidth=3)
+            ax.add_patch(arrow)
+        for index, row in unsuccess_ful.iterrows():
+            arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color='gray', zorder=3, mutation_scale=15, 
+                                            alpha=0.7, linewidth=2)
+            ax.add_patch(arrow)
+        for index, row in keypass.iterrows():
+            arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color=violet, zorder=5, mutation_scale=20, 
+                                            alpha=0.9, linewidth=3.5)
+            ax.add_patch(arrow)
+        for index, row in assist.iterrows():
+            arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color='green', zorder=6, mutation_scale=20, 
+                                            alpha=0.9, linewidth=3.5)
+            ax.add_patch(arrow)
+
+        most_by = dfcrs['name'].value_counts().idxmax() if not dfcrs.empty else None
+        most_count = dfcrs['name'].value_counts().max() if not dfcrs.empty else 0
+        most_left = left_df['shortName'].value_counts().idxmax() if not left_df.empty else None
+        left_count = left_df['shortName'].value_counts().max() if not left_df.empty else 0
+        most_right = right_df['shortName'].value_counts().idxmax() if not right_df.empty else None
+        right_count = right_df['shortName'].value_counts().max() if not right_df.empty else 0
+
+        if phase_tag == 'Full Time':
+            ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax_text(34, 112, f'Total Attempts: {len(dfcrs)} | <Successful: {len(right_s)+len(left_s)}> | <Unsuccessful: {len(right_u)+len(left_u)}>', color=line_color, fontsize=12, ha='center', va='center',
+                    highlight_textprops=[{'color': col}, {'color': 'gray'}], ax=ax)
+            ax.text(34, 108, f'Most by: {most_by} ({most_count})', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 116, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax_text(34, 112, f'Total Attempts: {len(dfcrs)} | <Successful: {len(right_s)+len(left_s)}> | <Unsuccessful: {len(right_u)+len(left_u)}>', color=line_color, fontsize=12, ha='center', va='center',
+                    highlight_textprops=[{'color': col}, {'color': 'gray'}], ax=ax)
+            ax.text(34, 108, f'Most by: {most_by} ({most_count})', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 116, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
+            ax_text(34, 112, f'Total Attempts: {len(dfcrs)} | <Successful: {len(right_s)+len(left_s)}> | <Unsuccessful: {len(right_u)+len(left_u)}>', color=line_color, fontsize=12, ha='center', va='center',
+                    highlight_textprops=[{'color': col}, {'color': 'gray'}], ax=ax)
+            ax.text(34, 108, f'Most by: {most_by} ({most_count})', color=col, fontsize=13, ha='center', va='center')
+
+        ax.text(68, 46, f'From Left: {len(left_s)+len(left_u)}\nAccurate: {len(left_s)}\n\nMost by:\n{most_left} ({left_count})', color=col, fontsize=13, ha='left', va='top')
+        ax.text(0, 46, f'From Right: {len(right_s)+len(right_u)}\nAccurate: {len(right_s)}\n\nMost by:\n{most_right} ({right_count})', color=col, fontsize=13, ha='right', va='top')
+
+        all_crs = dfcrs.name.to_list()
+        suc_crs = success_ful.name.to_list()
+        uns_crs = unsuccess_ful.name.to_list()
+        kp_crs = keypass.name.to_list()
+        as_crs = assist.name.to_list()
+
+        unique_players = set(all_crs + suc_crs + uns_crs)
+        player_crs_data = {
+            'Name': list(unique_players),
+            'Total_Crosses': [all_crs.count(player) for player in unique_players],
+            'Successful': [suc_crs.count(player) for player in unique_players],
+            'Unsuccessful': [uns_crs.count(player) for player in unique_players],
+            'Key_Pass_from_Cross': [kp_crs.count(player) for player in unique_players],
+            'Assist_from_Cross': [as_crs.count(player) for player in unique_players],
+        }
+
+        player_crs_stats = pd.DataFrame(player_crs_data)
+        player_crs_stats = player_crs_stats.sort_values(by=['Total_Crosses', 'Successful', 'Key_Pass_from_Cross', 'Assist_from_Cross'], ascending=[False, False, False, False])
+
+        return player_crs_stats
+
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    crs_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='crs_time_pill')
+    if crs_time_phase == 'Full Time':
+        home_crs_stats = plot_crossed(axs[0], hteamName, hcol, 'Full Time')
+        away_crs_stats = plot_crossed(axs[1], ateamName, acol, 'Full Time')
+    if crs_time_phase == 'First Half':
+        home_crs_stats = plot_crossed(axs[0], hteamName, hcol, 'First Half')
+        away_crs_stats = plot_crossed(axs[1], ateamName, acol, 'First Half')
+    if crs_time_phase == 'Second Half':
+        home_crs_stats = plot_crossed(axs[0], hteamName, hcol, 'Second Half')
+        away_crs_stats = plot_crossed(axs[1], ateamName, acol, 'Second Half')
+
+    fig_text(0.5, 0.89, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 0.85, 'Open-Play Crosses', fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.81, '@adnaaan433', fontsize=10, ha='center', va='center')
+
+    fig.text(0.5, 0.1, '*Violet Arrow = KeyPass from Cross | Green Arrow = Assist from Cross', fontsize=10, fontstyle='italic', ha='center', va='center')
+
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.085, bottom=0.8, width=0.125, height=0.125)
+
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.8, width=0.125, height=0.125)
+
+    st.pyplot(fig)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f'{hteamName} Players Crossing Stats:')
+        st.dataframe(home_crs_stats, hide_index=True)
+    with col2:
+        st.write(f'{ateamName} Players Crossing Stats:')
+        st.dataframe(away_crs_stats, hide_index=True)
+
+if an_tp == 'Team Domination Zones':
+    st.header(f'{an_tp}')
+
+    def plot_congestion(ax, phase_tag):
+        if phase_tag == 'Full Time':
+            dfdz = df.copy()
+            ax.text(52.5, 76, 'Full Time: 0-90 minutes', fontsize=15, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            dfdz = df[df['period'] == 'FirstHalf']
+            ax.text(52.5, 76, 'First Half: 0-45 minutes', fontsize=15, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            dfdz = df[df['period'] == 'SecondHalf']
+            ax.text(52.5, 76, 'Second Half: 0-45 minutes', fontsize=15, ha='center', va='center')
+        pcmap = LinearSegmentedColormap.from_list("Pearl Earring - 10 colors", [acol, 'gray', hcol], N=20)
+        df1 = dfdz[(dfdz['teamName'] == hteamName) & (dfdz['isTouch'] == 1) & (~dfdz['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn'))]
+        df2 = dfdz[(dfdz['teamName'] == ateamName) & (dfdz['isTouch'] == 1) & (~dfdz['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn'))]
+        df2['x'] = 105 - df2['x']
+        df2['y'] = 68 - df2['y']
+        pitch = Pitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, linewidth=2, line_zorder=6)
+        pitch.draw(ax=ax)
+        ax.set_ylim(-0.5, 68.5)
+        ax.set_xlim(-0.5, 105.5)
+
+        bin_statistic1 = pitch.bin_statistic(df1.x, df1.y, bins=(6, 5), statistic='count', normalize=False)
+        bin_statistic2 = pitch.bin_statistic(df2.x, df2.y, bins=(6, 5), statistic='count', normalize=False)
+
+        # Assuming 'cx' and 'cy' are as follows:
+        cx = np.array([[ 8.75, 26.25, 43.75, 61.25, 78.75, 96.25],
+                       [ 8.75, 26.25, 43.75, 61.25, 78.75, 96.25],
+                       [ 8.75, 26.25, 43.75, 61.25, 78.75, 96.25],
+                       [ 8.75, 26.25, 43.75, 61.25, 78.75, 96.25],
+                       [ 8.75, 26.25, 43.75, 61.25, 78.75, 96.25]])
+
+        cy = np.array([[61.2, 61.2, 61.2, 61.2, 61.2, 61.2],
+                       [47.6, 47.6, 47.6, 47.6, 47.6, 47.6],
+                       [34.0, 34.0, 34.0, 34.0, 34.0, 34.0],
+                       [20.4, 20.4, 20.4, 20.4, 20.4, 20.4],
+                       [ 6.8,  6.8,  6.8,  6.8,  6.8,  6.8]])
+
+        # Flatten the arrays
+        cx_flat = cx.flatten()
+        cy_flat = cy.flatten()
+
+        # Create a DataFrame
+        df_cong = pd.DataFrame({'cx': cx_flat, 'cy': cy_flat})
+
+        hd_values = []
+
+        # Loop through the 2D arrays
+        for i in range(bin_statistic1['statistic'].shape[0]):
+            for j in range(bin_statistic1['statistic'].shape[1]):
+                stat1 = bin_statistic1['statistic'][i, j]
+                stat2 = bin_statistic2['statistic'][i, j]
+
+                if (stat1 / (stat1 + stat2)) > 0.55:
+                    hd_values.append(1)
+                elif (stat1 / (stat1 + stat2)) < 0.45:
+                    hd_values.append(0)
+                else:
+                    hd_values.append(0.5)
+
+        df_cong['hd'] = hd_values
+        bin_stat = pitch.bin_statistic(df_cong.cx, df_cong.cy, bins=(6, 5), values=df_cong['hd'], statistic='sum', normalize=False)
+        pitch.heatmap(bin_stat, ax=ax, cmap=pcmap, edgecolors='#000000', lw=0, zorder=3, alpha=0.85)
+
+        ax_text(52.5, 71, s=f"<{hteamName}>  |  Contested  |  <{ateamName}>", highlight_textprops=[{'color': hcol}, {'color': acol}],
+                color='gray', fontsize=18, ha='center', va='center', ax=ax)
+        # ax.set_title("Team's Dominating Zone", color=line_color, fontsize=30, fontweight='bold', y=1.075)
+        ax.text(0, -3, f'{hteamName}\nAttacking Direction--->', color=hcol, fontsize=13, ha='left', va='top')
+        ax.text(105, -3, f'{ateamName}\n<---Attacking Direction', color=acol, fontsize=13, ha='right', va='top')
+
+        ax.vlines(1*(105/6), ymin=0, ymax=68, color=bg_color, lw=2, ls='--', zorder=5)
+        ax.vlines(2*(105/6), ymin=0, ymax=68, color=bg_color, lw=2, ls='--', zorder=5)
+        ax.vlines(3*(105/6), ymin=0, ymax=68, color=bg_color, lw=2, ls='--', zorder=5)
+        ax.vlines(4*(105/6), ymin=0, ymax=68, color=bg_color, lw=2, ls='--', zorder=5)
+        ax.vlines(5*(105/6), ymin=0, ymax=68, color=bg_color, lw=2, ls='--', zorder=5)
+
+        ax.hlines(1*(68/5), xmin=0, xmax=105, color=bg_color, lw=2, ls='--', zorder=5)
+        ax.hlines(2*(68/5), xmin=0, xmax=105, color=bg_color, lw=2, ls='--', zorder=5)
+        ax.hlines(3*(68/5), xmin=0, xmax=105, color=bg_color, lw=2, ls='--', zorder=5)
+        ax.hlines(4*(68/5), xmin=0, xmax=105, color=bg_color, lw=2, ls='--', zorder=5)
+
+        return
+
+    fig, ax = plt.subplots(figsize=(10, 10), facecolor=bg_color)
+    tdz_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='tdz_time_pill')
+    if tdz_time_phase == 'Full Time':
+        plot_congestion(ax, 'Full Time')
+    if tdz_time_phase == 'First Half':
+        plot_congestion(ax, 'First Half')
+    if tdz_time_phase == 'Second Half':
+        plot_congestion(ax, 'Second Half')
+
+    fig_text(0.5, 0.92, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=22, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 0.88, "Team's Dominating Zone", fontsize=16, ha='center', va='center')
+    fig.text(0.5, 0.18, '@adnaaan433', fontsize=10, ha='center', va='center')
+
+    fig.text(0.5, 0.13, '*Dominating Zone means where the team had more than 55% Open-Play touches than the Opponent', fontstyle='italic', fontsize=7, ha='center', va='center')
+    fig.text(0.5, 0.11, '*Contested means where the team had 45-55% Open-Play touches than the Opponent, where less than 45% there Opponent was dominant', fontstyle='italic', fontsize=7, ha='center', va='center')
+
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.075, bottom=0.84, width=0.11, height=0.11)
+
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.84, bottom=0.84, width=0.11, height=0.11)
+
+    st.pyplot(fig)
+
+if an_tp == 'Pass Target Zones':
+    st.header(f'Overall {an_tp}')
