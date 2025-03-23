@@ -1295,112 +1295,106 @@ def progressive_carry(ax, team_name, col, phase_tag):
         st.dataframe(away_shots_stats, hide_index=True)
 
 if an_tp == 'GK Saves':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
+    # st.header(f'{st.session_state.analysis_type}')
+    st.header(f'{an_tp}')
+    
+    def plot_goal_post(ax, team_name, col, phase_tag):
+        if phase_tag == 'Full Time':
+            shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost']))]
+        elif phase_tag == 'First Half':
+            shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='FirstHalf')]
+        elif phase_tag == 'Second Half':
+            shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='SecondHalf')]
+    
+        shots_df['goalMouthZ'] = (shots_df['goalMouthZ']*0.75) + 38
+        shots_df['goalMouthY'] = ((37.66 - shots_df['goalMouthY'])*12.295) + 7.5
+    
+        # plotting an invisible pitch using the pitch color and line color same color, because the goalposts are being plotted inside the pitch using pitch's dimension
+        pitch = Pitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=bg_color, linewidth=2)
+        pitch.draw(ax=ax)
+        ax.set_ylim(-0.5, 68.5)
+        ax.set_xlim(-0.5, 105.5)
+        
+        # goalpost bars
+        ax.plot([7.5, 7.5], [38, 68], color=line_color, linewidth=5)
+        ax.plot([7.5, 97.5], [68, 68], color=line_color, linewidth=5)
+        ax.plot([97.5, 97.5], [68, 38], color=line_color, linewidth=5)
+        ax.plot([0, 105], [38, 38], color=line_color, linewidth=3)
+        # plotting the home net
+        y_values = (np.arange(0, 6) * 6) + 38
+        for y in y_values:
+            ax.plot([7.5, 97.5], [y, y], color=line_color, linewidth=2, alpha=0.2)
+        x_values = (np.arange(0, 11) * 9) + 7.5
+        for x in x_values:
+            ax.plot([x, x], [38, 68], color=line_color, linewidth=2, alpha=0.2)
+    
+        # filtering different types of shots without BigChance
+        hSavedf = shots_df[(shots_df['type']=='SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
+        hGoaldf = shots_df[(shots_df['type']=='Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
+        hPostdf = shots_df[(shots_df['type']=='ShotOnPost') & (~shots_df['qualifiers'].str.contains('BigChance'))]
+        
+        # filtering different types of shots with BigChance
+        hSavedf_bc = shots_df[(shots_df['type']=='SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (shots_df['qualifiers'].str.contains('BigChance'))]
+        hGoaldf_bc = shots_df[(shots_df['type']=='Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (shots_df['qualifiers'].str.contains('BigChance'))]
+        hPostdf_bc = shots_df[(shots_df['type']=='ShotOnPost') & (shots_df['qualifiers'].str.contains('BigChance'))]
+    
+        # scattering those shots without BigChance
+        pitch.scatter(hSavedf.goalMouthY, hSavedf.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolor=col, hatch='/////', s=350, ax=ax)
+        pitch.scatter(hGoaldf.goalMouthY, hGoaldf.goalMouthZ, marker='football', c=bg_color, zorder=3, edgecolors='green', s=350, ax=ax)
+        pitch.scatter(hPostdf.goalMouthY, hPostdf.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolors='orange', hatch='/////', s=350, ax=ax)
+        # scattering those shots with BigChance
+        pitch.scatter(hSavedf_bc.goalMouthY, hSavedf_bc.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolor=col, hatch='/////', s=1000, ax=ax)
+        pitch.scatter(hGoaldf_bc.goalMouthY, hGoaldf_bc.goalMouthZ, marker='football', c=bg_color, zorder=3, edgecolors='green', s=1000, ax=ax)
+        pitch.scatter(hPostdf_bc.goalMouthY, hPostdf_bc.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolors='orange', hatch='/////', s=1000, ax=ax)
+    
+        if phase_tag == 'Full Time':
+            ax.text(52.5, 80, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(52.5, 80, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(52.5, 80, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
             
-            def plot_goal_post(ax, team_name, col, phase_tag):
-                if phase_tag == 'Full Time':
-                    shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost']))]
-                elif phase_tag == 'First Half':
-                    shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='FirstHalf')]
-                elif phase_tag == 'Second Half':
-                    shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='SecondHalf')]
-            
-                shots_df['goalMouthZ'] = (shots_df['goalMouthZ']*0.75) + 38
-                shots_df['goalMouthY'] = ((37.66 - shots_df['goalMouthY'])*12.295) + 7.5
-            
-                # plotting an invisible pitch using the pitch color and line color same color, because the goalposts are being plotted inside the pitch using pitch's dimension
-                pitch = Pitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=bg_color, linewidth=2)
-                pitch.draw(ax=ax)
-                ax.set_ylim(-0.5,68.5)
-                ax.set_xlim(-0.5,105.5)
-                
-                # goalpost bars
-                ax.plot([7.5, 7.5], [38, 68], color=line_color, linewidth=5)
-                ax.plot([7.5, 97.5], [68, 68], color=line_color, linewidth=5)
-                ax.plot([97.5, 97.5], [68, 38], color=line_color, linewidth=5)
-                ax.plot([0, 105], [38, 38], color=line_color, linewidth=3)
-                # plotting the home net
-                y_values = (np.arange(0, 6) * 6) + 38
-                for y in y_values:
-                    ax.plot([7.5, 97.5], [y, y], color=line_color, linewidth=2, alpha=0.2)
-                x_values = (np.arange(0, 11) * 9) + 7.5
-                for x in x_values:
-                    ax.plot([x, x], [38, 68], color=line_color, linewidth=2, alpha=0.2)
-            
-            
-                # filtering different types of shots without BigChance
-                hSavedf = shots_df[(shots_df['type']=='SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
-                hGoaldf = shots_df[(shots_df['type']=='Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
-                hPostdf = shots_df[(shots_df['type']=='ShotOnPost') & (~shots_df['qualifiers'].str.contains('BigChance'))]
-                
-                # filtering different types of shots with BigChance
-                hSavedf_bc = shots_df[(shots_df['type']=='SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (shots_df['qualifiers'].str.contains('BigChance'))]
-                hGoaldf_bc = shots_df[(shots_df['type']=='Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (shots_df['qualifiers'].str.contains('BigChance'))]
-                hPostdf_bc = shots_df[(shots_df['type']=='ShotOnPost') & (shots_df['qualifiers'].str.contains('BigChance'))]
-                
-            
-                # scattering those shots without BigChance
-                pitch.scatter(hSavedf.goalMouthY, hSavedf.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolor=col, hatch='/////', s=350, ax=ax)
-                pitch.scatter(hGoaldf.goalMouthY, hGoaldf.goalMouthZ, marker='football', c=bg_color, zorder=3, edgecolors='green', s=350, ax=ax)
-                pitch.scatter(hPostdf.goalMouthY, hPostdf.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolors='orange', hatch='/////', s=350, ax=ax)
-                # scattering those shots with BigChance
-                pitch.scatter(hSavedf_bc.goalMouthY, hSavedf_bc.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolor=col, hatch='/////', s=1000, ax=ax)
-                pitch.scatter(hGoaldf_bc.goalMouthY, hGoaldf_bc.goalMouthZ, marker='football', c=bg_color, zorder=3, edgecolors='green', s=1000, ax=ax)
-                pitch.scatter(hPostdf_bc.goalMouthY, hPostdf_bc.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolors='orange', hatch='/////', s=1000, ax=ax)
-            
-            
-                if phase_tag == 'Full Time':
-                    ax.text(52.5, 80, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'First Half':
-                    ax.text(52.5, 80, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-                elif phase_tag == 'Second Half':
-                    ax.text(52.5, 80, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                    
-                ax.text(52.5, 73, f'{team_name} GK Saves', color=col, fontsize=15, fontweight='bold', ha='center', va='center')
-            
-                ax.text(52.5, 28-(5*0), f'Total Shots faced: {len(shots_df)}', fontsize=13, ha='center', va='center')
-                ax.text(52.5, 28-(5*1), f'Shots On Target faced: {len(hSavedf)+len(hSavedf_bc)+len(hGoaldf)+len(hGoaldf_bc)}', fontsize=13, ha='center', va='center')
-                ax.text(52.5, 28-(5*2), f'Shots Saved: {len(hSavedf)+len(hSavedf_bc)}', fontsize=13, ha='center', va='center')
-                ax.text(52.5, 28-(5*3), f'Goals Conceded: {len(hGoaldf)+len(hGoaldf_bc)}', fontsize=13, ha='center', va='center')
-                ax.text(52.5, 28-(5*4), f'Goals Conceded from Big Chances: {len(hGoaldf_bc)}', fontsize=13, ha='center', va='center')
-                ax.text(52.5, 28-(5*5), f'Big Chances Saved: {len(hSavedf_bc)}', fontsize=13, ha='center', va='center')
-            
-                return
-            
-            gp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='gp_time_pill' )
-            if gp_time_phase == 'Full Time':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-                home_shots_stats = plot_goal_post(axs[0], hteamName, hcol, 'Full Time')
-                away_shots_stats = plot_goal_post(axs[1], ateamName, acol, 'Full Time')
-                
-            if gp_time_phase == 'First Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-                plot_goal_post(axs[0], hteamName, hcol, 'First Half')
-                plot_goal_post(axs[1], ateamName, acol, 'First Half')
-                
-            if gp_time_phase == 'Second Half':
-                fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-                plot_goal_post(axs[0], hteamName, hcol, 'Second Half')
-                plot_goal_post(axs[1], ateamName, acol, 'Second Half')
-            
-            fig_text(0.5, 0.94, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 0.89, 'GoalKeeper Saves', fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.84, '@adnaaan433', fontsize=10, ha='center', va='center')
-            
-            fig.text(0.5, 0.2, '*Bigger circle means shots from Big Chances', fontsize=10, fontstyle='italic', ha='center', va='center')
-            
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.86, width=0.125, height=0.125)
-            
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.86, width=0.125, height=0.125)
-            
-            st.pyplot(fig)
-            
-           if an_tp == 'Match Momentum':
-                # st.header(f'{st.session_state.analysis_type}')
-                st.header(f'{an_tp}')
-            
+        ax.text(52.5, 73, f'{team_name} GK Saves', color=col, fontsize=15, fontweight='bold', ha='center', va='center')
+    
+        ax.text(52.5, 28-(5*0), f'Total Shots faced: {len(shots_df)}', fontsize=13, ha='center', va='center')
+        ax.text(52.5, 28-(5*1), f'Shots On Target faced: {len(hSavedf)+len(hSavedf_bc)+len(hGoaldf)+len(hGoaldf_bc)}', fontsize=13, ha='center', va='center')
+        ax.text(52.5, 28-(5*2), f'Shots Saved: {len(hSavedf)+len(hSavedf_bc)}', fontsize=13, ha='center', va='center')
+        ax.text(52.5, 28-(5*3), f'Goals Conceded: {len(hGoaldf)+len(hGoaldf_bc)}', fontsize=13, ha='center', va='center')
+        ax.text(52.5, 28-(5*4), f'Goals Conceded from Big Chances: {len(hGoaldf_bc)}', fontsize=13, ha='center', va='center')
+        ax.text(52.5, 28-(5*5), f'Big Chances Saved: {len(hSavedf_bc)}', fontsize=13, ha='center', va='center')
+    
+        return
+    
+    gp_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='gp_time_pill')  # استبدلت st.pills بـ st.radio
+    if gp_time_phase == 'Full Time':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_shots_stats = plot_goal_post(axs[0], hteamName, hcol, 'Full Time')
+        away_shots_stats = plot_goal_post(axs[1], ateamName, acol, 'Full Time')
+    elif gp_time_phase == 'First Half':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        plot_goal_post(axs[0], hteamName, hcol, 'First Half')
+        plot_goal_post(axs[1], ateamName, acol, 'First Half')
+    elif gp_time_phase == 'Second Half':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        plot_goal_post(axs[0], hteamName, hcol, 'Second Half')
+        plot_goal_post(axs[1], ateamName, acol, 'Second Half')
+    
+    fig_text(0.5, 0.94, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 0.89, 'GoalKeeper Saves', fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.84, '@adnaaan433', fontsize=10, ha='center', va='center')
+    
+    fig.text(0.5, 0.2, '*Bigger circle means shots from Big Chances', fontsize=10, fontstyle='italic', ha='center', va='center')
+    
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.085, bottom=0.86, width=0.125, height=0.125)
+    
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.86, width=0.125, height=0.125)
+    
+    st.pyplot(fig)
+
+if an_tp == 'Match Momentum':
+    # st.header(f'{st.session_state.analysis_type}')
+    st.header(f'{an_tp}')
