@@ -3534,342 +3534,288 @@ with tab2:
             generate_gk_dashboard(f'{gk_aname}', aftmb_tid)
             
 with tab4:
-            top_type = st.selectbox('Select Type', ['Top Ball Progressors', 'Top Shot Sequences Involvements', 'Top Defensive Involvements', 'Top Threat Creating Players'], index=None, key='top_players_selection')
-            
-def top_dfs():
-                # Get unique players
-                unique_players = df['name'].unique()
-                
-                
-                # Top Ball Progressor
-                # Initialize an empty dictionary to store home players different type of pass counts
-                progressor_counts = {'name': unique_players, 'Progressive Passes': [], 'Progressive Carries': [], 'team names': []}
-                for name in unique_players:
-                    dfp = df[(df['name']==name) & (df['outcomeType']=='Successful')]
-                    progressor_counts['Progressive Passes'].append(len(dfp[(dfp['prog_pass'] >= 9.144) & (dfp['x']>=35) & (~dfp['qualifiers'].str.contains('CornerTaken|Freekick'))]))
-                    progressor_counts['Progressive Carries'].append(len(dfp[(dfp['prog_carry'] >= 9.144) & (dfp['endX']>=35)]))
-                    progressor_counts['team names'].append(dfp['teamName'].max())
-                progressor_df = pd.DataFrame(progressor_counts)
-                progressor_df['total'] = progressor_df['Progressive Passes']+progressor_df['Progressive Carries']
-                progressor_df = progressor_df.sort_values(by=['total', 'Progressive Passes'], ascending=[False, False])
-                progressor_df.reset_index(drop=True, inplace=True)
-                progressor_df = progressor_df.head(10)
-                progressor_df['shortName'] = progressor_df['name'].apply(get_short_name)
-                
-                # Top Threate Creators
-                # Initialize an empty dictionary to store home players different type of Carries counts
-                xT_counts = {'name': unique_players, 'xT from Pass': [], 'xT from Carry': [], 'team names': []}
-                for name in unique_players:
-                    dfp = df[(df['name']==name) & (df['outcomeType']=='Successful') & (df['xT']>0)]
-                    xT_counts['xT from Pass'].append((dfp[(dfp['type'] == 'Pass') & (~dfp['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn'))])['xT'].sum().round(2))
-                    xT_counts['xT from Carry'].append((dfp[(dfp['type'] == 'Carry')])['xT'].sum().round(2))
-                    xT_counts['team names'].append(dfp['teamName'].max())
-                    
-                xT_df = pd.DataFrame(xT_counts)
-                xT_df['total'] = xT_df['xT from Pass']+xT_df['xT from Carry']
-                xT_df = xT_df.sort_values(by=['total', 'xT from Pass'], ascending=[False, False])
-                xT_df.reset_index(drop=True, inplace=True)
-                xT_df = xT_df.head(10)
-                xT_df['shortName'] = xT_df['name'].apply(get_short_name)
-                
-                
-                
-                
-                # Shot Sequence Involvement
-                df_no_carry = df[~df['type'].str.contains('Carry|TakeOn|Challenge')].reset_index(drop=True)
-                # Initialize an empty dictionary to store home players different type of shot sequence counts
-                shot_seq_counts = {'name': unique_players, 'Shots': [], 'Shot Assists': [], 'Buildup to Shot': [], 'team names': []}
-                # Putting counts in those lists
-                for name in unique_players:
-                    dfp = df_no_carry[df_no_carry['name'] == name]
-                    shot_seq_counts['Shots'].append(len(dfp[dfp['type'].isin(['MissedShots','SavedShot','ShotOnPost','Goal'])]))
-                    shot_seq_counts['Shot Assists'].append(len(dfp[(dfp['qualifiers'].str.contains('KeyPass'))]))
-                    shot_seq_counts['Buildup to Shot'].append(len(df_no_carry[(df_no_carry['type'] == 'Pass') & (df_no_carry['outcomeType']=='Successful') & 
-                                                                              (df_no_carry['name'] == name) &
-                                                                              (df_no_carry['qualifiers'].shift(-1).str.contains('KeyPass'))]))
-                    
-                    shot_seq_counts['team names'].append(dfp['teamName'].max())
-                # converting that list into a dataframe
-                sh_sq_df = pd.DataFrame(shot_seq_counts)
-                sh_sq_df['total'] = sh_sq_df['Shots']+sh_sq_df['Shot Assists']+sh_sq_df['Buildup to Shot']
-                sh_sq_df = sh_sq_df.sort_values(by=['total', 'Shots', 'Shot Assists'], ascending=[False, False, False])
-                sh_sq_df.reset_index(drop=True, inplace=True)
-                sh_sq_df = sh_sq_df.head(10)
-                sh_sq_df['shortName'] = sh_sq_df['name'].apply(get_short_name)
-                
-                
-                
-                
-                # Top Defenders
-                # Initialize an empty dictionary to store home players different type of defensive actions counts
-                defensive_actions_counts = {'name': unique_players, 'Tackles': [], 'Interceptions': [], 'Clearance': [], 'team names': []}
-                for name in unique_players:
-                    dfp = df[(df['name']==name) & (df['outcomeType']=='Successful')]
-                    defensive_actions_counts['Tackles'].append(len(dfp[dfp['type'] == 'Tackle']))
-                    defensive_actions_counts['Interceptions'].append(len(dfp[dfp['type'] == 'Interception']))
-                    defensive_actions_counts['Clearance'].append(len(dfp[dfp['type'] == 'Clearance']))
-                    defensive_actions_counts['team names'].append(dfp['teamName'].max())
-                # converting that list into a dataframe
-                defender_df = pd.DataFrame(defensive_actions_counts)
-                defender_df['total'] = defender_df['Tackles']+defender_df['Interceptions']+defender_df['Clearance']
-                defender_df = defender_df.sort_values(by=['total', 'Tackles', 'Interceptions'], ascending=[False, False, False])
-                defender_df.reset_index(drop=True, inplace=True)
-                defender_df = defender_df.head(10)
-                defender_df['shortName'] = defender_df['name'].apply(get_short_name)
-            
-                return progressor_df, xT_df, sh_sq_df, defender_df
-            
-                progressor_df, xT_df, sh_sq_df, defender_df = top_dfs()
-            
-def passer_bar(ax):
-                top10_progressors = progressor_df['shortName'][::-1].tolist()
-                progressor_pp = progressor_df['Progressive Passes'][::-1].tolist()
-                progressor_pc = progressor_df['Progressive Carries'][::-1].tolist()
-            
-                ax.barh(top10_progressors, progressor_pp, label='Prog. Pass', zorder=3, color=hcol, left=0)
-                ax.barh(top10_progressors, progressor_pc, label='Prog. Carry', zorder=3, color=acol, left=progressor_pp)
-            
-                # Add counts in the middle of the bars (if count > 0)
-                for i, player in enumerate(top10_progressors):
-                    for j, count in enumerate([progressor_pp[i], progressor_pc[i]]):
-                        if count > 0:
-                            x_position = sum([progressor_pp[i], progressor_pc[i]][:j]) + count / 2
-                            ax.text(x_position, i, str(count), ha='center', va='center', color=bg_color, fontsize=50, fontweight='bold')
-                    # Add total count at the end of the bar
-                    ax.text(progressor_df['total'].iloc[i] + 0.25, 9-i, str(progressor_df['total'].iloc[i]), ha='left', va='center', color=line_color, fontsize=50, fontweight='bold')
-                    # Plotting the logos
-                    himg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-                    htimg = Image.open(himg).convert('RGBA')
-                    himagebox = OffsetImage(htimg, zoom=0.5)
-                    aimg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-                    atimg = Image.open(aimg).convert('RGBA')
-                    aimagebox = OffsetImage(atimg, zoom=0.5)
-                    for i, row in progressor_df.iterrows():
-                        if row['team names'] == hteamName:
-                            timagebox = himagebox
-                        else:
-                            timagebox = aimagebox
-                          # Adjust zoom as needed
-                        ab = AnnotationBbox(timagebox, (0, 9-i), frameon=False, xybox=(-100, 0), xycoords='data', boxcoords="offset points")
-                        ax.add_artist(ab)
-            
-                ax.set_facecolor(bg_color)
-                ax.tick_params(axis='x', colors=line_color, labelsize=35, pad=50)
-                ax.tick_params(axis='y', colors=line_color, labelsize=50, pad=200)
-                ax.xaxis.label.set_color(bg_color)
-                ax.yaxis.label.set_color(bg_color)
-                ax.grid(True, zorder=1, ls='dotted', lw=2.5, color='gray')
-                ax.set_facecolor('#ededed')
-                # Customize the spines
-                ax.spines['top'].set_visible(False)     # Hide the top spine
-                ax.spines['right'].set_visible(False)   # Hide the right spine
-                ax.spines['bottom'].set_visible(True)   # Keep the bottom spine visible
-                ax.spines['left'].set_visible(True)
-                # Increase Linewidth
-                ax.spines['bottom'].set_linewidth(2.5)   # Adjust the bottom spine line width
-                ax.spines['left'].set_linewidth(2.5)  
-            
-                ax.legend(fontsize=35, loc='lower right')
-                return 
-            
-def sh_sq_bar(ax):
-                top10 = sh_sq_df.head(10).iloc[::-1]
-            
-                # Plot horizontal bar chart
-                ax.barh(top10['shortName'], top10['Shots'], zorder=3, height=0.75, label='Shot', color=hcol)
-                ax.barh(top10['shortName'], top10['Shot Assists'], zorder=3, height=0.75, label='Shot Assist', color='green', left=top10['Shots'])
-                ax.barh(top10['shortName'], top10['Buildup to Shot'], zorder=3, height=0.75, label='Buildup to Shot', color=acol, left=top10[['Shots', 'Shot Assists']].sum(axis=1))
-            
-                # Add counts in the middle of the bars (if count > 0)
-                for i, player in enumerate(top10['shortName']):
-                    for j, count in enumerate(top10[['Shots', 'Shot Assists', 'Buildup to Shot']].iloc[i]):
-                        if count > 0:
-                            x_position = sum(top10.iloc[i, 1:1+j]) + count / 2
-                            ax.text(x_position, i, str(count), ha='center', va='center', color=bg_color, fontsize=50, fontweight='bold')
-                    # Add total count at the end of the bar
-                    ax.text(top10['total'].iloc[i] + 0.25, i, str(top10['total'].iloc[i]), ha='left', va='center', color=line_color, fontsize=50, fontweight='bold')
-                    # Plotting the logos
-                    himg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-                    htimg = Image.open(himg).convert('RGBA')
-                    himagebox = OffsetImage(htimg, zoom=0.5)
-                    aimg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-                    atimg = Image.open(aimg).convert('RGBA')
-                    aimagebox = OffsetImage(atimg, zoom=0.5)
-                    for i, row in top10.iterrows():
-                        if row['team names'] == hteamName:
-                            timagebox = himagebox
-                        else:
-                            timagebox = aimagebox
-                          # Adjust zoom as needed
-                        ab = AnnotationBbox(timagebox, (0, 9-i), frameon=False, xybox=(-100, 0), xycoords='data', boxcoords="offset points")
-                        ax.add_artist(ab)
-            
-                ax.set_facecolor(bg_color)
-                ax.tick_params(axis='x', colors=line_color, labelsize=35, pad=50)
-                ax.tick_params(axis='y', colors=line_color, labelsize=50, pad=200)
-                ax.xaxis.label.set_color(bg_color)
-                ax.yaxis.label.set_color(bg_color)
-                ax.grid(True, zorder=1, ls='dotted', lw=2.5, color='gray')
-                ax.set_facecolor('#ededed')
-                # Customize the spines
-                ax.spines['top'].set_visible(False)     # Hide the top spine
-                ax.spines['right'].set_visible(False)   # Hide the right spine
-                ax.spines['bottom'].set_visible(True)   # Keep the bottom spine visible
-                ax.spines['left'].set_visible(True)
-                # Increase Linewidth
-                ax.spines['bottom'].set_linewidth(2.5)   # Adjust the bottom spine line width
-                ax.spines['left'].set_linewidth(2.5)  
-            
-                ax.legend(fontsize=35, loc='lower right')
-                
-def top_defender(ax):
-                top10 = defender_df.head(10).iloc[::-1]
-            
-                # Plot horizontal bar chart
-                ax.barh(top10['shortName'], top10['Tackles'], zorder=3, height=0.75, label='Tackle', color=hcol)
-                ax.barh(top10['shortName'], top10['Interceptions'], zorder=3, height=0.75, label='Interception', color='green', left=top10['Tackles'])
-                ax.barh(top10['shortName'], top10['Clearance'], zorder=3, height=0.75, label='Clearance', color=acol, left=top10[['Tackles', 'Interceptions']].sum(axis=1))
-            
-                # Add counts in the middle of the bars (if count > 0)
-                for i, player in enumerate(top10['shortName']):
-                    for j, count in enumerate(top10[['Tackles', 'Interceptions', 'Clearance']].iloc[i]):
-                        if count > 0:
-                            x_position = sum(top10.iloc[i, 1:1+j]) + count / 2
-                            ax.text(x_position, i, str(count), ha='center', va='center', color=bg_color, fontsize=50, fontweight='bold')
-                    # Add total count at the end of the bar
-                    ax.text(top10['total'].iloc[i] + 0.25, i, str(top10['total'].iloc[i]), ha='left', va='center', color=line_color, fontsize=50, fontweight='bold')
-                    # Plotting the logos
-                    himg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-                    htimg = Image.open(himg).convert('RGBA')
-                    himagebox = OffsetImage(htimg, zoom=0.5)
-                    aimg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-                    atimg = Image.open(aimg).convert('RGBA')
-                    aimagebox = OffsetImage(atimg, zoom=0.5)
-                    for i, row in top10.iterrows():
-                        if row['team names'] == hteamName:
-                            timagebox = himagebox
-                        else:
-                            timagebox = aimagebox
-                          # Adjust zoom as needed
-                        ab = AnnotationBbox(timagebox, (0, 9-i), frameon=False, xybox=(-100, 0), xycoords='data', boxcoords="offset points")
-                        ax.add_artist(ab)
-            
-                ax.set_facecolor(bg_color)
-                ax.tick_params(axis='x', colors=line_color, labelsize=35, pad=50)
-                ax.tick_params(axis='y', colors=line_color, labelsize=50, pad=200)
-                ax.xaxis.label.set_color(bg_color)
-                ax.yaxis.label.set_color(bg_color)
-                ax.grid(True, zorder=1, ls='dotted', lw=2.5, color='gray')
-                ax.set_facecolor('#ededed')
-                # Customize the spines
-                ax.spines['top'].set_visible(False)     # Hide the top spine
-                ax.spines['right'].set_visible(False)   # Hide the right spine
-                ax.spines['bottom'].set_visible(True)   # Keep the bottom spine visible
-                ax.spines['left'].set_visible(True)
-                # Increase Linewidth
-                ax.spines['bottom'].set_linewidth(2.5)   # Adjust the bottom spine line width
-                ax.spines['left'].set_linewidth(2.5)  
-            
-                ax.legend(fontsize=35, loc='lower right')
-            
-                return
-            
-def xT_bar(ax):
-                path_eff = [path_effects.Stroke(linewidth=2.5, foreground=line_color), path_effects.Normal()]
-                top10_progressors = xT_df['shortName'][::-1].tolist()
-                progressor_pp = xT_df['xT from Pass'][::-1].tolist()
-                progressor_pc = xT_df['xT from Carry'][::-1].tolist()
-                total_rounded = xT_df['total'].round(2)[::-1].tolist()
-            
-                ax.barh(top10_progressors, progressor_pp, label='xT from Pass', zorder=3, color=hcol, left=0)
-                ax.barh(top10_progressors, progressor_pc, label='xT from Carry', zorder=3, color=acol, left=progressor_pp)
-            
-                # Add counts in the middle of the bars (if count > 0)
-                for i, player in enumerate(top10_progressors):
-                    for j, count in enumerate([progressor_pp[i], progressor_pc[i]]):
-                        if count > 0:
-                            x_position = sum([progressor_pp[i], progressor_pc[i]][:j]) + count / 2
-                            ax.text(x_position, i, f"{count:.2f}", ha='center', va='center', color=bg_color, rotation=45, fontsize=50, fontweight='bold', path_effects=path_eff)
-                    # Add total count at the end of the bar
-                    ax.text(xT_df['total'].iloc[i] + 0.01, 9-i, f"{total_rounded[i]:.2f}", ha='left', va='center', rotation=45, color=line_color, fontsize=50, fontweight='bold')
-                    # Plotting the logos
-                    himg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-                    htimg = Image.open(himg).convert('RGBA')
-                    himagebox = OffsetImage(htimg, zoom=0.5)
-                    aimg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-                    atimg = Image.open(aimg).convert('RGBA')
-                    aimagebox = OffsetImage(atimg, zoom=0.5)
-                    for i, row in xT_df.iterrows():
-                        if row['team names'] == hteamName:
-                            timagebox = himagebox
-                        else:
-                            timagebox = aimagebox
-                          # Adjust zoom as needed
-                        ab = AnnotationBbox(timagebox, (0, 9-i), frameon=False, xybox=(-100, 0), xycoords='data', boxcoords="offset points")
-                        ax.add_artist(ab)
-            
-                ax.set_facecolor(bg_color)
-                ax.tick_params(axis='x', colors=line_color, labelsize=35, pad=50)
-                ax.tick_params(axis='y', colors=line_color, labelsize=50, pad=200)
-                ax.xaxis.label.set_color(bg_color)
-                ax.yaxis.label.set_color(bg_color)
-                ax.grid(True, zorder=1, ls='dotted', lw=2.5, color='gray')
-                ax.set_facecolor('#ededed')
-                # Customize the spines
-                ax.spines['top'].set_visible(False)     # Hide the top spine
-                ax.spines['right'].set_visible(False)   # Hide the right spine
-                ax.spines['bottom'].set_visible(True)   # Keep the bottom spine visible
-                ax.spines['left'].set_visible(True)
-                # Increase Linewidth
-                ax.spines['bottom'].set_linewidth(2.5)   # Adjust the bottom spine line width
-                ax.spines['left'].set_linewidth(2.5)  
-            
-                ax.legend(fontsize=35, loc='lower right')
-                return
-            
-            
-if top_type == 'Top Ball Progressors':
-                fig,ax = plt.subplots(figsize=(25,25), facecolor=bg_color)
-                passer_bar(ax)
-                
-                fig.text(0.35, 1.02, 'Top Ball Progressors', fontsize=75, fontweight='bold', ha='center', va='center')
-                fig.text(0.35, 0.97, f'in the match {hteamName} {hgoal_count} - {agoal_count} {ateamName}', color='#1a1a1a', fontsize=50, ha='center', va='center')  
-                fig.text(0.35, 0.94, '@adnaaan433', fontsize=25, ha='center', va='center')
-                
-                st.pyplot(fig)
-                
-if top_type == 'Top Shot Sequences Involvements':
-                fig,ax = plt.subplots(figsize=(25,25), facecolor=bg_color)
-                sh_sq_bar(ax)
-                
-                fig.text(0.35, 1.02, 'Top Shot Sequence Involvements', fontsize=75, fontweight='bold', ha='center', va='center')
-                fig.text(0.35, 0.97, f'in the match {hteamName} {hgoal_count} - {agoal_count} {ateamName}', color='#1a1a1a', fontsize=50, ha='center', va='center')
-                fig.text(0.35, 0.94, '@adnaaan433', fontsize=25, ha='center', va='center')
-                
-                st.pyplot(fig)
-                
-if top_type == 'Top Defensive Involvements':
-                fig,ax = plt.subplots(figsize=(25,25), facecolor=bg_color)
-                top_defender(ax)
-                
-                fig.text(0.35, 1.02, 'Top Defensive Involvements', fontsize=75, fontweight='bold', ha='center', va='center')
-                fig.text(0.35, 0.97, f'in the match {hteamName} {hgoal_count} - {agoal_count} {ateamName}', color='#1a1a1a', fontsize=50, ha='center', va='center') 
-                fig.text(0.35, 0.94, '@adnaaan433', fontsize=25, ha='center', va='center')
-                
-                st.pyplot(fig)
-                
-if top_type == 'Top Threat Creating Players':
-                fig,ax = plt.subplots(figsize=(25,25), facecolor=bg_color)
-                xT_bar(ax)
-                
-                fig.text(0.35, 1.02, 'Top Threat Creating Players', fontsize=75, fontweight='bold', ha='center', va='center')
-                fig.text(0.35, 0.97, f'in the match {hteamName} {hgoal_count} - {agoal_count} {ateamName}', color='#1a1a1a', fontsize=50, ha='center', va='center')
-                fig.text(0.35, 0.94, '@adnaaan433', fontsize=25, ha='center', va='center')
-                
-                st.pyplot(fig)
-            
-        
+    top_type = st.selectbox('Select Type', ['Top Ball Progressors', 'Top Shot Sequences Involvements', 'Top Defensive Involvements', 'Top Threat Creating Players'], 
+                            index=None, key='top_players_selection')
 
+    # تعريف دالة top_dfs
+    def top_dfs():
+        # Get unique players
+        unique_players = df['name'].unique()
+        
+        # Top Ball Progressor
+        progressor_counts = {'name': unique_players, 'Progressive Passes': [], 'Progressive Carries': [], 'team names': []}
+        for name in unique_players:
+            dfp = df[(df['name'] == name) & (df['outcomeType'] == 'Successful')]
+            progressor_counts['Progressive Passes'].append(len(dfp[(dfp['prog_pass'] >= 9.144) & (dfp['x'] >= 35) & (~dfp['qualifiers'].str.contains('CornerTaken|Freekick'))]))
+            progressor_counts['Progressive Carries'].append(len(dfp[(dfp['prog_carry'] >= 9.144) & (dfp['endX'] >= 35)]))
+            progressor_counts['team names'].append(dfp['teamName'].max())
+        progressor_df = pd.DataFrame(progressor_counts)
+        progressor_df['total'] = progressor_df['Progressive Passes'] + progressor_df['Progressive Carries']
+        progressor_df = progressor_df.sort_values(by=['total', 'Progressive Passes'], ascending=[False, False])
+        progressor_df.reset_index(drop=True, inplace=True)
+        progressor_df = progressor_df.head(10)
+        progressor_df['shortName'] = progressor_df['name'].apply(get_short_name)
+        
+        # Top Threat Creators
+        xT_counts = {'name': unique_players, 'xT from Pass': [], 'xT from Carry': [], 'team names': []}
+        for name in unique_players:
+            dfp = df[(df['name'] == name) & (df['outcomeType'] == 'Successful') & (df['xT'] > 0)]
+            xT_counts['xT from Pass'].append((dfp[(dfp['type'] == 'Pass') & (~dfp['qualifiers'].str.contains('CornerTaken|Freekick|ThrowIn'))])['xT'].sum().round(2))
+            xT_counts['xT from Carry'].append((dfp[(dfp['type'] == 'Carry')])['xT'].sum().round(2))
+            xT_counts['team names'].append(dfp['teamName'].max())
+        xT_df = pd.DataFrame(xT_counts)
+        xT_df['total'] = xT_df['xT from Pass'] + xT_df['xT from Carry']
+        xT_df = xT_df.sort_values(by=['total', 'xT from Pass'], ascending=[False, False])
+        xT_df.reset_index(drop=True, inplace=True)
+        xT_df = xT_df.head(10)
+        xT_df['shortName'] = xT_df['name'].apply(get_short_name)
+        
+        # Shot Sequence Involvement
+        df_no_carry = df[~df['type'].str.contains('Carry|TakeOn|Challenge')].reset_index(drop=True)
+        shot_seq_counts = {'name': unique_players, 'Shots': [], 'Shot Assists': [], 'Buildup to Shot': [], 'team names': []}
+        for name in unique_players:
+            dfp = df_no_carry[df_no_carry['name'] == name]
+            shot_seq_counts['Shots'].append(len(dfp[dfp['type'].isin(['MissedShots', 'SavedShot', 'ShotOnPost', 'Goal'])]))
+            shot_seq_counts['Shot Assists'].append(len(dfp[(dfp['qualifiers'].str.contains('KeyPass'))]))
+            shot_seq_counts['Buildup to Shot'].append(len(df_no_carry[(df_no_carry['type'] == 'Pass') & 
+                                                                     (df_no_carry['outcomeType'] == 'Successful') & 
+                                                                     (df_no_carry['name'] == name) & 
+                                                                     (df_no_carry['qualifiers'].shift(-1).str.contains('KeyPass'))]))
+            shot_seq_counts['team names'].append(dfp['teamName'].max())
+        sh_sq_df = pd.DataFrame(shot_seq_counts)
+        sh_sq_df['total'] = sh_sq_df['Shots'] + sh_sq_df['Shot Assists'] + sh_sq_df['Buildup to Shot']
+        sh_sq_df = sh_sq_df.sort_values(by=['total', 'Shots', 'Shot Assists'], ascending=[False, False, False])
+        sh_sq_df.reset_index(drop=True, inplace=True)
+        sh_sq_df = sh_sq_df.head(10)
+        sh_sq_df['shortName'] = sh_sq_df['name'].apply(get_short_name)
+        
+        # Top Defenders
+        defensive_actions_counts = {'name': unique_players, 'Tackles': [], 'Interceptions': [], 'Clearance': [], 'team names': []}
+        for name in unique_players:
+            dfp = df[(df['name'] == name) & (df['outcomeType'] == 'Successful')]
+            defensive_actions_counts['Tackles'].append(len(dfp[dfp['type'] == 'Tackle']))
+            defensive_actions_counts['Interceptions'].append(len(dfp[dfp['type'] == 'Interception']))
+            defensive_actions_counts['Clearance'].append(len(dfp[dfp['type'] == 'Clearance']))
+            defensive_actions_counts['team names'].append(dfp['teamName'].max())
+        defender_df = pd.DataFrame(defensive_actions_counts)
+        defender_df['total'] = defender_df['Tackles'] + defender_df['Interceptions'] + defender_df['Clearance']
+        defender_df = defender_df.sort_values(by=['total', 'Tackles', 'Interceptions'], ascending=[False, False, False])
+        defender_df.reset_index(drop=True, inplace=True)
+        defender_df = defender_df.head(10)
+        defender_df['shortName'] = defender_df['name'].apply(get_short_name)
+        
+        return progressor_df, xT_df, sh_sq_df, defender_df
+
+    # استدعاء top_dfs مرة واحدة وتخزين النتائج
+    progressor_df, xT_df, sh_sq_df, defender_df = top_dfs()
+
+    # تعريف الدوال الأخرى (passer_bar, sh_sq_bar, top_defender, xT_bar) كما هي في الكود الأصلي
+    def passer_bar(ax):
+        top10_progressors = progressor_df['shortName'][::-1].tolist()
+        progressor_pp = progressor_df['Progressive Passes'][::-1].tolist()
+        progressor_pc = progressor_df['Progressive Carries'][::-1].tolist()
+        
+        ax.barh(top10_progressors, progressor_pp, label='Prog. Pass', zorder=3, color=hcol, left=0)
+        ax.barh(top10_progressors, progressor_pc, label='Prog. Carry', zorder=3, color=acol, left=progressor_pp)
+        
+        for i, player in enumerate(top10_progressors):
+            for j, count in enumerate([progressor_pp[i], progressor_pc[i]]):
+                if count > 0:
+                    x_position = sum([progressor_pp[i], progressor_pc[i]][:j]) + count / 2
+                    ax.text(x_position, i, str(count), ha='center', va='center', color=bg_color, fontsize=50, fontweight='bold')
+            ax.text(progressor_df['total'].iloc[i] + 0.25, 9-i, str(progressor_df['total'].iloc[i]), ha='left', va='center', color=line_color, fontsize=50, fontweight='bold')
+            himg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+            htimg = Image.open(himg).convert('RGBA')
+            himagebox = OffsetImage(htimg, zoom=0.5)
+            aimg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+            atimg = Image.open(aimg).convert('RGBA')
+            aimagebox = OffsetImage(atimg, zoom=0.5)
+            for i, row in progressor_df.iterrows():
+                if row['team names'] == hteamName:
+                    timagebox = himagebox
+                else:
+                    timagebox = aimagebox
+                ab = AnnotationBbox(timagebox, (0, 9-i), frameon=False, xybox=(-100, 0), xycoords='data', boxcoords="offset points")
+                ax.add_artist(ab)
+        
+        ax.set_facecolor(bg_color)
+        ax.tick_params(axis='x', colors=line_color, labelsize=35, pad=50)
+        ax.tick_params(axis='y', colors=line_color, labelsize=50, pad=200)
+        ax.xaxis.label.set_color(bg_color)
+        ax.yaxis.label.set_color(bg_color)
+        ax.grid(True, zorder=1, ls='dotted', lw=2.5, color='gray')
+        ax.set_facecolor('#ededed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        ax.spines['bottom'].set_linewidth(2.5)
+        ax.spines['left'].set_linewidth(2.5)
+        ax.legend(fontsize=35, loc='lower right')
+        return 
+
+    def sh_sq_bar(ax):
+        top10 = sh_sq_df.head(10).iloc[::-1]
+        ax.barh(top10['shortName'], top10['Shots'], zorder=3, height=0.75, label='Shot', color=hcol)
+        ax.barh(top10['shortName'], top10['Shot Assists'], zorder=3, height=0.75, label='Shot Assist', color='green', left=top10['Shots'])
+        ax.barh(top10['shortName'], top10['Buildup to Shot'], zorder=3, height=0.75, label='Buildup to Shot', color=acol, left=top10[['Shots', 'Shot Assists']].sum(axis=1))
+        
+        for i, player in enumerate(top10['shortName']):
+            for j, count in enumerate(top10[['Shots', 'Shot Assists', 'Buildup to Shot']].iloc[i]):
+                if count > 0:
+                    x_position = sum(top10.iloc[i, 1:1+j]) + count / 2
+                    ax.text(x_position, i, str(count), ha='center', va='center', color=bg_color, fontsize=50, fontweight='bold')
+            ax.text(top10['total'].iloc[i] + 0.25, i, str(top10['total'].iloc[i]), ha='left', va='center', color=line_color, fontsize=50, fontweight='bold')
+            himg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+            htimg = Image.open(himg).convert('RGBA')
+            himagebox = OffsetImage(htimg, zoom=0.5)
+            aimg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+            atimg = Image.open(aimg).convert('RGBA')
+            aimagebox = OffsetImage(atimg, zoom=0.5)
+            for i, row in top10.iterrows():
+                if row['team names'] == hteamName:
+                    timagebox = himagebox
+                else:
+                    timagebox = aimagebox
+                ab = AnnotationBbox(timagebox, (0, 9-i), frameon=False, xybox=(-100, 0), xycoords='data', boxcoords="offset points")
+                ax.add_artist(ab)
+        
+        ax.set_facecolor(bg_color)
+        ax.tick_params(axis='x', colors=line_color, labelsize=35, pad=50)
+        ax.tick_params(axis='y', colors=line_color, labelsize=50, pad=200)
+        ax.xaxis.label.set_color(bg_color)
+        ax.yaxis.label.set_color(bg_color)
+        ax.grid(True, zorder=1, ls='dotted', lw=2.5, color='gray')
+        ax.set_facecolor('#ededed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        ax.spines['bottom'].set_linewidth(2.5)
+        ax.spines['left'].set_linewidth(2.5)
+        ax.legend(fontsize=35, loc='lower right')
+        return
+
+    def top_defender(ax):
+        top10 = defender_df.head(10).iloc[::-1]
+        ax.barh(top10['shortName'], top10['Tackles'], zorder=3, height=0.75, label='Tackle', color=hcol)
+        ax.barh(top10['shortName'], top10['Interceptions'], zorder=3, height=0.75, label='Interception', color='green', left=top10['Tackles'])
+        ax.barh(top10['shortName'], top10['Clearance'], zorder=3, height=0.75, label='Clearance', color=acol, left=top10[['Tackles', 'Interceptions']].sum(axis=1))
+        
+        for i, player in enumerate(top10['shortName']):
+            for j, count in enumerate(top10[['Tackles', 'Interceptions', 'Clearance']].iloc[i]):
+                if count > 0:
+                    x_position = sum(top10.iloc[i, 1:1+j]) + count / 2
+                    ax.text(x_position, i, str(count), ha='center', va='center', color=bg_color, fontsize=50, fontweight='bold')
+            ax.text(top10['total'].iloc[i] + 0.25, i, str(top10['total'].iloc[i]), ha='left', va='center', color=line_color, fontsize=50, fontweight='bold')
+            himg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+            htimg = Image.open(himg).convert('RGBA')
+            himagebox = OffsetImage(htimg, zoom=0.5)
+            aimg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+            atimg = Image.open(aimg).convert('RGBA')
+            aimagebox = OffsetImage(atimg, zoom=0.5)
+            for i, row in top10.iterrows():
+                if row['team names'] == hteamName:
+                    timagebox = himagebox
+                else:
+                    timagebox = aimagebox
+                ab = AnnotationBbox(timagebox, (0, 9-i), frameon=False, xybox=(-100, 0), xycoords='data', boxcoords="offset points")
+                ax.add_artist(ab)
+        
+        ax.set_facecolor(bg_color)
+        ax.tick_params(axis='x', colors=line_color, labelsize=35, pad=50)
+        ax.tick_params(axis='y', colors=line_color, labelsize=50, pad=200)
+        ax.xaxis.label.set_color(bg_color)
+        ax.yaxis.label.set_color(bg_color)
+        ax.grid(True, zorder=1, ls='dotted', lw=2.5, color='gray')
+        ax.set_facecolor('#ededed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        ax.spines['bottom'].set_linewidth(2.5)
+        ax.spines['left'].set_linewidth(2.5)
+        ax.legend(fontsize=35, loc='lower right')
+        return
+
+    def xT_bar(ax):
+        path_eff = [path_effects.Stroke(linewidth=2.5, foreground=line_color), path_effects.Normal()]
+        top10_progressors = xT_df['shortName'][::-1].tolist()
+        progressor_pp = xT_df['xT from Pass'][::-1].tolist()
+        progressor_pc = xT_df['xT from Carry'][::-1].tolist()
+        total_rounded = xT_df['total'].round(2)[::-1].tolist()
+        
+        ax.barh(top10_progressors, progressor_pp, label='xT from Pass', zorder=3, color=hcol, left=0)
+        ax.barh(top10_progressors, progressor_pc, label='xT from Carry', zorder=3, color=acol, left=progressor_pp)
+        
+        for i, player in enumerate(top10_progressors):
+            for j, count in enumerate([progressor_pp[i], progressor_pc[i]]):
+                if count > 0:
+                    x_position = sum([progressor_pp[i], progressor_pc[i]][:j]) + count / 2
+                    ax.text(x_position, i, f"{count:.2f}", ha='center', va='center', color=bg_color, rotation=45, fontsize=50, fontweight='bold', path_effects=path_eff)
+            ax.text(xT_df['total'].iloc[i] + 0.01, 9-i, f"{total_rounded[i]:.2f}", ha='left', va='center', rotation=45, color=line_color, fontsize=50, fontweight='bold')
+            himg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+            htimg = Image.open(himg).convert('RGBA')
+            himagebox = OffsetImage(htimg, zoom=0.5)
+            aimg = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+            atimg = Image.open(aimg).convert('RGBA')
+            aimagebox = OffsetImage(atimg, zoom=0.5)
+            for i, row in xT_df.iterrows():
+                if row['team names'] == hteamName:
+                    timagebox = himagebox
+                else:
+                    timagebox = aimagebox
+                ab = AnnotationBbox(timagebox, (0, 9-i), frameon=False, xybox=(-100, 0), xycoords='data', boxcoords="offset points")
+                ax.add_artist(ab)
+        
+        ax.set_facecolor(bg_color)
+        ax.tick_params(axis='x', colors=line_color, labelsize=35, pad=50)
+        ax.tick_params(axis='y', colors=line_color, labelsize=50, pad=200)
+        ax.xaxis.label.set_color(bg_color)
+        ax.yaxis.label.set_color(bg_color)
+        ax.grid(True, zorder=1, ls='dotted', lw=2.5, color='gray')
+        ax.set_facecolor('#ededed')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        ax.spines['bottom'].set_linewidth(2.5)
+        ax.spines['left'].set_linewidth(2.5)
+        ax.legend(fontsize=35, loc='lower right')
+        return
+
+    # عرض الرسوم البيانية بناءً على اختيار top_type
+    if top_type == 'Top Ball Progressors':
+        fig, ax = plt.subplots(figsize=(25, 25), facecolor=bg_color)
+        passer_bar(ax)
+        fig.text(0.35, 1.02, 'Top Ball Progressors', fontsize=75, fontweight='bold', ha='center', va='center')
+        fig.text(0.35, 0.97, f'in the match {hteamName} {hgoal_count} - {agoal_count} {ateamName}', color='#1a1a1a', fontsize=50, ha='center', va='center')  
+        fig.text(0.35, 0.94, '@adnaaan433', fontsize=25, ha='center', va='center')
+        st.pyplot(fig)
+        
+    elif top_type == 'Top Shot Sequences Involvements':
+        fig, ax = plt.subplots(figsize=(25, 25), facecolor=bg_color)
+        sh_sq_bar(ax)
+        fig.text(0.35, 1.02, 'Top Shot Sequence Involvements', fontsize=75, fontweight='bold', ha='center', va='center')
+        fig.text(0.35, 0.97, f'in the match {hteamName} {hgoal_count} - {agoal_count} {ateamName}', color='#1a1a1a', fontsize=50, ha='center', va='center')
+        fig.text(0.35, 0.94, '@adnaaan433', fontsize=25, ha='center', va='center')
+        st.pyplot(fig)
+        
+    elif top_type == 'Top Defensive Involvements':
+        fig, ax = plt.subplots(figsize=(25, 25), facecolor=bg_color)
+        top_defender(ax)
+        fig.text(0.35, 1.02, 'Top Defensive Involvements', fontsize=75, fontweight='bold', ha='center', va='center')
+        fig.text(0.35, 0.97, f'in the match {hteamName} {hgoal_count} - {agoal_count} {ateamName}', color='#1a1a1a', fontsize=50, ha='center', va='center') 
+        fig.text(0.35, 0.94, '@adnaaan433', fontsize=25, ha='center', va='center')
+        st.pyplot(fig)
+        
+    elif top_type == 'Top Threat Creating Players':
+        fig, ax = plt.subplots(figsize=(25, 25), facecolor=bg_color)
+        xT_bar(ax)
+        fig.text(0.35, 1.02, 'Top Threat Creating Players', fontsize=75, fontweight='bold', ha='center', va='center')
+        fig.text(0.35, 0.97, f'in the match {hteamName} {hgoal_count} - {agoal_count} {ateamName}', color='#1a1a1a', fontsize=50, ha='center', va='center')
+        fig.text(0.35, 0.94, '@adnaaan433', fontsize=25, ha='center', va='center')
+        st.pyplot(fig)
 else:
     st.title('Post Match Report')
     st.text('Data source: Opta,   Made by: Adnan,   twitter: @adnaaan433')
