@@ -408,7 +408,7 @@ if league and htn and atn and st.session_state.confirmed:
         return df_def_show  # إرجاع بيانات الأفعال الدفاعية
 
                 # اختيار فترة المباراة باستخدام أداة الراديو
-            dah_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), 
+        dah_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), 
                                           [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
                                           index=0, key='dah_time_pill')
                 fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
