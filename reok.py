@@ -3198,7 +3198,7 @@ with tab2:
 
         return int(mins_played), subs_text
 
-def generate_gk_dahsboard(pname, ftmb_tid):
+def generate_gk_dashboard(pname, ftmb_tid):
     fig, axs = plt.subplots(1, 2, figsize=(16, 15), facecolor='#f5f5f5')
 
     # Calculate minutes played
@@ -3470,7 +3470,6 @@ def player_detailed_data(pname):
 
     return shooting_stats_dict, passing_stats_dict, carry_stats_dict, pass_receiving_stats_dict, defensive_stats_dict, other_stats_dict
 
-# باقي الكود (الكتل الشرطية) يبدو صحيحًا من حيث المسافات البادئة
 if team_player == f"{hteamName} Players":
     home_pname_df = homedf[(homedf['name'] != 'nan') & (homedf['position'] != 'GK')]
     hpname = st.selectbox('Select a Player:', home_pname_df.name.unique(), index=None, key='home_player_analysis')
@@ -3550,11 +3549,11 @@ if team_player == f'{hteamName} GK':
     pname = st.selectbox('Select a Goal-Keeper:', home_gk_df.name.unique(), index=None, key='home_gk_analysis')
     if st.session_state.home_gk_analysis:
         st.header(f'{pname} Performance Dashboard')
-        generate_gk_dahsboard(f'{pname}', hftmb_tid)
+        generate_gk_dashboard(f'{pname}', hftmb_tid)
 
 if team_player == f'{ateamName} GK':
     away_gk_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] == 'GK')]
     pname = st.selectbox('Select a Goal-Keeper:', away_gk_df.name.unique(), index=None, key='away_gk_analysis')
     if st.session_state.away_gk_analysis:
         st.header(f'{pname} Performance Dashboard')
-        generate_gk_dahsboard(f'{pname}', aftmb_tid)
+        generate_gk_dashboard(f'{pname}', aftmb_tid)
