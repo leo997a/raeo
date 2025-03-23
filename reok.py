@@ -242,7 +242,9 @@ def get_event_data(season, league, stage, htn, atn):
                                np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
     df['prog_carry'] = np.where(df['type'] == 'Carry', 
                                 np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
-    df['shortName'] = df['name'].apply(lambda x: x.split()[0][0] + ". " + x.split()[-1] if len(x.split()) > 1 else x)
+    print(df['name'].isnull().sum())  # عدد القيم الفارغة
+    print(df['name'].apply(type).value_counts())  # أنواع البيانات في العمود
+    df['shortName'] = df['name'].apply(lambda x: x.split()[0][0] + ". " + x.split()[-1] if pd.notna(x) and isinstance(x, str) and len(x.split()) > 1 else x)
     df['period'] = df['period'].replace({1: 'FirstHalf', 2: 'SecondHalf', 3: 'FirstPeriodOfExtraTime', 4: 'SecondPeriodOfExtraTime', 5: 'PenaltyShootout', 14: 'PostGame', 16: 'PreMatch'})
     df = df[df['period'] != 'PenaltyShootout'].reset_index(drop=True)
     return df, teams_dict, players_df
