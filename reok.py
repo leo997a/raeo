@@ -404,18 +404,18 @@ if league and htn and atn and st.session_state.confirmed:
     
         return pass_btn  # This return statement is correctly inside the function
 
-                pn_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
-                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+            pn_time_phase = st.radio(reshape_arabic_text("اختر فترة المباراة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
+            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
                 
-                if pn_time_phase == reshape_arabic_text('الوقت الكامل'):
-                    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-                    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-                elif pn_time_phase == reshape_arabic_text('الشوط الأول'):
-                    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-                    away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-                elif pn_time_phase == reshape_arabic_text('الشوط الثاني'):
-                    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-                    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+            if pn_time_phase == reshape_arabic_text('الوقت الكامل'):
+                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
+            elif pn_time_phase == reshape_arabic_text('الشوط الأول'):
+                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
+                away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
+            elif pn_time_phase == reshape_arabic_text('الشوط الثاني'):
+                home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
+                away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
                 home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
                 away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
