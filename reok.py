@@ -427,11 +427,11 @@ if league and htn and atn and st.session_state.confirmed:
                 # إضافة العنوان والنصوص التوضيحية
         fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', 
                     highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'), fontsize=20, ha='center', va='center', color='white')
-            fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
-            fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), 
+        fig.text(0.5, 1.01, reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'), fontsize=20, ha='center', va='center', color='white')
+        fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+        fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), 
                     fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-            fig.text(0.5, 0.03, reshape_arabic_text('*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية'), 
+        fig.text(0.5, 0.03, reshape_arabic_text('*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية'), 
                     fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
                 # إضافة شعارات الفريقين
