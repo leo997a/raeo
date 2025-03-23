@@ -2852,25 +2852,36 @@ from urllib.request import urlopen
 from PIL import Image
 from mplsoccer import VerticalPitch
 from scipy.spatial import ConvexHull
-from matplotlib import font_manager  # تصحيح الاستيراد
+from matplotlib import font_manager
 import os
+
 # تهيئة Matplotlib لدعم العربية
 font_path = "/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf"
 if os.path.exists(font_path):
     font_manager.fontManager.addfont(font_path)
     plt.rcParams['font.family'] = 'Noto Sans Arabic'
 else:
-    plt.rcParams['font.family'] = 'DejaVu Sans'  # خط افتراضي
+    plt.rcParams['font.family'] = 'DejaVu Sans'
     st.warning("الخط العربي غير موجود، يتم استخدام خط افتراضي.")
 plt.rcParams['axes.unicode_minus'] = False
 
-
 # تحميل بيانات الفرق
-df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
-team_names = df_teamNameId['team_name'].tolist()  # قائمة بأسماء الفرق
+try:
+    df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/pmr_app/refs/heads/main/teams_name_and_id.csv')
+    st.write("أسماء الأعمدة في df_teamNameId:", df_teamNameId.columns.tolist())  # للتحقق
+    if 'team_name' in df_teamNameId.columns:
+        team_names = df_teamNameId['team_name'].tolist()
+    else:
+        st.error("العمود 'team_name' غير موجود في البيانات!")
+        team_names = ["فريق افتراضي 1", "فريق افتراضي 2"]
+except Exception as e:
+    st.error(f"خطأ في تحميل البيانات: {e}")
+    team_names = ["فريق افتراضي 1", "فريق افتراضي 2"]
 
+# اختيار الفريق المضيف والضيف
 home_team = st.selectbox("اختر الفريق المضيف", team_names)
-away_team = st.selectbox("اختر الفريق الضيف", team_names, index=1)  # اختيار افتراضي مختلف
+away_team = st.selectbox("اختر الفريق الضيف", team_names, index=1)
+
 # اختيار الفريق لتحليل اللاعبين
 team_options = [home_team, away_team]
 selected_team = st.radio("اختر الفريق لتحليل اللاعبين", team_options)
@@ -2882,6 +2893,7 @@ elif st.session_state.selecting_team_for_player_analysis != f"{selected_team} Pl
     st.session_state.selecting_team_for_player_analysis = f"{selected_team} Players"
 
 st.write(f"الفريق المختار للتحليل: {st.session_state.selecting_team_for_player_analysis}")
+
 # تعريف الألوان
 bg_color = '#f5f5f5'
 line_color = '#000000'
