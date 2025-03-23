@@ -689,7 +689,7 @@ def pass_network(ax, team_name, col, phase_tag):
     return pass_btn
 
 # الجزء الخارجي من الكود مع معالجة النصوص العربية وضبط الإحداثيات
-tab1, tab2 = st.tabs([reshape_arabic_text("تحليل المباراة"), reshape_arabic_text("تبويب آخر")])
+tab1, tab2, tab3, tab4 = st.tabs(['Team Analysis', 'Player Analysis', 'Match Statistics', 'Top Players'])
 
 with tab1:
     an_tp = st.selectbox('نوع التحليل:', [
