@@ -737,7 +737,11 @@ with tab1:
                  highlight_textprops=[{'color': hcol}, {'color': acol}],
                  fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
         fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
-        fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='white')
+        fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', 
+         fontsize=14, fontfamily='Roboto', fontweight='bold', 
+         color='#FFD700', ha='center', va='center',
+         bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
+         path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
 
         # ضبط النصوص في الأسفل مع تطبيق reshape_arabic_text
         fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
