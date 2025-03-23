@@ -3485,7 +3485,7 @@ if team_player == f"{hteamName} Players":
 elif team_player == f"{ateamName} Players":
         away_pname_df = awaydf[(awaydf['name'] != 'nan') & (awaydf['position'] != 'GK')]
         apname = st.selectbox('Select a Player:', away_pname_df.name.unique(), index=None, key='away_player_analysis')
-    if st.session_state.away_player_analysis and apname:  # التأكد من أن apname ليس None
+if st.session_state.away_player_analysis and apname:  # التأكد من أن apname ليس None
             st.header(f'{apname} Performance Dashboard')
             generate_player_dashboard(f'{apname}', aftmb_tid)  # تصحيح اسم الدالة
             
