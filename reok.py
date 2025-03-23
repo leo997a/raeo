@@ -1400,7 +1400,7 @@ if an_tp == 'GK Saves':
             
             st.pyplot(fig)
             
-        if an_tp == 'Match Momentum':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
+           if an_tp == 'Match Momentum':
+                # st.header(f'{st.session_state.analysis_type}')
+                st.header(f'{an_tp}')
             
