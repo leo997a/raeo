@@ -1317,10 +1317,6 @@ def progressive_carry(ax, team_name, col, phase_tag):
         st.dataframe(away_shots_stats, hide_index=True)
 
 if an_tp == 'احصائيات الحراس':
-    # st.header(f'{st.session_state.analysis_type}')
-    st.header(f'{an_tp}')
-    
-    if an_tp == 'احصائيات الحراس':
     st.header(reshape_arabic_text('إحصائيات الحراس'))
 
     def plot_goal_post(ax, team_name, col, phase_tag):
