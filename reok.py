@@ -1382,7 +1382,7 @@ if an_tp == 'احصائيات الحراس':
             reshape_arabic_text(f'الفرص الكبيرة المتصدى لها: {len(hSavedf_bc)}')
         ]
         for i, txt in enumerate(stats_texts):
-            ax.text(52.5, 28 - (5 * i), txt, fontsize Urinary=12, ha='center', va='center', color='white', alpha=0.9)
+            ax.text(52.5, 28 - (5 * i), txt, fontsize=12, ha='center', va='center', color='white', alpha=0.9)
 
     # خارج الدالة، في النطاق الرئيسي للشرط
     gp_time_phase = st.radio(reshape_arabic_text("الفترة الزمنية"), 
