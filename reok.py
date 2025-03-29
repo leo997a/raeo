@@ -9,9 +9,8 @@ from matplotlib.colors import to_rgba, LinearSegmentedColormap
 import seaborn as sns
 import requests
 import matplotlib.patches as patches
-from mplsoccer import Pitch, VerticalPitch, add_image
+from mplsoccer import Pitch, VerticalPitch, add_image, fig_text
 from matplotlib import rcParams
-from mplsoccer import fig_text
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib import patheffects
 import matplotlib.patheffects as path_effects
@@ -25,7 +24,6 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 import time
-from mplsoccer import fig_text
 
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
