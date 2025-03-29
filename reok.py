@@ -1320,103 +1320,130 @@ if an_tp == 'احصائيات الحراس':
     # st.header(f'{st.session_state.analysis_type}')
     st.header(f'{an_tp}')
     
+    if an_tp == 'احصائيات الحراس':
+    st.header(reshape_arabic_text('إحصائيات الحراس'))
+
     def plot_goal_post(ax, team_name, col, phase_tag):
+        # تصفية التسديدات بناءً على الفترة الزمنية
         if phase_tag == 'Full Time':
-            shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost']))]
+            shots_df = df[(df['teamName'] != team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost']))]
+            phase_text = reshape_arabic_text('المباراة كاملة: 0-90 دقيقة')
         elif phase_tag == 'First Half':
-            shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='FirstHalf')]
+            shots_df = df[(df['teamName'] != team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period'] == 'FirstHalf')]
+            phase_text = reshape_arabic_text('الشوط الأول: 0-45 دقيقة')
         elif phase_tag == 'Second Half':
-            shots_df = df[(df['teamName']!=team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period']=='SecondHalf')]
-    
-        shots_df['goalMouthZ'] = (shots_df['goalMouthZ']*0.75) + 38
-        shots_df['goalMouthY'] = ((37.66 - shots_df['goalMouthY'])*12.295) + 7.5
-    
-        # plotting an invisible pitch using the pitch color and line color same color, because the goalposts are being plotted inside the pitch using pitch's dimension
+            shots_df = df[(df['teamName'] != team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (df['period'] == 'SecondHalf')]
+            phase_text = reshape_arabic_text('الشوط الثاني: 45-90 دقيقة')
+
+        shots_df['goalMouthZ'] = (shots_df['goalMouthZ'] * 0.75) + 38
+        shots_df['goalMouthY'] = ((37.66 - shots_df['goalMouthY']) * 12.295) + 7.5
+
+        # إعداد الملعب مع خلفية متدرجة
         pitch = Pitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=bg_color, linewidth=2)
         pitch.draw(ax=ax)
         ax.set_ylim(-0.5, 68.5)
         ax.set_xlim(-0.5, 105.5)
-        
-        # goalpost bars
-        ax.plot([7.5, 7.5], [38, 68], color=line_color, linewidth=5)
-        ax.plot([7.5, 97.5], [68, 68], color=line_color, linewidth=5)
-        ax.plot([97.5, 97.5], [68, 38], color=line_color, linewidth=5)
-        ax.plot([0, 105], [38, 38], color=line_color, linewidth=3)
-        # plotting the home net
+
+        # إضافة تدرج للخلفية
+        gradient = LinearSegmentedColormap.from_list('custom_gradient', gradient_colors)
+        gradient_array = gradient(np.linspace(0, 1, 256))
+        ax.imshow(np.tile(gradient_array, (100, 1)).T, extent=[-0.5, 105.5, -0.5, 68.5], aspect='auto', zorder=0)
+
+        # رسم أعمدة المرمى
+        ax.plot([7.5, 7.5], [38, 68], color=line_color, linewidth=5, zorder=2)
+        ax.plot([7.5, 97.5], [68, 68], color=line_color, linewidth=5, zorder=2)
+        ax.plot([97.5, 97.5], [68, 38], color=line_color, linewidth=5, zorder=2)
+        ax.plot([0, 105], [38, 38], color=line_color, linewidth=3, zorder=2)
         y_values = (np.arange(0, 6) * 6) + 38
         for y in y_values:
-            ax.plot([7.5, 97.5], [y, y], color=line_color, linewidth=2, alpha=0.2)
+            ax.plot([7.5, 97.5], [y, y], color=line_color, linewidth=2, alpha=0.3, zorder=1)
         x_values = (np.arange(0, 11) * 9) + 7.5
         for x in x_values:
-            ax.plot([x, x], [38, 68], color=line_color, linewidth=2, alpha=0.2)
-    
-        # filtering different types of shots without BigChance
-        hSavedf = shots_df[(shots_df['type']=='SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
-        hGoaldf = shots_df[(shots_df['type']=='Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
-        hPostdf = shots_df[(shots_df['type']=='ShotOnPost') & (~shots_df['qualifiers'].str.contains('BigChance'))]
-        
-        # filtering different types of shots with BigChance
-        hSavedf_bc = shots_df[(shots_df['type']=='SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (shots_df['qualifiers'].str.contains('BigChance'))]
-        hGoaldf_bc = shots_df[(shots_df['type']=='Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (shots_df['qualifiers'].str.contains('BigChance'))]
-        hPostdf_bc = shots_df[(shots_df['type']=='ShotOnPost') & (shots_df['qualifiers'].str.contains('BigChance'))]
-    
-        # scattering those shots without BigChance
-        pitch.scatter(hSavedf.goalMouthY, hSavedf.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolor=col, hatch='/////', s=350, ax=ax)
-        pitch.scatter(hGoaldf.goalMouthY, hGoaldf.goalMouthZ, marker='football', c=bg_color, zorder=3, edgecolors='green', s=350, ax=ax)
-        pitch.scatter(hPostdf.goalMouthY, hPostdf.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolors='orange', hatch='/////', s=350, ax=ax)
-        # scattering those shots with BigChance
-        pitch.scatter(hSavedf_bc.goalMouthY, hSavedf_bc.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolor=col, hatch='/////', s=1000, ax=ax)
-        pitch.scatter(hGoaldf_bc.goalMouthY, hGoaldf_bc.goalMouthZ, marker='football', c=bg_color, zorder=3, edgecolors='green', s=1000, ax=ax)
-        pitch.scatter(hPostdf_bc.goalMouthY, hPostdf_bc.goalMouthZ, marker='o', c=bg_color, zorder=3, edgecolors='orange', hatch='/////', s=1000, ax=ax)
-    
-        if phase_tag == 'Full Time':
-            ax.text(52.5, 80, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-        elif phase_tag == 'First Half':
-            ax.text(52.5, 80, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-        elif phase_tag == 'Second Half':
-            ax.text(52.5, 80, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-            
-        ax.text(52.5, 73, f'{team_name} GK Saves', color=col, fontsize=15, fontweight='bold', ha='center', va='center')
-    
-        ax.text(52.5, 28-(5*0), f'Total Shots faced: {len(shots_df)}', fontsize=13, ha='center', va='center')
-        ax.text(52.5, 28-(5*1), f'Shots On Target faced: {len(hSavedf)+len(hSavedf_bc)+len(hGoaldf)+len(hGoaldf_bc)}', fontsize=13, ha='center', va='center')
-        ax.text(52.5, 28-(5*2), f'Shots Saved: {len(hSavedf)+len(hSavedf_bc)}', fontsize=13, ha='center', va='center')
-        ax.text(52.5, 28-(5*3), f'Goals Conceded: {len(hGoaldf)+len(hGoaldf_bc)}', fontsize=13, ha='center', va='center')
-        ax.text(52.5, 28-(5*4), f'Goals Conceded from Big Chances: {len(hGoaldf_bc)}', fontsize=13, ha='center', va='center')
-        ax.text(52.5, 28-(5*5), f'Big Chances Saved: {len(hSavedf_bc)}', fontsize=13, ha='center', va='center')
-    
-        return
-    
-    gp_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='gp_time_pill')  # استبدلت st.pills بـ st.radio
-    if gp_time_phase == 'Full Time':
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-        home_shots_stats = plot_goal_post(axs[0], hteamName, hcol, 'Full Time')
-        away_shots_stats = plot_goal_post(axs[1], ateamName, acol, 'Full Time')
-    elif gp_time_phase == 'First Half':
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+            ax.plot([x, x], [38, 68], color=line_color, linewidth=2, alpha=0.3, zorder=1)
+
+        # تصفية التسديدات
+        hSavedf = shots_df[(shots_df['type'] == 'SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
+        hGoaldf = shots_df[(shots_df['type'] == 'Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
+        hPostdf = shots_df[(shots_df['type'] == 'ShotOnPost') & (~shots_df['qualifiers'].str.contains('BigChance'))]
+        hSavedf_bc = shots_df[(shots_df['type'] == 'SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (shots_df['qualifiers'].str.contains('BigChance'))]
+        hGoaldf_bc = shots_df[(shots_df['type'] == 'Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (shots_df['qualifiers'].str.contains('BigChance'))]
+        hPostdf_bc = shots_df[(shots_df['type'] == 'ShotOnPost') & (shots_df['qualifiers'].str.contains('BigChance'))]
+
+        # رسم التسديدات
+        pitch.scatter(hSavedf.goalMouthY, hSavedf.goalMouthZ, marker='o', c=col, edgecolor='white', linewidth=2, s=350, ax=ax, zorder=3, alpha=0.9)
+        pitch.scatter(hGoaldf.goalMouthY, hGoaldf.goalMouthZ, marker='football', c=col, edgecolors='white', s=350, ax=ax, zorder=3)
+        pitch.scatter(hPostdf.goalMouthY, hPostdf.goalMouthZ, marker='o', c='orange', edgecolors='white', linewidth=2, s=350, ax=ax, zorder=3, alpha=0.9)
+        pitch.scatter(hSavedf_bc.goalMouthY, hSavedf_bc.goalMouthZ, marker='o', c=col, edgecolor='white', linewidth=2, s=1000, ax=ax, zorder=3, alpha=0.9)
+        pitch.scatter(hGoaldf_bc.goalMouthY, hGoaldf_bc.goalMouthZ, marker='football', c=col, edgecolors='white', s=1000, ax=ax, zorder=3)
+        pitch.scatter(hPostdf_bc.goalMouthY, hPostdf_bc.goalMouthZ, marker='o', c='orange', edgecolors='white', linewidth=2, s=1000, ax=ax, zorder=3, alpha=0.9)
+
+        # نصوص الإحصائيات بالعربية
+        ax.text(52.5, 80, phase_text, color='white', fontsize=14, ha='center', va='center', 
+                bbox=dict(facecolor=col, alpha=0.2, edgecolor='none'))
+        ax.text(52.5, 73, reshape_arabic_text(f'تصديات حارس {team_name}'), color=col, fontsize=18, fontweight='bold', ha='center', va='center')
+
+        stats_texts = [
+            reshape_arabic_text(f'إجمالي التسديدات المواجهة: {len(shots_df)}'),
+            reshape_arabic_text(f'التسديدات على المرمى المواجهة: {len(hSavedf) + len(hSavedf_bc) + len(hGoaldf) + len(hGoaldf_bc)}'),
+            reshape_arabic_text(f'التسديدات المتصدى لها: {len(hSavedf) + len(hSavedf_bc)}'),
+            reshape_arabic_text(f'الأهداف المستقبلة: {len(hGoaldf) + len(hGoaldf_bc)}'),
+            reshape_arabic_text(f'الأهداف المستقبلة من فرص كبيرة: {len(hGoaldf_bc)}'),
+            reshape_arabic_text(f'الفرص الكبيرة المتصدى لها: {len(hSavedf_bc)}')
+        ]
+        for i, txt in enumerate(stats_texts):
+            ax.text(52.5, 28 - (5 * i), txt, fontsize=12, ha='center', va='center', color='white', alpha=0.9)
+
+    # اختيار الفترة الزمنية
+    gp_time_phase = st.radio(reshape_arabic_text("الفترة الزمنية"), 
+                             [reshape_arabic_text('المباراة كاملة'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
+                             index=0, key='gp_time_pill', horizontal=True)
+
+    # إعداد الرسم
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    if gp_time_phase == reshape_arabic_text('المباراة كاملة'):
+        plot_goal_post(axs[0], hteamName, hcol, 'Full Time')
+        plot_goal_post(axs[1], ateamName, acol, 'Full Time')
+    elif gp_time_phase == reshape_arabic_text('الشوط الأول'):
         plot_goal_post(axs[0], hteamName, hcol, 'First Half')
         plot_goal_post(axs[1], ateamName, acol, 'First Half')
-    elif gp_time_phase == 'Second Half':
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    elif gp_time_phase == reshape_arabic_text('الشوط الثاني'):
         plot_goal_post(axs[0], hteamName, hcol, 'Second Half')
         plot_goal_post(axs[1], ateamName, acol, 'Second Half')
-    
-    fig_text(0.5, 0.94, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-    fig.text(0.5, 0.89, 'GoalKeeper Saves', fontsize=20, ha='center', va='center')
-    fig.text(0.5, 0.84, '@adnaaan433', fontsize=10, ha='center', va='center')
-    
-    fig.text(0.5, 0.2, '*Bigger circle means shots from Big Chances', fontsize=10, fontstyle='italic', ha='center', va='center')
-    
+
+    # إضافة نصوص الرأس وحقوق القناة
+    home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+    away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+    title = f"<{home_part}> - <{away_part}>"
+    fig.text(0.5, 0.96, title, 
+             highlight_textprops=[{'color': hcol}, {'color': acol}],
+             fontsize=24, fontweight='bold', ha='center', va='center')
+    fig.text(0.5, 0.91, reshape_arabic_text('إحصائيات الحراس'), 
+             color='white', fontsize=18, ha='center', va='center', weight='bold')
+    fig.text(0.5, 0.87, '✦ @REO_SHOW ✦', 
+             fontsize=14, fontfamily='Roboto', fontweight='bold', 
+             color='#FFD700', ha='center', va='center',
+             bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
+             path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
+
+    # ملاحظة بالعربية
+    fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر الكبيرة تمثل التسديدات من فرص كبيرة'), 
+             fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+
+    # إضافة شعارات الفريقين
     himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
     himage = Image.open(himage)
-    ax_himage = add_image(himage, fig, left=0.085, bottom=0.86, width=0.125, height=0.125)
-    
+    ax_himage = fig.add_axes([0.05, 0.85, 0.1, 0.1], anchor='NW', zorder=1)
+    ax_himage.imshow(himage)
+    ax_himage.axis('off')
+
     aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
     aimage = Image.open(aimage)
-    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.86, width=0.125, height=0.125)
-    
-    st.pyplot(fig)
+    ax_aimage = fig.add_axes([0.85, 0.85, 0.1, 0.1], anchor='NE', zorder=1)
+    ax_aimage.imshow(aimage)
+    ax_aimage.axis('off')
 
+    # عرض الرسم في Streamlit
+    st.pyplot(fig)
 if an_tp == 'Match Momentum':
     # st.header(f'{st.session_state.analysis_type}')
     st.header(f'{an_tp}')
