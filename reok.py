@@ -24,7 +24,7 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 import time
-from mplsoccer import fig_text  # أضف هذا في بداية الملف
+from mplsoccer import fig_text
 
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
