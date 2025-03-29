@@ -9,7 +9,8 @@ from matplotlib.colors import to_rgba, LinearSegmentedColormap
 import seaborn as sns
 import requests
 import matplotlib.patches as patches
-from mplsoccer import Pitch, VerticalPitch, add_image, fig_text
+from mplsoccer import Pitch, VerticalPitch, add_image
+from highlight_text import fig_text         # استيراد fig_text من highlight-text
 from matplotlib import rcParams
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib import patheffects
