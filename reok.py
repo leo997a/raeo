@@ -3540,7 +3540,6 @@ with tab4:
 
     # تعريف دالة top_dfs
     def top_dfs():
-    # Get unique players
     unique_players = df['name'].unique()
     
     # Top Ball Progressor
