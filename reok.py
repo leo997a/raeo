@@ -1321,7 +1321,7 @@ if an_tp == 'احصائيات الحراس':
     st.header(reshape_arabic_text('إحصائيات الحراس'))
 
     def plot_goal_post(ax, team_name, col, phase_tag):
-        # كتلة الدالة يجب أن تكون مهيأة بشكل صحيح
+        # تصفية التسديدات بناءً على الفترة الزمنية
         if phase_tag == 'Full Time':
             shots_df = df[(df['teamName'] != team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost']))]
             phase_text = reshape_arabic_text('المباراة كاملة: 0-90 دقيقة')
@@ -1335,26 +1335,36 @@ if an_tp == 'احصائيات الحراس':
         shots_df['goalMouthZ'] = (shots_df['goalMouthZ'] * 0.75) + 38
         shots_df['goalMouthY'] = ((37.66 - shots_df['goalMouthY']) * 12.295) + 7.5
 
+        # إعداد الملعب مع خلفية متدرجة
         pitch = Pitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=bg_color, linewidth=2)
         pitch.draw(ax=ax)
         ax.set_ylim(-0.5, 68.5)
         ax.set_xlim(-0.5, 105.5)
 
+        # إضافة تدرج للخلفية
         gradient = LinearSegmentedColormap.from_list('custom_gradient', gradient_colors)
         gradient_array = gradient(np.linspace(0, 1, 256))
         ax.imshow(np.tile(gradient_array, (100, 1)).T, extent=[-0.5, 105.5, -0.5, 68.5], aspect='auto', zorder=0)
 
+        # رسم أعمدة المرمى
         ax.plot([7.5, 7.5], [38, 68], color=line_color, linewidth=5, zorder=2)
         ax.plot([7.5, 97.5], [68, 68], color=line_color, linewidth=5, zorder=2)
         ax.plot([97.5, 97.5], [68, 38], color=line_color, linewidth=5, zorder=2)
         ax.plot([0, 105], [38, 38], color=line_color, linewidth=3, zorder=2)
-        y_values = (np.arange(0, 6) * 6) + 38
-        for y in y_values:
-            ax.plot([7.5, 97.5], [y, y], color=line_color, linewidth=2, alpha=0.3, zorder=1)
-        x_values = (np.arange(0, 11) * 9) + 7.5
-        for x in x_values:
-            ax.plot([x, x], [38, 68], color=line_color, linewidth=2, alpha=0.3, zorder=1)
 
+        # رسم الشباك
+        net_x = np.linspace(7.5, 97.5, 20)  # خطوط أفقية للشباك
+        net_y = np.linspace(38, 68, 10)     # خطوط عمودية للشباك
+        for x in net_x:
+            ax.plot([x, x], [38, 68], color=net_color, linewidth=1, alpha=0.3, zorder=1)
+        for y in net_y:
+            ax.plot([7.5, 97.5], [y, y], color=net_color, linewidth=1, alpha=0.3, zorder=1)
+
+        # إضافة رمز الحارس (دائرة مع رمز "GK")
+        ax.scatter(52.5, 38, s=500, color=col, edgecolor='white', linewidth=2, zorder=5)
+        ax.text(52.5, 38, 'GK', color='white', fontsize=10, ha='center', va='center', fontweight='bold', zorder=6)
+
+        # تصفية التسديدات
         hSavedf = shots_df[(shots_df['type'] == 'SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
         hGoaldf = shots_df[(shots_df['type'] == 'Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
         hPostdf = shots_df[(shots_df['type'] == 'ShotOnPost') & (~shots_df['qualifiers'].str.contains('BigChance'))]
@@ -1362,6 +1372,7 @@ if an_tp == 'احصائيات الحراس':
         hGoaldf_bc = shots_df[(shots_df['type'] == 'Goal') & (~shots_df['qualifiers'].str.contains('OwnGoal')) & (shots_df['qualifiers'].str.contains('BigChance'))]
         hPostdf_bc = shots_df[(shots_df['type'] == 'ShotOnPost') & (shots_df['qualifiers'].str.contains('BigChance'))]
 
+        # رسم التسديدات مع تأثيرات
         pitch.scatter(hSavedf.goalMouthY, hSavedf.goalMouthZ, marker='o', c=col, edgecolor='white', linewidth=2, s=350, ax=ax, zorder=3, alpha=0.9)
         pitch.scatter(hGoaldf.goalMouthY, hGoaldf.goalMouthZ, marker='football', c=col, edgecolors='white', s=350, ax=ax, zorder=3)
         pitch.scatter(hPostdf.goalMouthY, hPostdf.goalMouthZ, marker='o', c='orange', edgecolors='white', linewidth=2, s=350, ax=ax, zorder=3, alpha=0.9)
@@ -1369,9 +1380,12 @@ if an_tp == 'احصائيات الحراس':
         pitch.scatter(hGoaldf_bc.goalMouthY, hGoaldf_bc.goalMouthZ, marker='football', c=col, edgecolors='white', s=1000, ax=ax, zorder=3)
         pitch.scatter(hPostdf_bc.goalMouthY, hPostdf_bc.goalMouthZ, marker='o', c='orange', edgecolors='white', linewidth=2, s=1000, ax=ax, zorder=3, alpha=0.9)
 
+        # نصوص الإحصائيات مع تأثيرات عصرية
         ax.text(52.5, 80, phase_text, color='white', fontsize=14, ha='center', va='center', 
-                bbox=dict(facecolor=col, alpha=0.2, edgecolor='none'))
-        ax.text(52.5, 73, reshape_arabic_text(f'تصديات حارس {team_name}'), color=col, fontsize=18, fontweight='bold', ha='center', va='center')
+                bbox=dict(facecolor=col, alpha=0.3, edgecolor='none', boxstyle='round,pad=0.5'),
+                path_effects=[patheffects.withStroke(linewidth=2, foreground=col)])
+        ax.text(52.5, 73, reshape_arabic_text(f'تصديات حارس {team_name}'), color=col, fontsize=18, fontweight='bold', ha='center', va='center',
+                path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
 
         stats_texts = [
             reshape_arabic_text(f'إجمالي التسديدات المواجهة: {len(shots_df)}'),
@@ -1382,13 +1396,16 @@ if an_tp == 'احصائيات الحراس':
             reshape_arabic_text(f'الفرص الكبيرة المتصدى لها: {len(hSavedf_bc)}')
         ]
         for i, txt in enumerate(stats_texts):
-            ax.text(52.5, 28 - (5 * i), txt, fontsize=12, ha='center', va='center', color='white', alpha=0.9)
+            ax.text(52.5, 28 - (5 * i), txt, fontsize=12, ha='center', va='center', color='white', alpha=0.9,
+                    bbox=dict(facecolor=col, alpha=0.2, edgecolor='none', boxstyle='round,pad=0.3'),
+                    path_effects=[patheffects.withStroke(linewidth=1, foreground=col)])
 
-    # خارج الدالة، في النطاق الرئيسي للشرط
+    # اختيار الفترة الزمنية
     gp_time_phase = st.radio(reshape_arabic_text("الفترة الزمنية"), 
                              [reshape_arabic_text('المباراة كاملة'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], 
                              index=0, key='gp_time_pill', horizontal=True)
 
+    # إعداد الرسم
     fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
     if gp_time_phase == reshape_arabic_text('المباراة كاملة'):
         plot_goal_post(axs[0], hteamName, hcol, 'Full Time')
@@ -1400,21 +1417,27 @@ if an_tp == 'احصائيات الحراس':
         plot_goal_post(axs[0], hteamName, hcol, 'Second Half')
         plot_goal_post(axs[1], ateamName, acol, 'Second Half')
 
+    # إضافة نصوص الرأس وحقوق القناة
     home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
     away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
     title = f"{home_part} - {away_part}"
-    fig.text(0.5, 0.96, title, fontsize=24, fontweight='bold', ha='center', va='center', color='white')
+    fig.text(0.5, 0.96, title, fontsize=24, fontweight='bold', ha='center', va='center', color='white',
+             path_effects=[patheffects.withStroke(linewidth=2, foreground='#FFD700')])
     fig.text(0.5, 0.91, reshape_arabic_text('إحصائيات الحراس'), 
-             color='white', fontsize=18, ha='center', va='center', weight='bold')
+             color='white', fontsize=18, ha='center', va='center', weight='bold',
+             path_effects=[patheffects.withStroke(linewidth=2, foreground='#FFD700')])
     fig.text(0.5, 0.87, '✦ @REO_SHOW ✦', 
              fontsize=14, fontfamily='Roboto', fontweight='bold', 
              color='#FFD700', ha='center', va='center',
              bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
              path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
 
+    # ملاحظة بالعربية
     fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر الكبيرة تمثل التسديدات من فرص كبيرة'), 
-             fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+             fontsize=10, fontstyle='italic', ha='center', va='center', color='white',
+             path_effects=[patheffects.withStroke(linewidth=1, foreground='#FFD700')])
 
+    # إضافة شعارات الفريقين
     himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
     himage = Image.open(himage)
     himage_box = OffsetImage(himage, zoom=0.5)
@@ -1427,6 +1450,7 @@ if an_tp == 'احصائيات الحراس':
     ax_aimage = AnnotationBbox(aimage_box, (0.85, 0.85), frameon=False, xycoords='figure fraction')
     fig.add_artist(ax_aimage)
 
+    # عرض الرسم في Streamlit
     st.pyplot(fig)
     
 if an_tp == 'Match Momentum':
