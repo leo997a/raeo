@@ -11,6 +11,7 @@ import requests
 import matplotlib.patches as patches
 from mplsoccer import Pitch, VerticalPitch, add_image
 from matplotlib import rcParams
+from mplsoccer import fig_text
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib import patheffects
 import matplotlib.patheffects as path_effects
