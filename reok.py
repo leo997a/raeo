@@ -593,91 +593,95 @@ def pass_network(ax, team_name, col, phase_tag):
 # الجزء الخارجي من الكود مع معالجة النصوص العربية وضبط الإحداثيات
 tab1, tab2, tab3, tab4 = st.tabs(['Team Analysis', 'Player Analysis', 'Match Statistics', 'Top Players'])
 
-with tab1:
-    an_tp = st.selectbox('نوع التحليل:', [
-        'شبكة التمريرات', 
-        'Defensive Actions Heatmap', 
-        'Progressive Passes', 
-        'Progressive Carries', 
-        'Shotmap', 
-        'احصائيات الحراس', 
-        'Match Momentum',
-        reshape_arabic_text('Zone14 & Half-Space Passes'), 
-        reshape_arabic_text('Final Third Entries'), 
-        reshape_arabic_text('Box Entries'), 
-        reshape_arabic_text('High-Turnovers'), 
-        reshape_arabic_text('Chances Creating Zones'), 
-        reshape_arabic_text('Crosses'), 
-        reshape_arabic_text('Team Domination Zones'), 
-        reshape_arabic_text('Pass Target Zones'),
-        'Attacking Thirds'
-    ], index=0, key='analysis_type')
-    
-    if an_tp == 'شبكة التمريرات':
-        st.header('شبكة التمريرات')
-        
-        pn_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='pn_time_pill')
+        with tab1:
+            an_tp = st.selectbox('نوع التحليل:', [
+                'شبكة التمريرات', 
+                'Defensive Actions Heatmap', 
+                'Progressive Passes', 
+                'Progressive Carries', 
+                'Shotmap', 
+                'احصائيات الحراس', 
+                'Match Momentum',
+                reshape_arabic_text('Zone14 & Half-Space Passes'), 
+                reshape_arabic_text('Final Third Entries'), 
+                reshape_arabic_text('Box Entries'), 
+                reshape_arabic_text('High-Turnovers'), 
+                reshape_arabic_text('Chances Creating Zones'), 
+                reshape_arabic_text('Crosses'), 
+                reshape_arabic_text('Team Domination Zones'), 
+                reshape_arabic_text('Pass Target Zones'),
+                'Attacking Thirds'
+            ], index=0, key='analysis_type')
+            
+            if an_tp == 'شبكة التمريرات':
+                st.header('شبكة التمريرات')
+                
+                pn_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='pn_time_pill')
 
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-        home_pass_btn = None
-        away_pass_btn = None
+                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+                home_pass_btn = None
+                away_pass_btn = None
 
-        if pn_time_phase == 'Full Time':
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
-        elif pn_time_phase == 'First Half':
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
-        elif pn_time_phase == 'Second Half':
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
-            away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
+                if pn_time_phase == 'Full Time':
+                    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+                    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
+                elif pn_time_phase == 'First Half':
+                    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
+                    away_pass_btn = pass_network(axs[1], ateamName, acol, 'First Half')
+                elif pn_time_phase == 'Second Half':
+                    home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
+                    away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
-        home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
-        away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
-        title = f"<{home_part}> - <{away_part}>"
-        fig_text(0.5, 1.05, title, 
-                 highlight_textprops=[{'color': hcol}, {'color': acol}],
-                 fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
-        fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
-        fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', 
-                 fontsize=14, fontfamily='Roboto', fontweight='bold', 
-                 color='#FFD700', ha='center', va='center',
-                 bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
-                 path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
+                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+                title = f"<{home_part}> - <{away_part}>"
+                fig_text(0.5, 1.05, title, 
+                         highlight_textprops=[{'color': hcol}, {'color': acol}],
+                         fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
+                fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
+                fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', 
+                         fontsize=14, fontfamily='Roboto', fontweight='bold', 
+                         color='#FFD700', ha='center', va='center',
+                         bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
+                         path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
 
-        fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
-                 fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-        fig.text(0.5, 0.00, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
-                 fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
+                         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                fig.text(0.5, 0.00, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
+                         fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-        himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-        himage = Image.open(himage)
-        ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+                himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+                himage = Image.open(himage)
+                ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
 
-        aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-        aimage = Image.open(aimage)
-        ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+                aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+                aimage = Image.open(aimage)
+                ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-        plt.subplots_adjust(top=0.85, bottom=0.15)
+                plt.subplots_adjust(top=0.85, bottom=0.15)
 
-        st.pyplot(fig)
+                st.pyplot(fig)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
-            if home_pass_btn is not None:
-                st.dataframe(home_pass_btn, hide_index=True)
-            else:
-                st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
-        with col2:
-            st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
-            if away_pass_btn is not None:
-                st.dataframe(away_pass_btn, hide_index=True)
-            else:
-                st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
-    elif an_tp == 'Defensive Actions Heatmap':
-        st.header(f'{an_tp}')
-        # أضف الكود الخاص بـ Defensive Actions Heatmap هنا إذا كان لديك
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
+                    if home_pass_btn is not None:
+                        st.dataframe(home_pass_btn, hide_index=True)
+                    else:
+                        st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+                with col2:
+                    st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
+                    if away_pass_btn is not None:
+                        st.dataframe(away_pass_btn, hide_index=True)
+                    else:
+                        st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+            elif an_tp == 'Defensive Actions Heatmap':
+                st.header(f'{an_tp}')
+                # أضف الكود الخاص بـ Defensive Actions Heatmap هنا إذا كان لديك
+    else:
+        st.error("فشل في جلب بيانات المباراة. تأكد من أن الرابط صحيح (من WhoScored) وحاول مرة أخرى.")
+else:
+    st.info("الرجاء إدخال رابط المباراة والضغط على تأكيد.")
 
 def def_acts_hm(ax, team_name, col, phase_tag):
     def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
