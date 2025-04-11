@@ -28,8 +28,7 @@ import subprocess
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# استدعاء التثبيت عند بدء التشغيل
-install_chrome()
+
 # تجاهل تحذيرات Deprecation
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -89,30 +88,27 @@ if match_input:
     st.session_state.confirmed = True
 
 # دالة لجلب البيانات من WhoScored
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+
 def get_data(match_url, driver=None):
     try:
         if driver is None:
-            # إعداد خيارات Chrome للعمل في بيئة السحابة
-            chrome_options = Options()
-            chrome_options.add_argument('--headless')  # تشغيل بدون واجهة
-            chrome_options.add_argument('--no-sandbox')  # مطلوب في الحاويات
-            chrome_options.add_argument('--disable-dev-shm-usage')  # تجنب مشاكل الذاكرة
-            chrome_options.add_argument('--disable-gpu')  # تعطيل GPU
-            chrome_options.add_argument('--remote-debugging-port=9222')  # منفذ تصحيح
-
-            # استخدام webdriver-manager لتحميل chromedriver
+            chrome_options = webdriver.ChromeOptions()
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--remote-debugging-port=9222')
+            
             service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
         
         logger.info(f"Fetching data from {match_url}")
         driver.get(match_url)
         # أضف الكود الحالي لجمع البيانات هنا
-        # مثال (يجب استبداله بالكود الحقيقي لجمع البيانات):
-        # data = driver.find_element(...)  # جمع البيانات من الصفحة
-        # df = pd.DataFrame(data)
-        
-        # لأغراض الاختبار، نعيد DataFrame فارغًا
-        df = pd.DataFrame()  # استبدل هذا ببياناتك الفعلية
+        df = pd.DataFrame()  # استبدل ببياناتك الفعلية
         logger.info(f"Data fetched successfully: {df.shape}")
         return df
     except Exception as e:
