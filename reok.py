@@ -22,6 +22,22 @@ from PIL import Image
 from urllib.request import urlopen
 from unidecode import unidecode
 
+def install_chrome():
+    try:
+        # التحقق مما إذا كان Chrome مثبتًا
+        result = subprocess.run(['google-chrome', '--version'], capture_output=True, text=True)
+        logger.info(f"Chrome already installed: {result.stdout}")
+    except FileNotFoundError:
+        logger.info("Installing Google Chrome...")
+        # تنزيل وتثبيت Chrome
+        subprocess.run(['wget', 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb'])
+        subprocess.run(['sudo', 'dpkg', '-i', 'google-chrome-stable_current_amd64.deb'])
+        subprocess.run(['sudo', 'apt-get', '-f', 'install', '-y'])
+        subprocess.run(['rm', 'google-chrome-stable_current_amd64.deb'])
+        logger.info("Google Chrome installed successfully")
+
+# استدعاء التثبيت عند بدء التشغيل
+install_chrome()
 # تجاهل تحذيرات Deprecation
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
