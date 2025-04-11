@@ -144,6 +144,39 @@ ateamName = "غير محدد"
 hteamID = None
 ateamID = None
 
+
+from selenium import webdriver
+from bs4 import BeautifulSoup
+import json
+import time
+
+def extract_json_from_url(match_url):
+    try:
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--remote-debugging-port=9222')
+
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+
+        driver.get(match_url)
+        time.sleep(5)  # انتظر لتحميل الصفحة بالكامل
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        script_tags = soup.find_all('script')
+        for script in script_tags:
+            if 'matchCentreData' in script.text:
+                json_str = script.text.split('matchCentreData = ')[1].split('};')[0] + '}'
+                return json.loads(json_str)
+        return None
+    except Exception as e:
+        logger.error(f"Error extracting JSON: {str(e)}")
+        return None
+    finally:
+        driver.quit()
+
 # جلب البيانات
 if match_url and st.session_state.confirmed:
     @st.cache_data
