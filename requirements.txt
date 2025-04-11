@@ -21,3 +21,4 @@ pandas
 requests
 lxml
 webdriver-manager
+unidecode
