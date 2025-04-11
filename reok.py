@@ -21,13 +21,10 @@ import time
 from PIL import Image
 from urllib.request import urlopen
 from unidecode import unidecode
-import selenium.webdriver as webdriver
 import logging
-import subprocess
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 # تجاهل تحذيرات Deprecation
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -87,37 +84,39 @@ def reset_confirmed():
 if match_input:
     st.session_state.confirmed = True
 
-# دالة لجلب البيانات من WhoScored
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-
-def get_data(match_url, driver=None):
+# دالة لاستخراج JSON من URL
+def extract_json_from_url(match_url):
+    driver = None
     try:
-        if driver is None:
-            chrome_options = webdriver.ChromeOptions()
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
-            chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--remote-debugging-port=9222')
-            
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-        
-        logger.info(f"Fetching data from {match_url}")
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--remote-debugging-port=9222')
+
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+
+        logger.info(f"Fetching JSON from {match_url}")
         driver.get(match_url)
-        # أضف الكود الحالي لجمع البيانات هنا
-        df = pd.DataFrame()  # استبدل ببياناتك الفعلية
-        logger.info(f"Data fetched successfully: {df.shape}")
-        return df
+        time.sleep(5)  # انتظر لتحميل الصفحة بالكامل
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        script_tags = soup.find_all('script')
+        for script in script_tags:
+            if 'matchCentreData' in script.text:
+                json_str = script.text.split('matchCentreData = ')[1].split('};')[0] + '}'
+                return json.loads(json_str)
+        logger.warning(f"No matchCentreData found in {match_url}")
+        return None
     except Exception as e:
-        logger.error(f"Error fetching data: {str(e)}")
-        return pd.DataFrame()
+        logger.error(f"Error extracting JSON: {str(e)}")
+        return None
     finally:
-        if driver:
+        if driver is not None:
             driver.quit()
 
+# دالة لاستخراج البيانات من القاموس
 def extract_data_from_dict(data):
     events_dict = data["events"]
     teams_dict = {
@@ -135,6 +134,300 @@ def extract_data_from_dict(data):
     
     return events_dict, players_df, teams_dict
 
+# دالة لجلب بيانات الأحداث مع التخزين المؤقت
+@st.cache_data
+def get_event_data(match_url):
+    json_data = extract_json_from_url(match_url)
+    if json_data is None:
+        return None, None, None
+    
+    events_dict, players_df, teams_dict = extract_data_from_dict(json_data)
+    
+    df = pd.DataFrame(events_dict)
+    dfp = pd.DataFrame(players_df)
+    
+    # تنظيف البيانات
+    df['type'] = df['type'].astype(str)
+    df['outcomeType'] = df['outcomeType'].astype(str)
+    df['period'] = df['period'].astype(str)
+    df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
+    df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
+    df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
+    
+    df['period'] = df['period'].replace({
+        'FirstHalf': 1,
+        'SecondHalf': 2,
+        'FirstPeriodOfExtraTime': 3,
+        'SecondPeriodOfExtraTime': 4,
+        'PenaltyShootout': 5,
+        'PostGame': 14,
+        'PreMatch': 16
+    })
+    
+    def cumulative_match_mins(events_df):
+        events_out = pd.DataFrame()
+        match_events = events_df.copy()
+        match_events['cumulative_mins'] = match_events['minute'] + (1/60) * match_events['second']
+        
+        for period in np.arange(1, match_events['period'].max() + 1, 1):
+            if period > 1:
+                t_delta = match_events[match_events['period'] == period - 1]['cumulative_mins'].max() - \
+                          match_events[match_events['period'] == period]['cumulative_mins'].min()
+            else:
+                t_delta = 0
+            match_events.loc[match_events['period'] == period, 'cumulative_mins'] += t_delta
+        
+        events_out = pd.concat([events_out, match_events])
+        return events_out
+    
+    df = cumulative_match_mins(df)
+    
+    def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50):
+        events_out = pd.DataFrame()
+        min_carry_length = 3.0
+        max_carry_length = 100.0
+        min_carry_duration = 1.0
+        max_carry_duration = 50.0
+        match_events = events_df.reset_index()
+        match_events.loc[match_events['type'] == 'BallRecovery', 'endX'] = match_events.loc[match_events['type'] == 'BallRecovery', 'endX'].fillna(match_events['x'])
+        match_events.loc[match_events['type'] == 'BallRecovery', 'endY'] = match_events.loc[match_events['type'] == 'BallRecovery', 'endY'].fillna(match_events['y'])
+        match_carries = pd.DataFrame()
+        
+        for idx, match_event in match_events.iterrows():
+            if idx < len(match_events) - 1:
+                prev_evt_team = match_event['teamId']
+                next_evt_idx = idx + 1
+                init_next_evt = match_events.loc[next_evt_idx]
+                take_ons = 0
+                incorrect_next_evt = True
+                
+                while incorrect_next_evt and next_evt_idx < len(match_events):
+                    next_evt = match_events.loc[next_evt_idx]
+                    
+                    if next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Successful':
+                        take_ons += 1
+                        incorrect_next_evt = True
+                    elif ((next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Unsuccessful')
+                          or (next_evt['teamId'] != prev_evt_team and next_evt['type'] == 'Challenge' and next_evt['outcomeType'] == 'Unsuccessful')
+                          or (next_evt['type'] == 'Foul')
+                          or (next_evt['type'] == 'Card')):
+                        incorrect_next_evt = True
+                    else:
+                        incorrect_next_evt = False
+                    
+                    next_evt_idx += 1
+                
+                same_team = prev_evt_team == next_evt['teamId']
+                not_ball_touch = match_event['type'] != 'BallTouch'
+                dx = 105 * (match_event['endX'] - next_evt['x']) / 100
+                dy = 68 * (match_event['endY'] - next_evt['y']) / 100
+                far_enough = dx ** 2 + dy ** 2 >= min_carry_length ** 2
+                not_too_far = dx ** 2 + dy ** 2 <= max_carry_length ** 2
+                dt = 60 * (next_evt['cumulative_mins'] - match_event['cumulative_mins'])
+                min_time = dt >= min_carry_duration
+                same_phase = dt < max_carry_duration
+                same_period = match_event['period'] == next_evt['period']
+                
+                valid_carry = same_team & not_ball_touch & far_enough & not_too_far & min_time & same_phase & same_period
+                
+                if valid_carry:
+                    carry = pd.DataFrame()
+                    prev = match_event
+                    nex = next_evt
+                    
+                    carry.loc[0, 'eventId'] = prev['eventId'] + 0.5
+                    carry['minute'] = np.floor(((init_next_evt['minute'] * 60 + init_next_evt['second']) + (
+                            prev['minute'] * 60 + prev['second'])) / (2 * 60))
+                    carry['second'] = (((init_next_evt['minute'] * 60 + init_next_evt['second']) +
+                                        (prev['minute'] * 60 + prev['second'])) / 2) - (carry['minute'] * 60)
+                    carry['teamId'] = nex['teamId']
+                    carry['x'] = prev['endX']
+                    carry['y'] = prev['endY']
+                    carry['expandedMinute'] = np.floor(((init_next_evt['expandedMinute'] * 60 + init_next_evt['second']) +
+                                                        (prev['expandedMinute'] * 60 + prev['second'])) / (2 * 60))
+                    carry['period'] = nex['period']
+                    carry['type'] = carry.apply(lambda x: {'value': 99, 'displayName': 'Carry'}, axis=1)
+                    carry['outcomeType'] = 'Successful'
+                    carry['qualifiers'] = carry.apply(lambda x: {'type': {'value': 999, 'displayName': 'takeOns'}, 'value': str(take_ons)}, axis=1)
+                    carry['satisfiedEventsTypes'] = carry.apply(lambda x: [], axis=1)
+                    carry['isTouch'] = True
+                    carry['playerId'] = nex['playerId']
+                    carry['endX'] = nex['x']
+                    carry['endY'] = nex['y']
+                    carry['blockedX'] = np.nan
+                    carry['blockedY'] = np.nan
+                    carry['goalMouthZ'] = np.nan
+                    carry['goalMouthY'] = np.nan
+                    carry['isShot'] = np.nan
+                    carry['relatedEventId'] = nex['eventId']
+                    carry['relatedPlayerId'] = np.nan
+                    carry['isGoal'] = np.nan
+                    carry['cardType'] = np.nan
+                    carry['isOwnGoal'] = np.nan
+                    carry['type'] = 'Carry'
+                    carry['cumulative_mins'] = (prev['cumulative_mins'] + init_next_evt['cumulative_mins']) / 2
+                    
+                    match_carries = pd.concat([match_carries, carry], ignore_index=True, sort=False)
+        
+        match_events_and_carries = pd.concat([match_carries, match_events], ignore_index=True, sort=False)
+        match_events_and_carries = match_events_and_carries.sort_values(['period', 'cumulative_mins']).reset_index(drop=True)
+        events_out = pd.concat([events_out, match_events_and_carries])
+        return events_out
+    
+    df = insert_ball_carries(df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50)
+    
+    df = df.reset_index(drop=True)
+    df['index'] = range(1, len(df) + 1)
+    df = df[['index'] + [col for col in df.columns if col != 'index']]
+    
+    # معالجة xT
+    df_base = df
+    dfxT = df_base.copy()
+    dfxT['qualifiers'] = dfxT['qualifiers'].astype(str)
+    dfxT = dfxT[(~dfxT['qualifiers'].str.contains('Corner'))]
+    dfxT = dfxT[(dfxT['type'].isin(['Pass', 'Carry'])) & (dfxT['outcomeType'] == 'Successful')]
+    
+    xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/refs/heads/main/xT_Grid.csv", header=None)
+    xT = np.array(xT)
+    xT_rows, xT_cols = xT.shape
+    
+    dfxT['x1_bin_xT'] = pd.cut(dfxT['x'], bins=xT_cols, labels=False)
+    dfxT['y1_bin_xT'] = pd.cut(dfxT['y'], bins=xT_rows, labels=False)
+    dfxT['x2_bin_xT'] = pd.cut(dfxT['endX'], bins=xT_cols, labels=False)
+    dfxT['y2_bin_xT'] = pd.cut(dfxT['endY'], bins=xT_rows, labels=False)
+    
+    dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
+    dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
+    
+    dfxT['xT'] = dfxT['end_zone_value_xT'] - dfxT['start_zone_value_xT']
+    columns_to_drop = ['id', 'eventId', 'minute', 'second', 'teamId', 'x', 'y', 'expandedMinute', 'period', 'outcomeType', 'qualifiers', 'type', 'satisfiedEventsTypes', 'isTouch', 'playerId', 'endX', 'endY', 
+                       'relatedEventId', 'relatedPlayerId', 'blockedX', 'blockedY', 'goalMouthZ', 'goalMouthY', 'isShot', 'cumulative_mins']
+    dfxT.drop(columns=columns_to_drop, inplace=True)
+    
+    df = df.merge(dfxT, on='index', how='left')
+    df['teamName'] = df['teamId'].map(teams_dict)
+    team_names = list(teams_dict.values())
+    opposition_dict = {team_names[i]: team_names[1-i] for i in range(len(team_names))}
+    df['oppositionTeamName'] = df['teamName'].map(opposition_dict)
+    
+    # تحويل الأبعاد
+    df['x'] = df['x'] * 1.05
+    df['y'] = df['y'] * 0.68
+    df['endX'] = df['endX'] * 1.05
+    df['endY'] = df['endY'] * 0.68
+    df['goalMouthY'] = df['goalMouthY'] * 0.68
+    
+    columns_to_drop = ['height', 'weight', 'age', 'isManOfTheMatch', 'field', 'stats', 'subbedInPlayerId', 'subbedOutPeriod', 'subbedOutExpandedMinute', 'subbedInPeriod', 'subbedInExpandedMinute', 'subbedOutPlayerId', 'teamId']
+    dfp.drop(columns=columns_to_drop, inplace=True)
+    df = df.merge(dfp, on='playerId', how='left')
+    
+    df['qualifiers'] = df['qualifiers'].astype(str)
+    df['prog_pass'] = np.where((df['type'] == 'Pass'), 
+                               np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
+    df['prog_carry'] = np.where((df['type'] == 'Carry'), 
+                                np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
+    df['pass_or_carry_angle'] = np.degrees(np.arctan2(df['endY'] - df['y'], df['endX'] - df['x']))
+    
+    df['name'] = df['name'].astype(str)
+    df['name'] = df['name'].apply(unidecode)
+    
+    def get_short_name(full_name):
+        if pd.isna(full_name):
+            return full_name
+        parts = full_name.split()
+        if len(parts) == 1:
+            return full_name
+        elif len(parts) == 2:
+            return parts[0][0] + ". " + parts[1]
+        else:
+            return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
+    
+    df['shortName'] = df['name'].apply(get_short_name)
+    
+    df['qualifiers'] = df['qualifiers'].astype(str)
+    columns_to_drop2 = ['id']
+    df.drop(columns=columns_to_drop2, inplace=True)
+    
+    def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
+        events_out = pd.DataFrame()
+        match_events_df = events_df.reset_index()
+        
+        match_pos_events_df = match_events_df[~match_events_df['type'].isin(['OffsideGiven', 'CornerAwarded','Start', 'Card', 'SubstitutionOff',
+                                                                             'SubstitutionOn', 'FormationChange','FormationSet', 'End'])].copy()
+        
+        match_pos_events_df['outcomeBinary'] = (match_pos_events_df['outcomeType']
+                                               .apply(lambda x: 1 if x == 'Successful' else 0))
+        match_pos_events_df['teamBinary'] = (match_pos_events_df['teamName']
+                                            .apply(lambda x: 1 if x == min(match_pos_events_df['teamName']) else 0))
+        match_pos_events_df['goalBinary'] = ((match_pos_events_df['type'] == 'Goal')
+                                            .astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0))
+        
+        pos_chain_df = pd.DataFrame()
+        
+        for n in np.arange(1, chain_check):
+            pos_chain_df[f'evt_{n}_same_team'] = abs(match_pos_events_df['teamBinary'].diff(periods=-n))
+            pos_chain_df[f'evt_{n}_same_team'] = pos_chain_df[f'evt_{n}_same_team'].apply(lambda x: 1 if x > 1 else x)
+        pos_chain_df['enough_evt_same_team'] = pos_chain_df.sum(axis=1).apply(lambda x: 1 if x < chain_check - suc_evts_in_chain else 0)
+        pos_chain_df['enough_evt_same_team'] = pos_chain_df['enough_evt_same_team'].diff(periods=1)
+        pos_chain_df[pos_chain_df['enough_evt_same_team'] < 0] = 0
+        
+        match_pos_events_df['period'] = pd.to_numeric(match_pos_events_df['period'], errors='coerce')
+        pos_chain_df['upcoming_ko'] = 0
+        for ko in match_pos_events_df[(match_pos_events_df['goalBinary'] == 1) | (match_pos_events_df['period'].diff(periods=1))].index.values:
+            ko_pos = match_pos_events_df.index.to_list().index(ko)
+            pos_chain_df.iloc[ko_pos - suc_evts_in_chain:ko_pos, 5] = 1
+        
+        pos_chain_df['valid_pos_start'] = (pos_chain_df.fillna(0)['enough_evt_same_team'] - pos_chain_df.fillna(0)['upcoming_ko'])
+        
+        pos_chain_df['kick_off_period_change'] = match_pos_events_df['period'].diff(periods=1)
+        pos_chain_df['kick_off_goal'] = ((match_pos_events_df['type'] == 'Goal')
+                                        .astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0))
+        pos_chain_df.loc[pos_chain_df['kick_off_period_change'] == 1, 'valid_pos_start'] = 1
+        pos_chain_df.loc[pos_chain_df['kick_off_goal'] == 1, 'valid_pos_start'] = 1
+        
+        pos_chain_df['teamName'] = match_pos_events_df['teamName']
+        pos_chain_df.loc[pos_chain_df.head(1).index, 'valid_pos_start'] = 1
+        pos_chain_df.loc[pos_chain_df.head(1).index, 'possession_id'] = 1
+        pos_chain_df.loc[pos_chain_df.head(1).index, 'possession_team'] = pos_chain_df.loc[pos_chain_df.head(1).index, 'teamName']
+        
+        valid_pos_start_id = pos_chain_df[pos_chain_df['valid_pos_start'] > 0].index
+        
+        possession_id = 2
+        for idx in np.arange(1, len(valid_pos_start_id)):
+            current_team = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
+            previous_team = pos_chain_df.loc[valid_pos_start_id[idx - 1], 'teamName']
+            if ((previous_team == current_team) & (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_goal'] != 1) &
+                    (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_period_change'] != 1)):
+                pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = np.nan
+            else:
+                pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = possession_id
+                pos_chain_df.loc[valid_pos_start_id[idx], 'possession_team'] = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
+                possession_id += 1
+        
+        match_events_df = pd.merge(match_events_df, pos_chain_df[['possession_id', 'possession_team']], how='left', left_index=True, right_index=True)
+        
+        match_events_df[['possession_id', 'possession_team']] = (match_events_df[['possession_id', 'possession_team']].fillna(method='ffill'))
+        match_events_df[['possession_id', 'possession_team']] = (match_events_df[['possession_id', 'possession_team']].fillna(method='bfill'))
+        
+        events_out = pd.concat([events_out, match_events_df])
+        return events_out
+    
+    df = get_possession_chains(df, 5, 3)
+    
+    df['period'] = df['period'].replace({
+        1: 'FirstHalf',
+        2: 'SecondHalf',
+        3: 'FirstPeriodOfExtraTime',
+        4: 'SecondPeriodOfExtraTime',
+        5: 'PenaltyShootout',
+        14: 'PostGame',
+        16: 'PreMatch'
+    })
+    
+    df = df[df['period'] != 'PenaltyShootout']
+    df = df.reset_index(drop=True)
+    return df, teams_dict, players_df
+
 # تعريف المتغيرات افتراضيًا
 df = None
 teams_dict = None
@@ -144,334 +437,8 @@ ateamName = "غير محدد"
 hteamID = None
 ateamID = None
 
-
-from selenium import webdriver
-from bs4 import BeautifulSoup
-import json
-import time
-
-def extract_json_from_url(match_url):
-    try:
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--remote-debugging-port=9222')
-
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-
-        driver.get(match_url)
-        time.sleep(5)  # انتظر لتحميل الصفحة بالكامل
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        script_tags = soup.find_all('script')
-        for script in script_tags:
-            if 'matchCentreData' in script.text:
-                json_str = script.text.split('matchCentreData = ')[1].split('};')[0] + '}'
-                return json.loads(json_str)
-        return None
-    except Exception as e:
-        logger.error(f"Error extracting JSON: {str(e)}")
-        return None
-    finally:
-        driver.quit()
-
 # جلب البيانات
 if match_url and st.session_state.confirmed:
-    @st.cache_data
-    def get_event_data(match_url):
-        json_data = extract_json_from_url(match_url)
-        if json_data is None:
-            return None, None, None
-        
-        events_dict, players_df, teams_dict = extract_data_from_dict(json_data)
-        
-        df = pd.DataFrame(events_dict)
-        dfp = pd.DataFrame(players_df)
-        
-        # تنظيف البيانات
-        df['type'] = df['type'].astype(str)
-        df['outcomeType'] = df['outcomeType'].astype(str)
-        df['period'] = df['period'].astype(str)
-        df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
-        df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
-        df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
-        
-        df['period'] = df['period'].replace({
-            'FirstHalf': 1,
-            'SecondHalf': 2,
-            'FirstPeriodOfExtraTime': 3,
-            'SecondPeriodOfExtraTime': 4,
-            'PenaltyShootout': 5,
-            'PostGame': 14,
-            'PreMatch': 16
-        })
-        
-        def cumulative_match_mins(events_df):
-            events_out = pd.DataFrame()
-            match_events = events_df.copy()
-            match_events['cumulative_mins'] = match_events['minute'] + (1/60) * match_events['second']
-            
-            for period in np.arange(1, match_events['period'].max() + 1, 1):
-                if period > 1:
-                    t_delta = match_events[match_events['period'] == period - 1]['cumulative_mins'].max() - \
-                              match_events[match_events['period'] == period]['cumulative_mins'].min()
-                else:
-                    t_delta = 0
-                match_events.loc[match_events['period'] == period, 'cumulative_mins'] += t_delta
-            
-            events_out = pd.concat([events_out, match_events])
-            return events_out
-        
-        df = cumulative_match_mins(df)
-        
-        def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50):
-            events_out = pd.DataFrame()
-            min_carry_length = 3.0
-            max_carry_length = 100.0
-            min_carry_duration = 1.0
-            max_carry_duration = 50.0
-            match_events = events_df.reset_index()
-            match_events.loc[match_events['type'] == 'BallRecovery', 'endX'] = match_events.loc[match_events['type'] == 'BallRecovery', 'endX'].fillna(match_events['x'])
-            match_events.loc[match_events['type'] == 'BallRecovery', 'endY'] = match_events.loc[match_events['type'] == 'BallRecovery', 'endY'].fillna(match_events['y'])
-            match_carries = pd.DataFrame()
-            
-            for idx, match_event in match_events.iterrows():
-                if idx < len(match_events) - 1:
-                    prev_evt_team = match_event['teamId']
-                    next_evt_idx = idx + 1
-                    init_next_evt = match_events.loc[next_evt_idx]
-                    take_ons = 0
-                    incorrect_next_evt = True
-                    
-                    while incorrect_next_evt:
-                        next_evt = match_events.loc[next_evt_idx]
-                        
-                        if next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Successful':
-                            take_ons += 1
-                            incorrect_next_evt = True
-                        elif ((next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Unsuccessful')
-                              or (next_evt['teamId'] != prev_evt_team and next_evt['type'] == 'Challenge' and next_evt['outcomeType'] == 'Unsuccessful')
-                              or (next_evt['type'] == 'Foul')
-                              or (next_evt['type'] == 'Card')):
-                            incorrect_next_evt = True
-                        else:
-                            incorrect_next_evt = False
-                        
-                        next_evt_idx += 1
-                    
-                    same_team = prev_evt_team == next_evt['teamId']
-                    not_ball_touch = match_event['type'] != 'BallTouch'
-                    dx = 105 * (match_event['endX'] - next_evt['x']) / 100
-                    dy = 68 * (match_event['endY'] - next_evt['y']) / 100
-                    far_enough = dx ** 2 + dy ** 2 >= min_carry_length ** 2
-                    not_too_far = dx ** 2 + dy ** 2 <= max_carry_length ** 2
-                    dt = 60 * (next_evt['cumulative_mins'] - match_event['cumulative_mins'])
-                    min_time = dt >= min_carry_duration
-                    same_phase = dt < max_carry_duration
-                    same_period = match_event['period'] == next_evt['period']
-                    
-                    valid_carry = same_team & not_ball_touch & far_enough & not_too_far & min_time & same_phase & same_period
-                    
-                    if valid_carry:
-                        carry = pd.DataFrame()
-                        prev = match_event
-                        nex = next_evt
-                        
-                        carry.loc[0, 'eventId'] = prev['eventId'] + 0.5
-                        carry['minute'] = np.floor(((init_next_evt['minute'] * 60 + init_next_evt['second']) + (
-                                prev['minute'] * 60 + prev['second'])) / (2 * 60))
-                        carry['second'] = (((init_next_evt['minute'] * 60 + init_next_evt['second']) +
-                                            (prev['minute'] * 60 + prev['second'])) / 2) - (carry['minute'] * 60)
-                        carry['teamId'] = nex['teamId']
-                        carry['x'] = prev['endX']
-                        carry['y'] = prev['endY']
-                        carry['expandedMinute'] = np.floor(((init_next_evt['expandedMinute'] * 60 + init_next_evt['second']) +
-                                                            (prev['expandedMinute'] * 60 + prev['second'])) / (2 * 60))
-                        carry['period'] = nex['period']
-                        carry['type'] = carry.apply(lambda x: {'value': 99, 'displayName': 'Carry'}, axis=1)
-                        carry['outcomeType'] = 'Successful'
-                        carry['qualifiers'] = carry.apply(lambda x: {'type': {'value': 999, 'displayName': 'takeOns'}, 'value': str(take_ons)}, axis=1)
-                        carry['satisfiedEventsTypes'] = carry.apply(lambda x: [], axis=1)
-                        carry['isTouch'] = True
-                        carry['playerId'] = nex['playerId']
-                        carry['endX'] = nex['x']
-                        carry['endY'] = nex['y']
-                        carry['blockedX'] = np.nan
-                        carry['blockedY'] = np.nan
-                        carry['goalMouthZ'] = np.nan
-                        carry['goalMouthY'] = np.nan
-                        carry['isShot'] = np.nan
-                        carry['relatedEventId'] = nex['eventId']
-                        carry['relatedPlayerId'] = np.nan
-                        carry['isGoal'] = np.nan
-                        carry['cardType'] = np.nan
-                        carry['isOwnGoal'] = np.nan
-                        carry['type'] = 'Carry'
-                        carry['cumulative_mins'] = (prev['cumulative_mins'] + init_next_evt['cumulative_mins']) / 2
-                        
-                        match_carries = pd.concat([match_carries, carry], ignore_index=True, sort=False)
-            
-            match_events_and_carries = pd.concat([match_carries, match_events], ignore_index=True, sort=False)
-            match_events_and_carries = match_events_and_carries.sort_values(['period', 'cumulative_mins']).reset_index(drop=True)
-            events_out = pd.concat([events_out, match_events_and_carries])
-            return events_out
-        
-        df = insert_ball_carries(df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50)
-        
-        df = df.reset_index(drop=True)
-        df['index'] = range(1, len(df) + 1)
-        df = df[['index'] + [col for col in df.columns if col != 'index']]
-        
-        # معالجة xT
-        df_base = df
-        dfxT = df_base.copy()
-        dfxT['qualifiers'] = dfxT['qualifiers'].astype(str)
-        dfxT = dfxT[(~dfxT['qualifiers'].str.contains('Corner'))]
-        dfxT = dfxT[(dfxT['type'].isin(['Pass', 'Carry'])) & (dfxT['outcomeType'] == 'Successful')]
-        
-        xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/refs/heads/main/xT_Grid.csv", header=None)
-        xT = np.array(xT)
-        xT_rows, xT_cols = xT.shape
-        
-        dfxT['x1_bin_xT'] = pd.cut(dfxT['x'], bins=xT_cols, labels=False)
-        dfxT['y1_bin_xT'] = pd.cut(dfxT['y'], bins=xT_rows, labels=False)
-        dfxT['x2_bin_xT'] = pd.cut(dfxT['endX'], bins=xT_cols, labels=False)
-        dfxT['y2_bin_xT'] = pd.cut(dfxT['endY'], bins=xT_rows, labels=False)
-        
-        dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
-        dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
-        
-        dfxT['xT'] = dfxT['end_zone_value_xT'] - dfxT['start_zone_value_xT']
-        columns_to_drop = ['id', 'eventId', 'minute', 'second', 'teamId', 'x', 'y', 'expandedMinute', 'period', 'outcomeType', 'qualifiers', 'type', 'satisfiedEventsTypes', 'isTouch', 'playerId', 'endX', 'endY', 
-                           'relatedEventId', 'relatedPlayerId', 'blockedX', 'blockedY', 'goalMouthZ', 'goalMouthY', 'isShot', 'cumulative_mins']
-        dfxT.drop(columns=columns_to_drop, inplace=True)
-        
-        df = df.merge(dfxT, on='index', how='left')
-        df['teamName'] = df['teamId'].map(teams_dict)
-        team_names = list(teams_dict.values())
-        opposition_dict = {team_names[i]: team_names[1-i] for i in range(len(team_names))}
-        df['oppositionTeamName'] = df['teamName'].map(opposition_dict)
-        
-        # تحويل الأبعاد
-        df['x'] = df['x'] * 1.05
-        df['y'] = df['y'] * 0.68
-        df['endX'] = df['endX'] * 1.05
-        df['endY'] = df['endY'] * 0.68
-        df['goalMouthY'] = df['goalMouthY'] * 0.68
-        
-        columns_to_drop = ['height', 'weight', 'age', 'isManOfTheMatch', 'field', 'stats', 'subbedInPlayerId', 'subbedOutPeriod', 'subbedOutExpandedMinute', 'subbedInPeriod', 'subbedInExpandedMinute', 'subbedOutPlayerId', 'teamId']
-        dfp.drop(columns=columns_to_drop, inplace=True)
-        df = df.merge(dfp, on='playerId', how='left')
-        
-        df['qualifiers'] = df['qualifiers'].astype(str)
-        df['prog_pass'] = np.where((df['type'] == 'Pass'), 
-                                   np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
-        df['prog_carry'] = np.where((df['type'] == 'Carry'), 
-                                    np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
-        df['pass_or_carry_angle'] = np.degrees(np.arctan2(df['endY'] - df['y'], df['endX'] - df['x']))
-        
-        df['name'] = df['name'].astype(str)
-        df['name'] = df['name'].apply(unidecode)
-        
-        def get_short_name(full_name):
-            if pd.isna(full_name):
-                return full_name
-            parts = full_name.split()
-            if len(parts) == 1:
-                return full_name
-            elif len(parts) == 2:
-                return parts[0][0] + ". " + parts[1]
-            else:
-                return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
-        
-        df['shortName'] = df['name'].apply(get_short_name)
-        
-        df['qualifiers'] = df['qualifiers'].astype(str)
-        columns_to_drop2 = ['id']
-        df.drop(columns=columns_to_drop2, inplace=True)
-        
-        def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
-            events_out = pd.DataFrame()
-            match_events_df = events_df.reset_index()
-            
-            match_pos_events_df = match_events_df[~match_events_df['type'].isin(['OffsideGiven', 'CornerAwarded','Start', 'Card', 'SubstitutionOff',
-                                                                                 'SubstitutionOn', 'FormationChange','FormationSet', 'End'])].copy()
-            
-            match_pos_events_df['outcomeBinary'] = (match_pos_events_df['outcomeType']
-                                                   .apply(lambda x: 1 if x == 'Successful' else 0))
-            match_pos_events_df['teamBinary'] = (match_pos_events_df['teamName']
-                                                .apply(lambda x: 1 if x == min(match_pos_events_df['teamName']) else 0))
-            match_pos_events_df['goalBinary'] = ((match_pos_events_df['type'] == 'Goal')
-                                                .astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0))
-            
-            pos_chain_df = pd.DataFrame()
-            
-            for n in np.arange(1, chain_check):
-                pos_chain_df[f'evt_{n}_same_team'] = abs(match_pos_events_df['teamBinary'].diff(periods=-n))
-                pos_chain_df[f'evt_{n}_same_team'] = pos_chain_df[f'evt_{n}_same_team'].apply(lambda x: 1 if x > 1 else x)
-            pos_chain_df['enough_evt_same_team'] = pos_chain_df.sum(axis=1).apply(lambda x: 1 if x < chain_check - suc_evts_in_chain else 0)
-            pos_chain_df['enough_evt_same_team'] = pos_chain_df['enough_evt_same_team'].diff(periods=1)
-            pos_chain_df[pos_chain_df['enough_evt_same_team'] < 0] = 0
-            
-            match_pos_events_df['period'] = pd.to_numeric(match_pos_events_df['period'], errors='coerce')
-            pos_chain_df['upcoming_ko'] = 0
-            for ko in match_pos_events_df[(match_pos_events_df['goalBinary'] == 1) | (match_pos_events_df['period'].diff(periods=1))].index.values:
-                ko_pos = match_pos_events_df.index.to_list().index(ko)
-                pos_chain_df.iloc[ko_pos - suc_evts_in_chain:ko_pos, 5] = 1
-            
-            pos_chain_df['valid_pos_start'] = (pos_chain_df.fillna(0)['enough_evt_same_team'] - pos_chain_df.fillna(0)['upcoming_ko'])
-            
-            pos_chain_df['kick_off_period_change'] = match_pos_events_df['period'].diff(periods=1)
-            pos_chain_df['kick_off_goal'] = ((match_pos_events_df['type'] == 'Goal')
-                                            .astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0))
-            pos_chain_df.loc[pos_chain_df['kick_off_period_change'] == 1, 'valid_pos_start'] = 1
-            pos_chain_df.loc[pos_chain_df['kick_off_goal'] == 1, 'valid_pos_start'] = 1
-            
-            pos_chain_df['teamName'] = match_pos_events_df['teamName']
-            pos_chain_df.loc[pos_chain_df.head(1).index, 'valid_pos_start'] = 1
-            pos_chain_df.loc[pos_chain_df.head(1).index, 'possession_id'] = 1
-            pos_chain_df.loc[pos_chain_df.head(1).index, 'possession_team'] = pos_chain_df.loc[pos_chain_df.head(1).index, 'teamName']
-            
-            valid_pos_start_id = pos_chain_df[pos_chain_df['valid_pos_start'] > 0].index
-            
-            possession_id = 2
-            for idx in np.arange(1, len(valid_pos_start_id)):
-                current_team = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
-                previous_team = pos_chain_df.loc[valid_pos_start_id[idx - 1], 'teamName']
-                if ((previous_team == current_team) & (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_goal'] != 1) &
-                        (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_period_change'] != 1)):
-                    pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = np.nan
-                else:
-                    pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = possession_id
-                    pos_chain_df.loc[valid_pos_start_id[idx], 'possession_team'] = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
-                    possession_id += 1
-            
-            match_events_df = pd.merge(match_events_df, pos_chain_df[['possession_id', 'possession_team']], how='left', left_index=True, right_index=True)
-            
-            match_events_df[['possession_id', 'possession_team']] = (match_events_df[['possession_id', 'possession_team']].fillna(method='ffill'))
-            match_events_df[['possession_id', 'possession_team']] = (match_events_df[['possession_id', 'possession_team']].fillna(method='bfill'))
-            
-            events_out = pd.concat([events_out, match_events_df])
-            return events_out
-        
-        df = get_possession_chains(df, 5, 3)
-        
-        df['period'] = df['period'].replace({
-            1: 'FirstHalf',
-            2: 'SecondHalf',
-            3: 'FirstPeriodOfExtraTime',
-            4: 'SecondPeriodOfExtraTime',
-            5: 'PenaltyShootout',
-            14: 'PostGame',
-            16: 'PreMatch'
-        })
-        
-        df = df[df['period'] != 'PenaltyShootout']
-        df = df.reset_index(drop=True)
-        return df, teams_dict, players_df
-    
     df, teams_dict, players_df = get_event_data(match_url)
     
     if df is not None and teams_dict is not None and players_df is not None:
@@ -504,6 +471,7 @@ if match_url and st.session_state.confirmed:
         st.error("فشل في جلب بيانات المباراة. تأكد من الرابط وحاول مرة أخرى.")
 else:
     st.info("الرجاء إدخال رابط المباراة والضغط على تأكيد.")
+
 # دالة pass_network المعدلة
 def pass_network(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
@@ -549,28 +517,22 @@ def pass_network(ax, team_name, col, phase_tag):
     pass_btn['shirtNo_receiver'] = pass_btn['shirtNo_receiver'].astype(float).astype(int)
 
     # إعدادات التصميم العصري
-    MAX_LINE_WIDTH = 8  # الحد الأقصى لعرض الخطوط
-    MIN_LINE_WIDTH = 0.5  # الحد الأدنى لعرض الخطوط
-    MIN_TRANSPARENCY = 0.2  # الحد الأدنى للشفافية
-    MAX_TRANSPARENCY = 0.9  # الحد الأقصى للشفافية
+    MAX_LINE_WIDTH = 8
+    MIN_LINE_WIDTH = 0.5
+    MIN_TRANSPARENCY = 0.2
+    MAX_TRANSPARENCY = 0.9
 
-    # حساب عرض الخطوط بناءً على عدد التمريرات
     pass_counts_df['line_width'] = (pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()) * (MAX_LINE_WIDTH - MIN_LINE_WIDTH) + MIN_LINE_WIDTH
-
-    # حساب الشفافية بناءً على عدد التمريرات
     c_transparency = pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()
     c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
 
-    # إنشاء اللون مع الشفافية
     color = np.array(to_rgba(col))
     color = np.tile(color, (len(pass_counts_df), 1))
     color[:, 3] = c_transparency
 
-    # إنشاء ملعب بتصميم متدرج
     pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, linewidth=1.5, line_color=line_color)
     pitch.draw(ax=ax)
 
-    # تطبيق خلفية متدرجة
     gradient = LinearSegmentedColormap.from_list("pitch_gradient", gradient_colors, N=100)
     x = np.linspace(0, 1, 100)
     y = np.linspace(0, 1, 100)
@@ -579,36 +541,31 @@ def pass_network(ax, team_name, col, phase_tag):
     ax.imshow(Z, extent=[0, 68, 0, 105], cmap=gradient, alpha=0.8, aspect='auto', zorder=0)
     pitch.draw(ax=ax)
 
-    # رسم الخطوط بين اللاعبين مع عرض متغير وشفافية متغيرة
     for idx in range(len(pass_counts_df)):
         pitch.lines(
             pass_counts_df['pass_avg_x'].iloc[idx],
             pass_counts_df['pass_avg_y'].iloc[idx],
             pass_counts_df['receiver_avg_x'].iloc[idx],
             pass_counts_df['receiver_avg_y'].iloc[idx],
-            lw=pass_counts_df['line_width'].iloc[idx],  # عرض الخط بناءً على عدد التمريرات
-            color=color[idx],  # اللون مع الشفافية
+            lw=pass_counts_df['line_width'].iloc[idx],
+            color=color[idx],
             zorder=1,
             ax=ax
         )
 
-    # رسم دوائر اللاعبين
     for index, row in avg_locs_df.iterrows():
         if row['isFirstEleven'] == True:
             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='o', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.9, ax=ax)
         else:
             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='s', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.7, ax=ax)
 
-    # كتابة أرقام القمصان
     for index, row in avg_locs_df.iterrows():
         player_initials = row["shirtNo"]
         pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c='white', ha='center', va='center', size=14, weight='bold', ax=ax)
 
-    # خط التماسك العمودي
     avgph = round(avg_locs_df['avg_x'].median(), 2)
     ax.axhline(y=avgph, color='white', linestyle='--', alpha=0.5, linewidth=1.5)
 
-    # ارتفاع خط الدفاع والهجوم
     center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
     def_line_h = round(center_backs_height['avg_x'].median(), 2)
     Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == 1].sort_values(by='avg_x', ascending=False).head(2)
@@ -619,7 +576,6 @@ def pass_network(ax, team_name, col, phase_tag):
 
     v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
 
-    # إضافة النصوص مع معالجة العربية وضبط الإحداثيات
     if phase_tag == 'Full Time':
         ax.text(34, 115, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
         ax.text(34, 112, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
@@ -660,7 +616,6 @@ with tab1:
     if an_tp == 'شبكة التمريرات':
         st.header('شبكة التمريرات')
         
-        # استبدال st.pills بـ st.radio لأن st.pills غير مدعوم افتراضيًا في Streamlit
         pn_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='pn_time_pill')
 
         fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
@@ -668,7 +623,7 @@ with tab1:
         away_pass_btn = None
 
         if pn_time_phase == 'Full Time':
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time', df)
+            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
             away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
         elif pn_time_phase == 'First Half':
             home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
@@ -677,7 +632,6 @@ with tab1:
             home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Second Half')
             away_pass_btn = pass_network(axs[1], ateamName, acol, 'Second Half')
 
-        # معالجة العنوان
         home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
         away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
         title = f"<{home_part}> - <{away_part}>"
@@ -686,18 +640,16 @@ with tab1:
                  fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
         fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
         fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', 
-         fontsize=14, fontfamily='Roboto', fontweight='bold', 
-         color='#FFD700', ha='center', va='center',
-         bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
-         path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
+                 fontsize=14, fontfamily='Roboto', fontweight='bold', 
+                 color='#FFD700', ha='center', va='center',
+                 bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
+                 path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
 
-        # ضبط النصوص في الأسفل مع تطبيق reshape_arabic_text
         fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'),
                  fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
         fig.text(0.5, 0.00, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'),
                  fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-        # إضافة الصور
         himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
         himage = Image.open(himage)
         ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
@@ -706,7 +658,6 @@ with tab1:
         aimage = Image.open(aimage)
         ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
 
-        # ضبط المساحات العلوية والسفلية للرسم
         plt.subplots_adjust(top=0.85, bottom=0.15)
 
         st.pyplot(fig)
@@ -724,9 +675,10 @@ with tab1:
                 st.dataframe(away_pass_btn, hide_index=True)
             else:
                 st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
-if an_tp == 'Defensive Actions Heatmap':
-    st.header(f'{an_tp}')
-            
+    elif an_tp == 'Defensive Actions Heatmap':
+        st.header(f'{an_tp}')
+        # أضف الكود الخاص بـ Defensive Actions Heatmap هنا إذا كان لديك
+
 def def_acts_hm(ax, team_name, col, phase_tag):
     def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
                            (df['type'] == 'BallRecovery') |
