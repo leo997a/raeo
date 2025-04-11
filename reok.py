@@ -82,7 +82,7 @@ if match_input:
 
 # دالة لجلب البيانات من WhoScored
 def (match_url):
-    driver = None  # تعريف driver كـ None من البداية
+driver = None  # تعريف driver كـ None من البداية
     try:
         # إعداد Chrome مع webdriver-manager
         chrome_options = Options()
