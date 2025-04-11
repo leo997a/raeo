@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -81,13 +82,14 @@ if match_input:
 
 # دالة لجلب البيانات من WhoScored
 def extract_json_from_url(match_url):
+    driver = None  # تعريف driver كـ None من البداية
     try:
-        # إعداد Chrome
+        # إعداد Chrome مع webdriver-manager
         chrome_options = Options()
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
-        driver = webdriver.Chrome(service=Service(), options=chrome_options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
         
         # فتح الرابط
         driver.get(match_url)
@@ -109,7 +111,8 @@ def extract_json_from_url(match_url):
         return None
     
     finally:
-        driver.quit()
+        if driver is not None:  # التأكد إن driver معرّف قبل محاولة إغلاقه
+            driver.quit()
 
 def extract_data_from_dict(data):
     events_dict = data["events"]
