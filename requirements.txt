@@ -14,3 +14,10 @@ scikit-learn           # لتعليم الآلة (بدون نسخة محددة)
 arabic-reshaper        # لدعم النصوص العربية
 python-bidi            # لدعم اتجاه النصوص العربية
 Pillow                 # لمعالجة الصور (بدون نسخة محددة)
+streamlit
+selenium
+beautifulsoup4
+pandas
+requests
+lxml
+webdriver-manager
