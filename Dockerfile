@@ -1,32 +1,28 @@
-FROM python:3.12-slim
+FROM python:3.9-slim-bullseye
 
-# تثبيت التبعيات الأساسية
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
-    unzip \
-    curl \
-    libglib2.0-0 \
-    libnss3 \
-    libgconf-2-4 \
-    libfontconfig1 \
-    libxrender1 \
-    libxtst6 \
-    libxi6 \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# تثبيت Chrome
+# Add Google Chrome repository
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get install -y google-chrome-stable \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+
+# Install Chrome and chromedriver
+RUN apt-get update && apt-get install -y \
+    google-chrome-stable \
+    chromedriver \
     && rm -rf /var/lib/apt/lists/*
 
-# تثبيت Python والمكتبات
+# Set up Python environment
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# نسخ الكود
-COPY reok.py .
+# Copy application code
+COPY . .
 
-# تشغيل التطبيق
-CMD ["streamlit", "run", "reok.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Run Streamlit
+CMD ["streamlit", "run", "reok.py", "--server.port=8501"]
