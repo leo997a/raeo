@@ -1,10 +1,18 @@
 #!/bin/bash
+# Install prerequisites
+apt-get update
+apt-get install -y wget gnupg ca-certificates
+
+# Add Google Chrome repository key
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
+
 # Add Google Chrome repository
-wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
 echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
 
 # Update package lists
 apt-get update
 
-# Install dependencies
-apt-get install -y google-chrome-stable chromedriver
+# Install Google Chrome and chromedriver
+apt-get install -y google-chrome-stable
+apt-get install -y chromedriver
+chmod +x setup.sh
