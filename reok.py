@@ -21,12 +21,9 @@ import time
 from PIL import Image
 from urllib.request import urlopen
 from unidecode import unidecode
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 import selenium.webdriver as webdriver
-import pandas as pd
 import logging
+import subprocess
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
