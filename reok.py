@@ -81,7 +81,7 @@ if match_input:
     st.session_state.confirmed = True
 
 # دالة لجلب البيانات من WhoScored
-def extract_json_from_url(match_url):
+def (match_url):
     driver = None  # تعريف driver كـ None من البداية
     try:
         # إعداد Chrome مع webdriver-manager
@@ -89,20 +89,18 @@ def extract_json_from_url(match_url):
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
         
-        # فتح الرابط
         driver.get(match_url)
-        time.sleep(3)  # انتظار تحميل الصفحة
+        time.sleep(3)
         
-        # استخراج محتوى الصفحة
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         element = soup.select_one('script:-soup-contains("matchCentreData")')
         
         if not element:
             raise ValueError("لم يتم العثور على بيانات المباراة في الصفحة.")
         
-        # استخراج JSON
         matchdict = json.loads(element.text.split("matchCentreData: ")[1].split(',\n')[0])
         return matchdict
     
@@ -111,7 +109,7 @@ def extract_json_from_url(match_url):
         return None
     
     finally:
-        if driver is not None:  # التأكد إن driver معرّف قبل محاولة إغلاقه
+        if driver is not None:
             driver.quit()
 
 def extract_data_from_dict(data):
