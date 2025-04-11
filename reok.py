@@ -81,10 +81,9 @@ if match_input:
     st.session_state.confirmed = True
 
 # دالة لجلب البيانات من WhoScored
-def (match_url):
-driver = None  # تعريف driver كـ None من البداية
+def extract_json_from_url(match_url):
+    driver = None
     try:
-        # إعداد Chrome مع webdriver-manager
         chrome_options = Options()
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
@@ -111,7 +110,7 @@ driver = None  # تعريف driver كـ None من البداية
     finally:
         if driver is not None:
             driver.quit()
-
+            
 def extract_data_from_dict(data):
     events_dict = data["events"]
     teams_dict = {
