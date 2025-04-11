@@ -1,8 +1,2 @@
-# تثبيت التبعيات الأساسية لتشغيل Chrome وchromedriver
-libnss3
-libgconf-2-4
-libfontconfig1
-libappindicator3-1
-fonts-liberation
-xdg-utils
-wget
+google-chrome-stable
+chromedriver
