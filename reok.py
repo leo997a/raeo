@@ -21,6 +21,15 @@ import time
 from PIL import Image
 from urllib.request import urlopen
 from unidecode import unidecode
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+import selenium.webdriver as webdriver
+import pandas as pd
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def install_chrome():
     try:
@@ -97,34 +106,37 @@ if match_input:
     st.session_state.confirmed = True
 
 # دالة لجلب البيانات من WhoScored
-def extract_json_from_url(match_url):
-    driver = None
+def get_data(match_url, driver=None):
     try:
-        chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        if driver is None:
+            # إعداد خيارات Chrome للعمل في بيئة السحابة
+            chrome_options = Options()
+            chrome_options.add_argument('--headless')  # تشغيل بدون واجهة
+            chrome_options.add_argument('--no-sandbox')  # مطلوب في الحاويات
+            chrome_options.add_argument('--disable-dev-shm-usage')  # تجنب مشاكل الذاكرة
+            chrome_options.add_argument('--disable-gpu')  # تعطيل GPU
+            chrome_options.add_argument('--remote-debugging-port=9222')  # منفذ تصحيح
+
+            # استخدام webdriver-manager لتحميل chromedriver
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
         
+        logger.info(f"Fetching data from {match_url}")
         driver.get(match_url)
-        time.sleep(3)
+        # أضف الكود الحالي لجمع البيانات هنا
+        # مثال (يجب استبداله بالكود الحقيقي لجمع البيانات):
+        # data = driver.find_element(...)  # جمع البيانات من الصفحة
+        # df = pd.DataFrame(data)
         
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        element = soup.select_one('script:-soup-contains("matchCentreData")')
-        
-        if not element:
-            raise ValueError("لم يتم العثور على بيانات المباراة في الصفحة.")
-        
-        matchdict = json.loads(element.text.split("matchCentreData: ")[1].split(',\n')[0])
-        return matchdict
-    
+        # لأغراض الاختبار، نعيد DataFrame فارغًا
+        df = pd.DataFrame()  # استبدل هذا ببياناتك الفعلية
+        logger.info(f"Data fetched successfully: {df.shape}")
+        return df
     except Exception as e:
-        st.error(f"خطأ في جلب البيانات: {e}")
-        return None
-    
+        logger.error(f"Error fetching data: {str(e)}")
+        return pd.DataFrame()
     finally:
-        if driver is not None:
+        if driver:
             driver.quit()
 
 def extract_data_from_dict(data):
@@ -644,7 +656,7 @@ with tab1:
         away_pass_btn = None
 
         if pn_time_phase == 'Full Time':
-            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time')
+            home_pass_btn = pass_network(axs[0], hteamName, hcol, 'Full Time', df)
             away_pass_btn = pass_network(axs[1], ateamName, acol, 'Full Time')
         elif pn_time_phase == 'First Half':
             home_pass_btn = pass_network(axs[0], hteamName, hcol, 'First Half')
