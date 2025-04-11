@@ -110,7 +110,7 @@ def extract_json_from_url(match_url):
     finally:
         if driver is not None:
             driver.quit()
-            
+
 def extract_data_from_dict(data):
     events_dict = data["events"]
     teams_dict = {
@@ -127,6 +127,15 @@ def extract_data_from_dict(data):
     players_df['name'] = players_df['name'].apply(unidecode)
     
     return events_dict, players_df, teams_dict
+
+# تعريف المتغيرات افتراضيًا
+df = None
+teams_dict = None
+players_df = None
+hteamName = "غير محدد"
+ateamName = "غير محدد"
+hteamID = None
+ateamID = None
 
 # جلب البيانات
 if match_url and st.session_state.confirmed:
@@ -345,7 +354,7 @@ if match_url and st.session_state.confirmed:
         
         def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
             events_out = pd.DataFrame()
-            match_events_df = df.reset_index()
+            match_events_df = events_df.reset_index()
             
             match_pos_events_df = match_events_df[~match_events_df['type'].isin(['OffsideGiven', 'CornerAwarded','Start', 'Card', 'SubstitutionOff',
                                                                                  'SubstitutionOn', 'FormationChange','FormationSet', 'End'])].copy()
@@ -425,14 +434,7 @@ if match_url and st.session_state.confirmed:
     
     df, teams_dict, players_df = get_event_data(match_url)
     
-    if df is None or teams_dict is None or players_df is None:
-        st.error("فشل في جلب بيانات المباراة. تأكد من الرابط وحاول مرة أخرى.")
-    else:
-        # عرض بيانات أولية للتحقق
-        st.write("تم جلب البيانات بنجاح!")
-        st.write(f"عدد الأحداث: {len(df)}")
-        st.write(f"الفرق: {list(teams_dict.values())}")
-        
+    if df is not None and teams_dict is not None and players_df is not None:
         hteamID = list(teams_dict.keys())[0]
         ateamID = list(teams_dict.keys())[1]
         hteamName = teams_dict[hteamID]
@@ -458,9 +460,8 @@ if match_url and st.session_state.confirmed:
             aftmb_tid = 0
         
         st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
-        
-        # ... (هنا يستمر باقي الكود زي pass_network, progressive_pass, إلخ)
-
+    else:
+        st.error("فشل في جلب بيانات المباراة. تأكد من الرابط وحاول مرة أخرى.")
 else:
     st.info("الرجاء إدخال رابط المباراة والضغط على تأكيد.")
 # دالة pass_network المعدلة
