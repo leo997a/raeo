@@ -101,7 +101,7 @@ def cumulative_match_mins(events_df):
             events_out = pd.concat([events_out, match_events])
             return events_out
         
-        df = cumulative_match_mins(df)
+df = cumulative_match_mins(df)
         
         def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50):
             events_out = pd.DataFrame()
