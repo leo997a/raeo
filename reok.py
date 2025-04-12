@@ -85,40 +85,52 @@ if match_input:
 
 # دالة لجلب البيانات من WhoScored
 def extract_json_from_url(match_url):
-    """Extract match data from WhoScored match center using Selenium"""
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    
+    """
+    Extract matchCentreData JSON from a WhoScored match URL using Selenium.
+    """
+    # إعداد Selenium
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    service = Service()  # تأكد من أن chromedriver في PATH
+    driver = webdriver.Chrome(service=service, options=options)
+
     try:
-        # إعداد Chrome باستخدام Selenium
-        options = webdriver.ChromeOptions()
-        options.add_argument('--headless')  # تشغيل بدون واجهة
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        service = Service()
-        driver = webdriver.Chrome(service=service, options=options)
-        
-        # فتح الرابط
         driver.get(match_url)
-        time.sleep(2)  # الانتظار لتحميل الصفحة
-        
-        # استخراج محتوى الصفحة
+        time.sleep(3)  # الانتظار لتحميل السكربتات
+
         soup = BeautifulSoup(driver.page_source, 'html.parser')
-        element = soup.select_one('script:-soup-contains("matchCentreData")')
-        
-        if not element:
-            raise ValueError("لم يتم العثور على بيانات المباراة في الصفحة.")
-        
-        # استخراج JSON
-        matchdict = json.loads(element.text.split("matchCentreData: ")[1].split(',\n')[0])
-        
+        # البحث عن السكربت الذي يحتوي على matchCentreData
+        script = soup.find('script', string=lambda s: s and 'matchCentreData' in s)
+        if not script:
+            raise ValueError("لم يتم العثور على السكربت المطلوب في الصفحة.")
+
+        # تفكيك نص السكربت لاستخراج JSON
+        text = script.string
+        prefix = 'matchCentreData: '
+        start = text.find(prefix) + len(prefix)
+        end = text.find(',\n', start)
+        json_str = text[start:end]
+        matchdict = json.loads(json_str)
+
         return matchdict
-    
+
     except Exception as e:
-        st.error(f"خطأ في جلب البيانات: {e}")
+        print(f"خطأ أثناء استخراج البيانات: {e}")
         return None
-    
+
     finally:
         driver.quit()
+
+# عند التأكيد:
+json_data = extract_json_from_url(match_url)
+if json_data is None:
+    st.error("فشل في جلب بيانات المباراة. تأكد من الرابط وحاول مرة أخرى.")
+else:
+    events_dict, players_df, teams_dict = extract_data_from_dict(json_data)
+    # ثم بقية المعالجة كما في الكود الأصلي
+
 
 def extract_data_from_dict(data):
     """Extract events, players, and teams from match dictionary"""
