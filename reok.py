@@ -1509,43 +1509,6 @@ def plot_ShotsMap(ax, team_name, col, phase_tag, violet_color='#800080'):
     player_stats_df = player_stats_df.sort_values(by='Total Shots', ascending=False)
     return player_stats_df
 
-    # الكود التالي يجب أن يكون داخل كتلة if an_tp == 'Shotmap':
-        sm_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='sm_time_pill')  # استبدلت st.pills بـ st.radio لأن st.pills غير مدعوم افتراضيًا
-        if sm_time_phase == 'Full Time':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'Full Time')
-            away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'Full Time')
-        elif sm_time_phase == 'First Half':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'First Half')
-            away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'First Half')
-        elif sm_time_phase == 'Second Half':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'Second Half')
-            away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'Second Half')
-
-        fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-        fig.text(0.5, 1.01, reshape_arabic_text('خريطة التسديدات'), fontsize=20, ha='center', va='center')
-        fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center')
-        fig.text(0.5, 0.08, reshape_arabic_text('*الشكل الأكبر يعني تسديدات من فرص كبيرة'), fontsize=10, fontstyle='italic', ha='center', va='center')
-
-        himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-        himage = Image.open(himage)
-        ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
-
-        aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-        aimage = Image.open(aimage)
-        ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-
-        st.pyplot(fig)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write(reshape_arabic_text(f'أفضل المسددين في فريق {hteamName}:'))
-            st.dataframe(home_shots_stats, hide_index=True)
-        with col2:
-            st.write(reshape_arabic_text(f'أفضل المسددين في فريق {ateamName}:'))
-            st.dataframe(away_shots_stats, hide_index=True)
 
 # # Space
 # st.sidebar.text('')
