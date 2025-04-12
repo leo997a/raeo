@@ -1252,10 +1252,10 @@ if match_url and st.session_state.confirmed:
             def plot_ShotsMap(ax, team_name, col, phase_tag, violet_color='#800080'):
                 if phase_tag == 'Full Time':
                         shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal'))]
-                        elif phase_tag == 'First Half':
+                elif phase_tag == 'First Half':
                         shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal')) &
                                       (df['period'] == 'FirstHalf')]
-                        elif phase_tag == 'Second Half':
+                elif phase_tag == 'Second Half':
                         shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal')) &
                                       (df['period'] == 'SecondHalf')]
 
