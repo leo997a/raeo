@@ -910,51 +910,57 @@ if match_url and st.session_state.confirmed:
                     else:
                         st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
 
-            elif an_tp == reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'):
-                st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
-                dah_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='dah_time_pill')
+elif an_tp == reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'):
+    st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
+    dah_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='dah_time_pill')
 
-                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-                phase_map = {
-                    reshape_arabic_text('الوقت الكامل'): 'Full Time',
-                    reshape_arabic_text('الشوط الأول'): 'First Half',
-                    reshape_arabic_text('الشوط الثاني'): 'Second Half'
-                }
+    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+    phase_map = {
+        reshape_arabic_text('الوقت الكامل'): 'Full Time',
+        reshape_arabic_text('الشوط الأول'): 'First Half',
+        reshape_arabic_text('الشوط الثاني'): 'Second Half'
+    }
 
-                home_df_def = def_acts_hm(axs[0], hteamName, hcol, phase_map[dah_time_phase])
-                away_df_def = def_acts_hm(axs[1], ateamName, acol, phase_map[dah_time_phase])
+    home_df_def = def_acts_hm(axs[0], hteamName, hcol, phase_map[dah_time_phase])
+    away_df_def = def_acts_hm(axs[1], ateamName, acol, phase_map[dah_time_phase])
 
-                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
-                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
-                title = f"<{home_part}> - <{away_part}>"
-                fig_text(0.5, 1.05, title, highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center')
-                fig.text(0.5, 1.01, reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'), fontsize=20, ha='center', va='center', color='white')
-                fig.text(0.5, 0.97, '@REO_SHOW', fontsize=15, ha='center', va='center', color='#FFD700')
+    home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+    away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+    title = f"<{home_part}> - <{away_part}>"
+    fig_text(0.5, 1.05, title, highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center')
+    fig.text(0.5, 1.01, reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'), fontsize=20, ha='center', va='center', color='white')
+    fig.text(0.5, 0.97, '@REO_SHOW', fontsize=15, ha='center', va='center', color='#FFD700')
 
-                fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-                fig.text(0.5, 0.03, reshape_arabic_text('*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية للاعبي الميدان'), fontsize=10)
+    fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+    fig.text(0.5, 0.03, reshape_arabic_text('*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية للاعبي الميدان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+
+    try:
         himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
         himage = Image.open(himage)
         ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
 
         aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-        aimage = Image.open(aimage)
+        aimage = Image.open(aimage)  # إصلاح الخطأ المطبعي
         ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+    except:
+        st.warning(reshape_arabic_text("تعذر تحميل شعارات الفرق"))
 
-        st.pyplot(fig)
+    plt.subplots_adjust(top=0.85, bottom=0.15)
+    st.pyplot(fig)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write(f'الأفعال الدفاعية للاعبي فريق {hteamName}:')
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(reshape_arabic_text(f'الأفعال الدفاعية للاعبي فريق {hteamName}:'))
+        if home_df_def is not None:
             st.dataframe(home_df_def, hide_index=True)
-        with col2:
-            st.write(f'الأفعال الدفاعية للاعبي فريق {ateamName}:')
+        else:
+            st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+    with col2:
+        st.write(reshape_arabic_text(f'الأفعال الدفاعية للاعبي فريق {ateamName}:'))
+        if away_df_def is not None:
             st.dataframe(away_df_def, hide_index=True)
-            
-        if an_tp == 'Progressive Passes':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
-            
+        else:
+            st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
 def progressive_pass(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
         df_prop = df[(df['teamName'] == team_name) & (df['outcomeType'] == 'Successful') & (df['prog_pass'] > 9.144) & (~df['qualifiers'].str.contains('Corner|Freekick')) & (df['x'] >= 35)]
