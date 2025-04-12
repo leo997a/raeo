@@ -1071,39 +1071,39 @@ if match_url and st.session_state.confirmed:
                     home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
                     away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
                 
-    if pp_time_phase == 'Second Half':
-            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-            home_prop = progressive_pass(axs[0], hteamName, hcol, 'Second Half')
-            away_prop = progressive_pass(axs[1], ateamName, acol, 'Second Half')
+            if pp_time_phase == 'Second Half':
+                    fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                    home_prop = progressive_pass(axs[0], hteamName, hcol, 'Second Half')
+                    away_prop = progressive_pass(axs[1], ateamName, acol, 'Second Half')
                 
-            fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
-            fig.text(0.5, 1.01, 'Progressive Passes', fontsize=20, ha='center', va='center')
-            fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
+                    fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color':hcol}, {'color':acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+                    fig.text(0.5, 1.01, 'Progressive Passes', fontsize=20, ha='center', va='center')
+                    fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center')
             
-            fig.text(0.5, 0.02, '*Progressive Passes : Open-Play Successful Passes that move the ball at least 10 yards towards the Opponent Goal Center', fontsize=10, fontstyle='italic', ha='center', va='center')
-            fig.text(0.5, 0.00, '*Excluding the passes started from Own Defensive Third of the Pitch', fontsize=10, fontstyle='italic', ha='center', va='center')
+                    fig.text(0.5, 0.02, '*Progressive Passes : Open-Play Successful Passes that move the ball at least 10 yards towards the Opponent Goal Center', fontsize=10, fontstyle='italic', ha='center', va='center')
+                    fig.text(0.5, 0.00, '*Excluding the passes started from Own Defensive Third of the Pitch', fontsize=10, fontstyle='italic', ha='center', va='center')
             
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+                    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+                    himage = Image.open(himage)
+                    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
             
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+                    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+                    aimage = Image.open(aimage)
+                    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
             
-            st.pyplot(fig)
+                    st.pyplot(fig)
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f'{hteamName} Progressive Passers:')
-                st.dataframe(home_prop, hide_index=True)
-            with col2:
-                st.write(f'{ateamName} Progressive Passers:')
-                st.dataframe(away_prop, hide_index=True)
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write(f'{hteamName} Progressive Passers:')
+                        st.dataframe(home_prop, hide_index=True)
+                    with col2:
+                        st.write(f'{ateamName} Progressive Passers:')
+                        st.dataframe(away_prop, hide_index=True)
             
-    if an_tp == 'Progressive Carries':
-            # st.header(f'{st.session_state.analysis_type}')
-            st.header(f'{an_tp}')
+            if an_tp == 'Progressive Carries':
+                    # st.header(f'{st.session_state.analysis_type}')
+                    st.header(f'{an_tp}')
 def progressive_carry(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
             df_proc = df[(df['teamName']==team_name) & (df['prog_carry']>9.144) & (df['endX']>=35)]
