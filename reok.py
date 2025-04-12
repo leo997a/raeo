@@ -23,7 +23,10 @@ import streamlit as st
 import os
 import arabic_reshaper
 from bidi.algorithm import get_display
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 import time
+
 
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
@@ -254,7 +257,21 @@ def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
     match_events_df[['possession_id', 'possession_team']] = (match_events_df[['possession_id', 'possession_team']].fillna(method='bfill'))
     events_out = pd.concat([events_out, match_events_df])
     return events_out
-
+    
+def get_driver():
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    options.add_experimental_option('useAutomationExtension', False)
+    driver = webdriver.Chrome(options=options)
+    driver.execute_cdp_cmd('Network.setUserAgentOverride', {
+        'userAgent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    })
+    return driver
 # دالة get_event_data
 @st.cache_data
 def get_event_data(match_url):
