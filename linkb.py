@@ -8,7 +8,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import warnings
 import streamlit as st
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)  # Ignore deprecations in this file
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 whoscored_url = "https://1xbet.whoscored.com/Matches/1809770/Live/Europe-Europa-League-2023-2024-West-Ham-Bayer-Leverkusen"
 
@@ -18,25 +18,22 @@ def extract_match_dict(match_url, save_output=False):
     # إعداد خيارات Chrome
     chrome_options = Options()
     chrome_options.add_argument("--headless")  # تشغيل بدون واجهة رسومية
-    chrome_options.add_argument("--no-sandbox")  # ضروري في بيئات Linux السحابية
+    chrome_options.add_argument("--no-sandbox")  # ضروري في بيئات Docker
     chrome_options.add_argument("--disable-dev-shm-usage")  # تجنب مشاكل الذاكرة
+    chrome_options.add_argument("--disable-gpu")  # تعطيل GPU في الوضع headless
 
-    # إعداد Chrome WebDriver باستخدام webdriver_manager
+    # إعداد Chrome WebDriver
     driver = webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=chrome_options
     )
     
     try:
-        # فتح الرابط
         driver.get(match_url)
-        
-        # استخراج محتوى الصفحة
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         element = soup.select_one('script:-soup-contains("matchCentreData")')
         
         if element:
-            # استخراج البيانات من السكربت
             matchdict = json.loads(element.text.split("matchCentreData: ")[1].split(',\n')[0])
         else:
             raise ValueError("Could not find matchCentreData in the page source")
@@ -44,16 +41,16 @@ def extract_match_dict(match_url, save_output=False):
         return matchdict
     
     finally:
-        # إغلاق المتصفح
         driver.quit()
 
 def extract_data_from_dict(data):
     """Extract events, players, and teams from match dictionary"""
     events_dict = data["events"]
-    teams_dict = {data['home']['teamId']: data['home']['name'],
-                  data['away']['teamId']: data['away']['name']}
+    teams_dict = {
+        data['home']['teamId']: data['home']['name'],
+        data['away']['teamId']: data['away']['name']
+    }
     
-    # إنشاء إطار بيانات اللاعبين
     players_home_df = pd.DataFrame(data['home']['players'])
     players_home_df["teamId"] = data['home']['teamId']
     players_away_df = pd.DataFrame(data['away']['players'])
