@@ -853,19 +853,19 @@ if match_url and st.session_state.confirmed:
                 reshape_arabic_text('الثلث الهجومي')
             ], index=0, key='analysis_type')
 
-    if an_tp == reshape_arabic_text('شبكة التمريرات'):
-        st.header(reshape_arabic_text('شبكة التمريرات'))
-        pn_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
+        if an_tp == reshape_arabic_text('شبكة التمريرات'):
+            st.header(reshape_arabic_text('شبكة التمريرات'))
+            pn_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
 
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-        home_pass_btn = None
-        away_pass_btn = None
+            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+            home_pass_btn = None
+            away_pass_btn = None
 
-        phase_map = {
-            reshape_arabic_text('الوقت الكامل'): 'Full Time',
-            reshape_arabic_text('الشوط الأول'): 'First Half',
-            reshape_arabic_text('الشوط الثاني'): 'Second Half'
-        }
+            phase_map = {
+                reshape_arabic_text('الوقت الكامل'): 'Full Time',
+               reshape_arabic_text('الشوط الأول'): 'First Half',
+                reshape_arabic_text('الشوط الثاني'): 'Second Half'
+            }
 
         home_pass_btn = pass_network(axs[0], hteamName, hcol, phase_map[pn_time_phase])
         away_pass_btn = pass_network(axs[1], ateamName, acol, phase_map[pn_time_phase])
