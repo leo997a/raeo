@@ -680,7 +680,7 @@ def pass_network(ax, team_name, col, phase_tag):
                 # أضف الكود الخاص بـ Defensive Actions Heatmap هنا إذا كان لديك
             else:
                 st.error("فشل في جلب بيانات المباراة. تأكد من أن الرابط صحيح (من WhoScored) وحاول مرة أخرى.")
-            else:
+                else:
                 st.info("الرجاء إدخال رابط المباراة والضغط على تأكيد.")
     
 def def_acts_hm(ax, team_name, col, phase_tag):
