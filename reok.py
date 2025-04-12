@@ -40,6 +40,7 @@ def reshape_arabic_text(text):
     return get_display(reshaped_text)
 
 # إضافة CSS لدعم RTL في streamlit
+# إضافة CSS لدعم RTL في streamlit
 st.markdown("""
     <style>
     body {
@@ -52,34 +53,12 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# تعريف القيم الافتراضية للألوان أولاً
-default_hcol = '#d00000'  # لون الفريق المضيف الافتراضي
-default_acol = '#003087'  # لون الفريق الضيف الافتراضي
-default_bg_color = '#1e1e2f'  # لون الخلفية الافتراضي
-default_gradient_colors = ['#003087', '#d00000']  # ألوان التدرج الافتراضية
-violet = '#800080'  # تعريف اللون البنفسجي كقيمة ثابتة
-# إضافة أدوات اختيار الألوان في الشريط الجانبي
-st.sidebar.title('اختيار الألوان')
-hcol = st.sidebar.color_picker('لون الفريق المضيف', default_hcol, key='hcol_picker')
-acol = st.sidebar.color_picker('لون الفريق الضيف', default_acol, key='acol_picker')
-bg_color = st.sidebar.color_picker('لون الخلفية', default_bg_color, key='bg_color_picker')
-gradient_start = st.sidebar.color_picker('بداية التدرج', default_gradient_colors[0], key='gradient_start_picker')
-gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradient_colors[1], key='gradient_end_picker')
-gradient_colors = [gradient_start, gradient_end]  # تحديث قائمة ألوان التدرج
-line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker')  # اختياري
-
-st.sidebar.title('إدخال رابط المباراة')
-match_url = st.sidebar.text_input('أدخل رابط المباراة (من WhoScored):', placeholder='https://1xbet.whoscored.com/matches/...')
-
-# إضافة أدوات اختيار الألوان في الشريط الجانبي (كما هي)
-st.sidebar.title('اختيار الألوان')
-hcol = st.sidebar.color_picker('لون الفريق المضيف', default_hcol, key='hcol_picker')
-acol = st.sidebar.color_picker('لون الفريق الضيف', default_acol, key='acol_picker')
-bg_color = st.sidebar.color_picker('لون الخلفية', default_bg_color, key='bg_color_picker')
-gradient_start = st.sidebar.color_picker('بداية التدرج', default_gradient_colors[0], key='gradient_start_picker')
-gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradient_colors[1], key='gradient_end_picker')
-gradient_colors = [gradient_start, gradient_end]
-line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker')
+# تعريف القيم الافتراضية للألوان
+default_hcol = '#d00000'
+default_acol = '#003087'
+default_bg_color = '#1e1e2f'
+default_gradient_colors = ['#003087', '#d00000']
+violet = '#800080'
 
 # تهيئة الحالة
 if 'confirmed' not in st.session_state:
@@ -88,13 +67,27 @@ if 'confirmed' not in st.session_state:
 def reset_confirmed():
     st.session_state['confirmed'] = False
 
+# الشريط الجانبي
+st.sidebar.title('إدخال رابط المباراة')
+match_url = st.sidebar.text_input('أدخل رابط المباراة (من WhoScored):', placeholder='https://1xbet.whoscored.com/matches/...', key='match_url_input')
+
+# إضافة أدوات اختيار الألوان في الشريط الجانبي
+st.sidebar.title('اختيار الألوان')
+# استخدام مفاتيح فريدة وتجنب التكرار
+hcol = st.sidebar.color_picker('لون الفريق المضيف', default_hcol, key='hcol_picker_unique')
+acol = st.sidebar.color_picker('لون الفريق الضيف', default_acol, key='acol_picker_unique')
+bg_color = st.sidebar.color_picker('لون الخلفية', default_bg_color, key='bg_color_picker_unique')
+gradient_start = st.sidebar.color_picker('بداية التدرج', default_gradient_colors[0], key='gradient_start_picker_unique')
+gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradient_colors[1], key='gradient_end_picker_unique')
+gradient_colors = [gradient_start, gradient_end]
+line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker_unique')
+
 # التحقق من إدخال الرابط والضغط على زر التأكيد
 if match_url:
     try:
-        # محاولة جلب الرابط للتحقق من صحته
         response = requests.get(match_url)
-        response.raise_for_status()  # رمي خطأ إذا كان الرابط غير صالح
-        match_input = st.sidebar.button('تأكيد الرابط', on_click=lambda: st.session_state.update({'confirmed': True}))
+        response.raise_for_status()
+        match_input = st.sidebar.button('تأكيد الرابط', key='confirm_button_unique', on_click=lambda: st.session_state.update({'confirmed': True}))
     except requests.exceptions.RequestException:
         st.session_state['confirmed'] = False
         st.sidebar.error('الرابط غير صالح أو المباراة غير موجودة')
@@ -110,21 +103,16 @@ if match_url and st.session_state.confirmed:
                 response = requests.get(html_path)
                 response.raise_for_status()
                 html = response.text
-
-                # البحث عن البيانات باستخدام regex (كما في الكود الأصلي)
                 regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
                 data_txt = re.findall(regex_pattern, html)
                 if not data_txt:
                     raise ValueError("لم يتم العثور على بيانات JSON في الصفحة")
                 data_txt = data_txt[0]
-
-                # تنظيف النص ليصبح JSON صالح
                 data_txt = data_txt.replace('matchId', '"matchId"')
                 data_txt = data_txt.replace('matchCentreData', '"matchCentreData"')
                 data_txt = data_txt.replace('matchCentreEventTypeJson', '"matchCentreEventTypeJson"')
                 data_txt = data_txt.replace('formationIdNameMappings', '"formationIdNameMappings"')
                 data_txt = data_txt.replace('};', '}')
-
                 return data_txt
             except Exception as e:
                 st.error(f"خطأ أثناء استخراج البيانات: {str(e)}")
@@ -148,19 +136,21 @@ if match_url and st.session_state.confirmed:
             players_df['name'] = players_df['name'].apply(unidecode)
             return events_dict, players_df, teams_dict
 
-        # استخراج البيانات من الرابط
         json_data_txt = extract_json_from_html(match_url)
         data = json.loads(json_data_txt)
         events_dict, players_df, teams_dict = extract_data_from_dict(data)
-
         df = pd.DataFrame(events_dict)
         dfp = pd.DataFrame(players_df)
 
-        # باقي معالجة البيانات كما في الكود الأصلي
+        # معالجة البيانات (كما في الكود الأصلي)
         df['type'] = df['type'].astype(str)
         df['outcomeType'] = df['outcomeType'].astype(str)
         df['period'] = df['period'].astype(str)
         df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
+        df['outcomeType'] --outType'].str.extract(r"'displayName': '([^']+)")
+        df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
+        df['period'] = df['period'].replace({
+            'FirstHalf': 1, 'SecondHalf': df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
         df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
         df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
         df['period'] = df['period'].replace({
@@ -175,7 +165,7 @@ if match_url and st.session_state.confirmed:
         df['index'] = range(1, len(df) + 1)
         df = df[['index'] + [col for col in df.columns if col != 'index']]
 
-        # معالجة xT والبيانات الأخرى (كما في الكود الأصلي)
+        # معالجة xT
         dfxT = df.copy()
         dfxT['qualifiers'] = dfxT['qualifiers'].astype(str)
         dfxT = dfxT[(~dfxT['qualifiers'].str.contains('Corner'))]
@@ -249,18 +239,7 @@ if match_url and st.session_state.confirmed:
     # جلب البيانات باستخدام الرابط
     df, teams_dict, players_df = get_event_data(match_url)
 
-    # باقي الكود كما هو (معالجة البيانات، عرض الشبكة، إلخ)
-    def get_short_name(full_name):
-        if pd.isna(full_name):
-            return full_name
-        parts = full_name.split()
-        if len(parts) == 1:
-            return full_name
-        elif len(parts) == 2:
-            return parts[0][0] + ". " + parts[1]
-        else:
-            return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
-
+    # عرض نتيجة المباراة
     hteamID = list(teams_dict.keys())[0]
     ateamID = list(teams_dict.keys())[1]
     hteamName = teams_dict[hteamID]
@@ -278,7 +257,16 @@ if match_url and st.session_state.confirmed:
 
     st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
     st.text('تحليل المباراة بناءً على الرابط')
-    
+
+    # عرض شبكة التمريرات للفريق المضيف
+    fig, ax = plt.subplots(figsize=(10, 10))
+    pass_btn = pass_network(ax, hteamName, hcol, 'Full Time')
+    st.pyplot(fig)
+
+    # عرض شبكة التمريرات للفريق الضيف
+    fig, ax = plt.subplots(figsize=(10, 10))
+    pass_btn = pass_network(ax, ateamName, acol, 'Full Time')
+    st.pyplot(fig)
 # دالة pass_network المعدلة
 def pass_network(ax, team_name, col, phase_tag):
     if phase_tag == 'Full Time':
