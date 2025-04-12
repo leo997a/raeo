@@ -1157,7 +1157,7 @@ if match_url and st.session_state.confirmed:
                     m_name = 'None'
                     m_count = 0   
             
-    if len(rigt_proc) != 0:
+            if len(rigt_proc) != 0:
                             name_counts = rigt_proc['shortName'].value_counts()
                             name_counts_df = name_counts.reset_index()
                             name_counts_df.columns = ['name', 'count']
