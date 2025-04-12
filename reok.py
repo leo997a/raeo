@@ -832,7 +832,7 @@ if match_url and st.session_state.confirmed:
 
 # تبويبات التحليل
 # تعريف التبويبات
-tab1, tab2, tab3, tab4 = st.tabs([reshape_arabic_text('تحليل الفريق'), reshape_arabic_text('تحليل اللاعبين'), reshape_arabic_text('إحصائيات المباراة'), reshape_arabic_text('أفضل اللاعبين')])
+    tab1, tab2, tab3, tab4 = st.tabs([reshape_arabic_text('تحليل الفريق'), reshape_arabic_text('تحليل اللاعبين'), reshape_arabic_text('إحصائيات المباراة'), reshape_arabic_text('أفضل اللاعبين')])
 
 with tab1:
     an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
