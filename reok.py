@@ -1241,3 +1241,8 @@ if match_url and st.session_state.confirmed:
             if an_tp == 'Shotmap':
                 st.header(reshape_arabic_text('خريطة التسديدات'))
                 st.header(f'{an_tp}')
+# Add the rest of the Shotmap logic here
+        # Example placeholder for visualization (replace with actual logic)
+                fig, ax = plt.subplots(figsize=(10, 7), facecolor=bg_color)
+                ax.text(0.5, 0.5, reshape_arabic_text('خريطة التسديدات تحت الإنشاء'), ha='center', va='center', color='white')
+                st.pyplot(fig)
