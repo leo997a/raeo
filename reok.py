@@ -147,7 +147,7 @@ if match_url and st.session_state.confirmed:
         df['outcomeType'] = df['outcomeType'].astype(str)
         df['period'] = df['period'].astype(str)
         df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
-        df['outcomeType'] --outType'].str.extract(r"'displayName': '([^']+)")
+    df['outcomeType'] --outType'].str.extract(r"'displayName': '([^']+)")
         df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
         df['period'] = df['period'].replace({
             'FirstHalf': 1, 'SecondHalf': df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
