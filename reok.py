@@ -1246,3 +1246,5 @@ if match_url and st.session_state.confirmed:
                 fig, ax = plt.subplots(figsize=(10, 7), facecolor=bg_color)
                 ax.text(0.5, 0.5, reshape_arabic_text('خريطة التسديدات تحت الإنشاء'), ha='center', va='center', color='white')
                 st.pyplot(fig)
+
+                
