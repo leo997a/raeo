@@ -1436,7 +1436,3 @@ if match_url and st.session_state.confirmed:
 #         st.sidebar.success("Thank you for your feedback!")
 #     else:
 #         st.sidebar.warning("Please select a rating and enter some feedback before submitting.")
-    
-    
-    
-    
