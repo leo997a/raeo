@@ -1240,4 +1240,3 @@ if match_url and st.session_state.confirmed:
             if an_tp == 'Shotmap':
                 st.header(reshape_arabic_text('خريطة التسديدات'))
                 st.header(f'{an_tp}')
-
