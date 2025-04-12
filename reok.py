@@ -405,6 +405,10 @@ def pass_network(ax, team_name, col, phase_tag):
         df_pass = df[df['period'] == 'SecondHalf']
         df_pass = df_pass.reset_index(drop=True)
 
+    if df_pass.empty:
+        ax.text(0.5, 0.5, reshape_arabic_text('لا توجد بيانات متاحة'), ha='center', va='center', color='white')
+        return None
+
     total_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass')]
     accrt_pass = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful')]
     accuracy = round((len(accrt_pass) / len(total_pass)) * 100, 2) if len(total_pass) > 0 else 0
@@ -414,7 +418,15 @@ def pass_network(ax, team_name, col, phase_tag):
 
     off_acts_df = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
     off_acts_df = off_acts_df[['name', 'x', 'y']].reset_index(drop=True)
+    if off_acts_df.empty:
+        ax.text(0.5, 0.5, reshape_arabic_text('لا توجد أحداث هجومية متاحة'), ha='center', va='center', color='white')
+        return None
+
     avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
+    if avg_locs_df.empty:
+        ax.text(0.5, 0.5, reshape_arabic_text('لا يمكن حساب المواقع المتوسطة'), ha='center', va='center', color='white')
+        return None
+
     team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
     avg_locs_df = avg_locs_df.merge(team_pdf, on='name', how='left')
 
@@ -423,6 +435,9 @@ def pass_network(ax, team_name, col, phase_tag):
 
     pass_count_df = df_pass.groupby(['name', 'pass_receiver']).size().reset_index(name='pass_count').sort_values(by='pass_count', ascending=False)
     pass_count_df = pass_count_df.reset_index(drop=True)
+    if pass_count_df.empty:
+        ax.text(0.5, 0.5, reshape_arabic_text('لا توجد تمريرات ناجحة متاحة'), ha='center', va='center', color='white')
+        return None
 
     pass_counts_df = pd.merge(pass_count_df, avg_locs_df, on='name', how='left')
     pass_counts_df.rename(columns={'avg_x': 'pass_avg_x', 'avg_y': 'pass_avg_y'}, inplace=True)
@@ -506,7 +521,6 @@ def pass_network(ax, team_name, col, phase_tag):
     ax.text(34, -6, reshape_arabic_text(f"على الكرة\nالتماسك العمودي (المنطقة المظللة): {v_comp}%"), color='white', fontsize=12, ha='center', va='center', weight='bold')
 
     return pass_btn
-
 # دالة def_acts_hm
 def def_acts_hm(ax, team_name, col, phase_tag):
     global df, players_df
