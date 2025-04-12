@@ -1248,3 +1248,138 @@ if match_url and st.session_state.confirmed:
                 st.pyplot(fig)
 
                 
+
+    def plot_ShotsMap(ax, team_name, col, phase_tag, violet_color='#800080'):
+        if phase_tag == 'Full Time':
+            shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal'))]
+        elif phase_tag == 'First Half':
+            shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal')) &
+                          (df['period'] == 'FirstHalf')]
+        elif phase_tag == 'Second Half':
+            shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal')) &
+                          (df['period'] == 'SecondHalf')]
+
+        goal = shots_df[(shots_df['type'] == 'Goal') & (~shots_df['qualifiers'].str.contains('BigChance')) & (~shots_df['qualifiers'].str.contains('OwnGoal'))]
+        goal_bc = shots_df[(shots_df['type'] == 'Goal') & (shots_df['qualifiers'].str.contains('BigChance')) & (~shots_df['qualifiers'].str.contains('OwnGoal'))]
+        miss = shots_df[(shots_df['type'] == 'MissedShots') & (~shots_df['qualifiers'].str.contains('BigChance'))]
+        miss_bc = shots_df[(shots_df['type'] == 'MissedShots') & (shots_df['qualifiers'].str.contains('BigChance'))]
+        ontr = shots_df[(shots_df['type'] == 'SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & 
+                        (~shots_df['qualifiers'].str.contains('BigChance'))]
+        ontr_bc = shots_df[(shots_df['type'] == 'SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & 
+                        (shots_df['qualifiers'].str.contains('BigChance'))]
+        blkd = shots_df[(shots_df['type'] == 'SavedShot') & (shots_df['qualifiers'].str.contains(': 82,')) & 
+                        (~shots_df['qualifiers'].str.contains('BigChance'))]
+        blkd_bc = shots_df[(shots_df['type'] == 'SavedShot') & (shots_df['qualifiers'].str.contains(': 82,')) & 
+                        (shots_df['qualifiers'].str.contains('BigChance'))]
+        post = shots_df[(shots_df['type'] == 'ShotOnPost') & (~shots_df['qualifiers'].str.contains('BigChance'))]
+        post_bc = shots_df[(shots_df['type'] == 'ShotOnPost') & (shots_df['qualifiers'].str.contains('BigChance'))]
+
+        sotb = shots_df[(shots_df['qualifiers'].str.contains('OutOfBox'))]
+        opsh = shots_df[(shots_df['qualifiers'].str.contains('RegularPlay'))]
+        ogdf = df[(df['type'] == 'Goal') & (df['qualifiers'].str.contains('OwnGoal')) & (df['teamName'] != team_name)]
+
+        pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+        pitch.draw(ax=ax)
+        xps = [0, 0, 68, 68]
+        yps = [0, 35, 35, 0]
+        ax.fill(xps, yps, color=bg_color, edgecolor=line_color, lw=3, ls='--', alpha=1, zorder=5)
+        ax.vlines(34, ymin=0, ymax=35, color=line_color, ls='--', lw=3, zorder=5)
+
+        pitch.scatter(post.x, post.y, s=200, edgecolors=col, c=col, marker='o', ax=ax)
+        pitch.scatter(ontr.x, ontr.y, s=200, edgecolors=col, c='None', hatch='///////', marker='o', ax=ax)
+        pitch.scatter(blkd.x, blkd.y, s=200, edgecolors=col, c='None', hatch='///////', marker='s', ax=ax)
+        pitch.scatter(miss.x, miss.y, s=200, edgecolors=col, c='None', marker='o', ax=ax)
+        pitch.scatter(goal.x, goal.y, s=350, edgecolors='green', linewidths=0.6, c='None', marker='football', zorder=3, ax=ax)
+        pitch.scatter((105 - ogdf.x), (68 - ogdf.y), s=350, edgecolors='orange', linewidths=0.6, c='None', marker='football', zorder=3, ax=ax)
+
+        pitch.scatter(post_bc.x, post_bc.y, s=700, edgecolors=col, c=col, marker='o', ax=ax)
+        pitch.scatter(ontr_bc.x, ontr_bc.y, s=700, edgecolors=col, c='None', hatch='///////', marker='o', ax=ax)
+        pitch.scatter(blkd_bc.x, blkd_bc.y, s=700, edgecolors=col, c='None', hatch='///////', marker='s', ax=ax)
+        pitch.scatter(miss_bc.x, miss_bc.y, s=700, edgecolors=col, c='None', marker='o', ax=ax)
+        pitch.scatter(goal_bc.x, goal_bc.y, s=850, edgecolors='green', linewidths=0.6, c='None', marker='football', ax=ax)
+
+        if phase_tag == 'Full Time':
+            ax.text(34, 112, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'First Half':
+            ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+        elif phase_tag == 'Second Half':
+            ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+        ax.text(34, 108, reshape_arabic_text(f'إجمالي التسديدات: {len(shots_df)} | على المرمى: {len(goal) + len(goal_bc) + len(ontr) + len(ontr_bc)}'), color=col, fontsize=13, ha='center', va='center')
+
+        pitch.scatter(12 + (4 * 0), 64, s=200, zorder=6, edgecolors=col, c=col, marker='o', ax=ax)
+        pitch.scatter(12 + (4 * 1), 64, s=200, zorder=6, edgecolors=col, c='None', hatch='///////', marker='s', ax=ax)
+        pitch.scatter(12 + (4 * 2), 64, s=200, zorder=6, edgecolors=col, c='None', marker='o', ax=ax)
+        pitch.scatter(12 + (4 * 3), 64, s=200, zorder=6, edgecolors=col, c='None', hatch='///////', marker='o', ax=ax)
+        pitch.scatter(12 + (4 * 4), 64, s=350, zorder=6, edgecolors='green', linewidths=0.6, c='None', marker='football', ax=ax)
+
+        ax.text(34, 39, reshape_arabic_text('إحصائيات التسديد'), fontsize=15, fontweight='bold', zorder=7, ha='center', va='center')
+
+        ax.text(60, 12 + (4 * 4), reshape_arabic_text(f'الأهداف: {len(goal) + len(goal_bc)}'), zorder=6, ha='left', va='center')
+        ax.text(60, 12 + (4 * 3), reshape_arabic_text(f'التسديدات المصدودة: {len(ontr) + len(ontr_bc)}'), zorder=6, ha='left', va='center')
+        ax.text(60, 12 + (4 * 2), reshape_arabic_text(f'التسديدات خارج المرمى: {len(miss) + len(miss_bc)}'), zorder=6, ha='left', va='center')
+        ax.text(60, 12 + (4 * 1), reshape_arabic_text(f'التسديدات المحجوبة: {len(blkd) + len(blkd_bc)}'), zorder=6, ha='left', va='center')
+        ax.text(60, 12 + (4 * 0), reshape_arabic_text(f'التسديدات على العارضة: {len(post) + len(post_bc)}'), zorder=6, ha='left', va='center')
+        ax.text(30, 12 + (4 * 4), reshape_arabic_text(f'التسديدات خارج الصندوق: {len(sotb)}'), zorder=6, ha='left', va='center')
+        ax.text(30, 12 + (4 * 3), reshape_arabic_text(f'التسديدات داخل الصندوق: {len(shots_df) - len(sotb)}'), zorder=6, ha='left', va='center')
+        ax.text(30, 12 + (4 * 2), reshape_arabic_text(f'إجمالي الفرص الكبيرة: {len(goal_bc) + len(ontr_bc) + len(miss_bc) + len(blkd_bc) + len(post_bc)}'), zorder=6, ha='left', va='center')
+        ax.text(30, 12 + (4 * 1), reshape_arabic_text(f'الفرص الكبيرة المهدرة: {len(ontr_bc) + len(miss_bc) + len(blkd_bc) + len(post_bc)}'), zorder=6, ha='left', va='center')
+        ax.text(30, 12 + (4 * 0), reshape_arabic_text(f'التسديدات من اللعب المفتوح: {len(opsh)}'), zorder=6, ha='left', va='center')
+
+        p_list = shots_df.name.unique()
+        player_stats = {'Name': p_list, 'Total Shots': [], 'Goals': [], 'Shots Saved': [], 'Shots Off Target': [], 'Shots Blocked': [], 'Shots On Post': [],
+                        'Shots outside the box': [], 'Shots inside the box': [], 'Total Big Chances': [], 'Big Chances Missed': [], 'Open-Play Shots': []}
+        for name in p_list:
+            p_df = shots_df[shots_df['name'] == name]
+            player_stats['Total Shots'].append(len(p_df[p_df['type'].isin(['Goal', 'SavedShot', 'MissedShots', 'ShotOnPost'])]))
+            player_stats['Goals'].append(len(p_df[p_df['type'] == 'Goal']))
+            player_stats['Shots Saved'].append(len(p_df[(p_df['type'] == 'SavedShot') & (~p_df['qualifiers'].str.contains(': 82'))]))
+            player_stats['Shots Off Target'].append(len(p_df[p_df['type'] == 'MissedShots']))
+            player_stats['Shots Blocked'].append(len(p_df[(p_df['type'] == 'SavedShot') & (p_df['qualifiers'].str.contains(': 82'))]))
+            player_stats['Shots On Post'].append(len(p_df[p_df['type'] == 'ShotOnPost']))
+            player_stats['Shots outside the box'].append(len(p_df[p_df['qualifiers'].str.contains('OutOfBox')]))
+            player_stats['Shots inside the box'].append(len(p_df[~p_df['qualifiers'].str.contains('OutOfBox')]))
+            player_stats['Total Big Chances'].append(len(p_df[p_df['qualifiers'].str.contains('BigChance')]))
+            player_stats['Big Chances Missed'].append(len(p_df[(p_df['type'] != 'Goal') & (p_df['qualifiers'].str.contains('BigChance'))]))
+            player_stats['Open-Play Shots'].append(len(p_df[p_df['qualifiers'].str.contains('RegularPlay')]))
+
+        player_stats_df = pd.DataFrame(player_stats)
+        player_stats_df = player_stats_df.sort_values(by='Total Shots', ascending=False)
+        return player_stats_df
+
+    # الكود التالي يجب أن يكون داخل كتلة if an_tp == 'Shotmap':
+    sm_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='sm_time_pill')  # استبدلت st.pills بـ st.radio لأن st.pills غير مدعوم افتراضيًا
+    if sm_time_phase == 'Full Time':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'Full Time')
+        away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'Full Time')
+    elif sm_time_phase == 'First Half':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'First Half')
+        away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'First Half')
+    elif sm_time_phase == 'Second Half':
+        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+        home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, 'Second Half')
+        away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, 'Second Half')
+
+    fig_text(0.5, 1.05, f'<{hteamName} {hgoal_count}> - <{agoal_count} {ateamName}>', highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center', ax=fig)
+    fig.text(0.5, 1.01, reshape_arabic_text('خريطة التسديدات'), fontsize=20, ha='center', va='center')
+    fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center')
+    fig.text(0.5, 0.08, reshape_arabic_text('*الشكل الأكبر يعني تسديدات من فرص كبيرة'), fontsize=10, fontstyle='italic', ha='center', va='center')
+
+    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+    himage = Image.open(himage)
+    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+    aimage = Image.open(aimage)
+    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+
+    st.pyplot(fig)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(reshape_arabic_text(f'أفضل المسددين في فريق {hteamName}:'))
+        st.dataframe(home_shots_stats, hide_index=True)
+    with col2:
+        st.write(reshape_arabic_text(f'أفضل المسددين في فريق {ateamName}:'))
+        st.dataframe(away_shots_stats, hide_index=True)
