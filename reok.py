@@ -910,16 +910,16 @@ if match_url and st.session_state.confirmed:
             else:
                 st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
 
-    elif an_tp == reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'):
-        st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
-        dah_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='dah_time_pill')
+        elif an_tp == reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'):
+            st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
+            dah_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='dah_time_pill')
 
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-        phase_map = {
-            reshape_arabic_text('الوقت الكامل'): 'Full Time',
-            reshape_arabic_text('الشوط الأول'): 'First Half',
-            reshape_arabic_text('الشوط الثاني'): 'Second Half'
-        }
+            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+            phase_map = {
+                reshape_arabic_text('الوقت الكامل'): 'Full Time',
+                reshape_arabic_text('الشوط الأول'): 'First Half',
+                reshape_arabic_text('الشوط الثاني'): 'Second Half'
+            }
 
         home_df_def = def_acts_hm(axs[0], hteamName, hcol, phase_map[dah_time_phase])
         away_df_def = def_acts_hm(axs[1], ateamName, acol, phase_map[dah_time_phase])
