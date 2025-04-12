@@ -95,7 +95,6 @@ else:
     st.session_state['confirmed'] = False
 
 # إذا تم تأكيد الرابط، جلب البيانات
-if match_url and st.session_state.confirmed:
 
 
 
