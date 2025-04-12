@@ -808,6 +808,11 @@ def progressive_carry(ax, team_name, col, phase_tag):
 # الجزء الرئيسي
 if match_url and st.session_state.confirmed:
     try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(match_url, headers=headers)
+        response.raise_for_status()
         df, teams_dict, players_df = get_event_data(match_url)
         hteamID = list(teams_dict.keys())[0]
         ateamID = list(teams_dict.keys())[1]
@@ -824,9 +829,8 @@ if match_url and st.session_state.confirmed:
         hgoal_count += len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
         agoal_count += len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
 
-        # معرفات الفرق لشعارات FotMob (قيم افتراضية)
-        hftmb_tid = '9879'  # مثال: معرف لبرشلونة
-        aftmb_tid = '10267'  # مثال: معرف لريال مدريد
+        hftmb_tid = '9879'  # معرف برشلونة (تحقق منه)
+        aftmb_tid = '10267'  # معرف بوروسيا دورتموند (تحقق منه)
 
         st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
         st.text(reshape_arabic_text('تحليل المباراة بناءً على الرابط'))
