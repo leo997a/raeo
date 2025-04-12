@@ -590,25 +590,55 @@ def pass_network(ax, team_name, col, phase_tag):
 
     return pass_btn
 
-        # الجزء الخارجي من الكود مع معالجة النصوص العربية وضبط الإحداثيات
-    tab1, tab2, tab3, tab4 = st.tabs(['Team Analysis', 'Player Analysis', 'Match Statistics', 'Top Players'])
+# الجزء الخارجي من الكود مع معالجة النصوص العربية وضبط الإحداثيات
+if match_url and st.session_state.confirmed:
+    df, teams_dict, players_df = get_event_data(match_url)
+    
+    if df is not None and teams_dict is not None and players_df is not None:
+        hteamID = list(teams_dict.keys())[0]
+        ateamID = list(teams_dict.keys())[1]
+        hteamName = teams_dict[hteamID]
+        ateamName = teams_dict[ateamID]
+        
+        homedf = df[(df['teamName'] == hteamName)]
+        awaydf = df[(df['teamName'] == ateamName)]
+        hxT = homedf['xT'].sum().round(2)
+        axT = awaydf['xT'].sum().round(2)
+        
+        hgoal_count = len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))])
+        agoal_count = len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))])
+        hgoal_count = hgoal_count + len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
+        agoal_count = agoal_count + len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
+        
+        df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/refs/heads/main/teams_name_and_id.csv')
+        try:
+            hftmb_tid = df_teamNameId[df_teamNameId['teamName'] == hteamName].teamId.to_list()[0]
+            aftmb_tid = df_teamNameId[df_teamNameId['teamName'] == ateamName].teamId.to_list()[0]
+        except IndexError:
+            st.warning("لم يتم العثور على معرفات الفرق في قاعدة البيانات. قد تظهر بعض الصور مفقودة.")
+            hftmb_tid = 0
+            aftmb_tid = 0
+        
+        st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
+        
+        tab1, tab2, tab3, tab4 = st.tabs(['Team Analysis', 'Player Analysis', 'Match Statistics', 'Top Players'])
 
-    with tab1:
+        with tab1:
             an_tp = st.selectbox('نوع التحليل:', [
-                'شبكة التمريرات', 
-                'Defensive Actions Heatmap', 
-                'Progressive Passes', 
-                'Progressive Carries', 
-                'Shotmap', 
-                'احصائيات الحراس', 
+                'شبكة التمريرات',
+                'Defensive Actions Heatmap',
+                'Progressive Passes',
+                'Progressive Carries',
+                'Shotmap',
+                'احصائيات الحراس',
                 'Match Momentum',
-                reshape_arabic_text('Zone14 & Half-Space Passes'), 
-                reshape_arabic_text('Final Third Entries'), 
-                reshape_arabic_text('Box Entries'), 
-                reshape_arabic_text('High-Turnovers'), 
-                reshape_arabic_text('Chances Creating Zones'), 
-                reshape_arabic_text('Crosses'), 
-                reshape_arabic_text('Team Domination Zones'), 
+                reshape_arabic_text('Zone14 & Half-Space Passes'),
+                reshape_arabic_text('Final Third Entries'),
+                reshape_arabic_text('Box Entries'),
+                reshape_arabic_text('High-Turnovers'),
+                reshape_arabic_text('Chances Creating Zones'),
+                reshape_arabic_text('Crosses'),
+                reshape_arabic_text('Team Domination Zones'),
                 reshape_arabic_text('Pass Target Zones'),
                 'Attacking Thirds'
             ], index=0, key='analysis_type')
@@ -635,12 +665,12 @@ def pass_network(ax, team_name, col, phase_tag):
                 home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
                 away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
                 title = f"<{home_part}> - <{away_part}>"
-                fig_text(0.5, 1.05, title, 
+                fig_text(0.5, 1.05, title,
                          highlight_textprops=[{'color': hcol}, {'color': acol}],
                          fontsize=28, fontweight='bold', ha='center', va='center', ax=fig)
                 fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
-                fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', 
-                         fontsize=14, fontfamily='Roboto', fontweight='bold', 
+                fig.text(0.5, 0.97, '✦ @REO_SHOW ✦',
+                         fontsize=14, fontfamily='Roboto', fontweight='bold',
                          color='#FFD700', ha='center', va='center',
                          bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
                          path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
@@ -678,11 +708,10 @@ def pass_network(ax, team_name, col, phase_tag):
             elif an_tp == 'Defensive Actions Heatmap':
                 st.header(f'{an_tp}')
                 # أضف الكود الخاص بـ Defensive Actions Heatmap هنا إذا كان لديك
-            else:
-                st.error("فشل في جلب بيانات المباراة. تأكد من أن الرابط صحيح (من WhoScored) وحاول مرة أخرى.")
-                else:
-                st.info("الرجاء إدخال رابط المباراة والضغط على تأكيد.")
-    
+    else:
+        st.error("فشل في جلب بيانات المباراة. تأكد من أن الرابط صحيح (من WhoScored) وحاول مرة أخرى.")
+else:
+    st.info("الرجاء إدخال رابط المباراة والضغط على تأكيد.")
 def def_acts_hm(ax, team_name, col, phase_tag):
     def_acts_id = df.index[((df['type'] == 'Aerial') & (df['qualifiers'].str.contains('Defensive'))) |
                            (df['type'] == 'BallRecovery') |
