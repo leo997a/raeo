@@ -1,111 +1,86 @@
-import json
-import re
+import json, time, re
 import pandas as pd
+import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib.colors import to_rgba, LinearSegmentedColormap
-import requests
-import matplotlib.patches as patches
-from mplsoccer import Pitch, VerticalPitch, add_image
-from highlight_text import fig_text, ax_text
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from matplotlib import patheffects, rcParams
-from PIL import Image
-from urllib.request import urlopen
-from unidecode import unidecode
-from scipy.spatial import ConvexHull
 import streamlit as st
 import arabic_reshaper
 from bidi.algorithm import get_display
-import time
-
-# Selenium & parsing
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
-
+from unidecode import unidecode
+from scipy.spatial import ConvexHull
+from mplsoccer import Pitch, VerticalPitch
 # --------------------------------------------------------------------
 # إعداد matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
 mpl.rcParams['font.family'] = 'sans-serif'
-mpl.rcParams['font.sans-serif'] = ['Amiri', 'Noto Sans Arabic', 'Arial', 'Tahoma']
+mpl.rcParams['font.sans-serif'] = ['Amiri','Noto Sans Arabic','Arial','Tahoma']
 mpl.rcParams['axes.unicode_minus'] = False
 
-def reshape_arabic_text(text):
-    reshaped = arabic_reshaper.reshape(text)
-    return get_display(reshaped)
+def reshape_arabic_text(txt):
+    return get_display(arabic_reshaper.reshape(txt))
 
 st.markdown("""
-    <style>
-    body { direction: rtl; text-align: right; }
-    .stSelectbox > div > div > div { text-align: right; }
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+body {direction: rtl; text-align: right;}
+.stSelectbox > div > div > div {text-align: right;}
+</style>""", unsafe_allow_html=True)
 
-# Sidebar color pickers
-default_hcol, default_acol = '#d00000', '#003087'
-default_bg_color = '#1e1e2f'
-default_gradient = ['#003087', '#d00000']
-st.sidebar.title('اختيار الألوان')
-hcol = st.sidebar.color_picker('لون الفريق المضيف', default_hcol)
-acol = st.sidebar.color_picker('لون الفريق الضيف', default_acol)
-bg_color = st.sidebar.color_picker('لون الخلفية', default_bg_color)
-grad_start = st.sidebar.color_picker('بداية التدرج', default_gradient[0])
-grad_end   = st.sidebar.color_picker('نهاية التدرج', default_gradient[1])
+# Sidebar: ألوان + رابط المباراة
+st.sidebar.title('اختيارات')
+hcol = st.sidebar.color_picker('لون الفريق المضيف', '#d00000')
+acol = st.sidebar.color_picker('لون الفريق الضيف', '#003087')
+bg_color = st.sidebar.color_picker('لون الخلفية', '#1e1e2f')
+grad_start = st.sidebar.color_picker('بداية التدرج', '#003087')
+grad_end   = st.sidebar.color_picker('نهاية التدرج', '#d00000')
 line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff')
 gradient_colors = [grad_start, grad_end]
 
-# Sidebar match URL input
 st.sidebar.title('رابط المباراة')
-match_url = st.sidebar.text_input('أدخل رابط WhoScored:', 
+match_url = st.sidebar.text_input('WhoScored URL', 
     placeholder='https://1xbet.whoscored.com/matches/.../live/...')
-confirm = st.sidebar.button('تأكيد الرابط')
+confirm = st.sidebar.button('تأكيد')
+if 'confirmed' not in st.session_state: st.session_state.confirmed=False
+if confirm: st.session_state.confirmed=True
 
-if 'confirmed' not in st.session_state:
-    st.session_state.confirmed = False
-if confirm:
-    st.session_state.confirmed = True
-
-# --------------------------------------------------------------------
-# 1) دالة استخراج JSON من WhoScored
-def extract_json_from_url(match_url):
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    service = Service()  # عدّل إذا لزم مسار chromedriver
-    driver = webdriver.Chrome(service=service, options=options)
+# 1) استخراج JSON من WhoScored
+def extract_json_from_url(url):
+    opts = webdriver.ChromeOptions()
+    opts.add_argument('--headless')
+    opts.add_argument('--no-sandbox')
+    opts.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(service=Service(), options=opts)
     try:
-        driver.get(match_url)
-        time.sleep(3)
+        driver.get(url); time.sleep(3)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         script = soup.find('script', string=lambda s: s and 'matchCentreData' in s)
-        if not script:
-            return None
+        if not script: return None
         txt = script.string
         prefix = 'matchCentreData: '
-        start = txt.find(prefix) + len(prefix)
-        end   = txt.find(',\n', start)
+        start = txt.find(prefix)
+        if start<0: return None
+        start += len(prefix)
+        end = txt.find(',\n', start)
         return json.loads(txt[start:end])
     finally:
         driver.quit()
 
-# 2) دوال تفكيك البيانات
+# 2) تفكيك dict إلى أحداث ولاعبين وفرق
 def extract_data_from_dict(data):
     mc = data['matchCentreData']
-    events = mc['events']
-    teams_dict = {
+    teams = {
         mc['home']['teamId']: mc['home']['name'],
         mc['away']['teamId']: mc['away']['name']
     }
-    ph = pd.DataFrame(mc['home']['players'])
-    ph['teamId'] = mc['home']['teamId']
-    pa = pd.DataFrame(mc['away']['players'])
-    pa['teamId'] = mc['away']['teamId']
-    players_df = pd.concat([ph, pa])
-    players_df['name'] = players_df['name'].astype(str).apply(unidecode)
-    return events, players_df, teams_dict
+    ph = pd.DataFrame(mc['home']['players']); ph['teamId']=mc['home']['teamId']
+    pa = pd.DataFrame(mc['away']['players']); pa['teamId']=mc['away']['teamId']
+    players = pd.concat([ph,pa])
+    players['name']=players['name'].astype(str).apply(unidecode)
+    return mc['events'], players, teams
+
 
         def cumulative_match_mins(events_df):
             events_out = pd.DataFrame()
@@ -292,101 +267,49 @@ def extract_data_from_dict(data):
         df['name'] = df['name'].astype(str)
         df['name'] = df['name'].apply(unidecode)
         # Function to extract short names
-        def get_short_name(full_name):
-            if pd.isna(full_name):
-                return full_name
-            parts = full_name.split()
-            if len(parts) == 1:
-                return full_name  # No need for short name if there's only one word
-            elif len(parts) == 2:
-                return parts[0][0] + ". " + parts[1]
-            else:
-                return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
-        
-        # Applying the function to create 'shortName' column
-        df['shortName'] = df['name'].apply(get_short_name)
-        
-        df['qualifiers'] = df['qualifiers'].astype(str)
-        columns_to_drop2 = ['id']
-        df.drop(columns=columns_to_drop2, inplace=True)
-        
-        def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
-            # Initialise output
-            events_out = pd.DataFrame()
-            match_events_df = df.reset_index()
-        
-            # Isolate valid event types that contribute to possession
-            match_pos_events_df = match_events_df[~match_events_df['type'].isin(['OffsideGiven', 'CornerAwarded','Start', 'Card', 'SubstitutionOff',
-                                                                                          'SubstitutionOn', 'FormationChange','FormationSet', 'End'])].copy()
-        
-            # Add temporary binary outcome and team identifiers
-            match_pos_events_df['outcomeBinary'] = (match_pos_events_df['outcomeType']
-                                                        .apply(lambda x: 1 if x == 'Successful' else 0))
-            match_pos_events_df['teamBinary'] = (match_pos_events_df['teamName']
-                                 .apply(lambda x: 1 if x == min(match_pos_events_df['teamName']) else 0))
-            match_pos_events_df['goalBinary'] = ((match_pos_events_df['type'] == 'Goal')
-                                 .astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0))
-        
-            # Create a dataframe to investigate possessions chains
-            pos_chain_df = pd.DataFrame()
-        
-            # Check whether each event is completed by same team as the next (check_evts-1) events
-            for n in np.arange(1, chain_check):
-                pos_chain_df[f'evt_{n}_same_team'] = abs(match_pos_events_df['teamBinary'].diff(periods=-n))
-                pos_chain_df[f'evt_{n}_same_team'] = pos_chain_df[f'evt_{n}_same_team'].apply(lambda x: 1 if x > 1 else x)
-            pos_chain_df['enough_evt_same_team'] = pos_chain_df.sum(axis=1).apply(lambda x: 1 if x < chain_check - suc_evts_in_chain else 0)
-            pos_chain_df['enough_evt_same_team'] = pos_chain_df['enough_evt_same_team'].diff(periods=1)
-            pos_chain_df[pos_chain_df['enough_evt_same_team'] < 0] = 0
-        
-            match_pos_events_df['period'] = pd.to_numeric(match_pos_events_df['period'], errors='coerce')
-            # Check there are no kick-offs in the upcoming (check_evts-1) events
-            pos_chain_df['upcoming_ko'] = 0
-            for ko in match_pos_events_df[(match_pos_events_df['goalBinary'] == 1) | (match_pos_events_df['period'].diff(periods=1))].index.values:
-                ko_pos = match_pos_events_df.index.to_list().index(ko)
-                pos_chain_df.iloc[ko_pos - suc_evts_in_chain:ko_pos, 5] = 1
-        
-            # Determine valid possession starts based on event team and upcoming kick-offs
-            pos_chain_df['valid_pos_start'] = (pos_chain_df.fillna(0)['enough_evt_same_team'] - pos_chain_df.fillna(0)['upcoming_ko'])
-        
-            # Add in possession starts due to kick-offs (period changes and goals).
-            pos_chain_df['kick_off_period_change'] = match_pos_events_df['period'].diff(periods=1)
-            pos_chain_df['kick_off_goal'] = ((match_pos_events_df['type'] == 'Goal')
-                             .astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0))
-            pos_chain_df.loc[pos_chain_df['kick_off_period_change'] == 1, 'valid_pos_start'] = 1
-            pos_chain_df.loc[pos_chain_df['kick_off_goal'] == 1, 'valid_pos_start'] = 1
-        
-            # Add first possession manually
-            pos_chain_df['teamName'] = match_pos_events_df['teamName']
-            pos_chain_df.loc[pos_chain_df.head(1).index, 'valid_pos_start'] = 1
-            pos_chain_df.loc[pos_chain_df.head(1).index, 'possession_id'] = 1
-            pos_chain_df.loc[pos_chain_df.head(1).index, 'possession_team'] = pos_chain_df.loc[pos_chain_df.head(1).index, 'teamName']
-        
-            # Iterate through valid possession starts and assign them possession ids
-            valid_pos_start_id = pos_chain_df[pos_chain_df['valid_pos_start'] > 0].index
-        
-            possession_id = 2
-            for idx in np.arange(1, len(valid_pos_start_id)):
-                current_team = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
-                previous_team = pos_chain_df.loc[valid_pos_start_id[idx - 1], 'teamName']
-                if ((previous_team == current_team) & (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_goal'] != 1) &
-                        (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_period_change'] != 1)):
-                    pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = np.nan
-                else:
-                    pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = possession_id
-                    pos_chain_df.loc[valid_pos_start_id[idx], 'possession_team'] = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
-                    possession_id += 1
-        
-            # Assign possession id and team back to events dataframe
-            match_events_df = pd.merge(match_events_df, pos_chain_df[['possession_id', 'possession_team']], how='left', left_index=True, right_index=True)
-        
-            # Fill in possession ids and possession team
-            match_events_df[['possession_id', 'possession_team']] = (match_events_df[['possession_id', 'possession_team']].fillna(method='ffill'))
-            match_events_df[['possession_id', 'possession_team']] = (match_events_df[['possession_id', 'possession_team']].fillna(method='bfill'))
-        
-            # Rebuild events dataframe
-            events_out = pd.concat([events_out, match_events_df])
-        
-            return events_out
+# دالة لاختصار الاسم
+def get_short_name(full_name):
+    if pd.isna(full_name):
+        return full_name
+    parts = full_name.split()
+    if len(parts) == 1:
+        return full_name
+    elif len(parts) == 2:
+        return parts[0][0] + ". " + parts[1]
+    else:
+        return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
+
+# دالة لحساب سلاسل الاستحواذ
+def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
+    # هنا يجب أن تبدأ بـ events_out = pd.DataFrame()
+    events_out = pd.DataFrame()
+    # نستخدم dataframe المُمرّر وليس df خارجي
+    match_events_df = events_df.reset_index(drop=True).copy()
+
+    # استبعاد بعض الأحداث
+    invalid = ['OffsideGiven','CornerAwarded','Start','Card','SubstitutionOff',
+               'SubstitutionOn','FormationChange','FormationSet','End']
+    match_pos = match_events_df[~match_events_df['type'].isin(invalid)].copy()
+
+    # الأعمدة المؤقتة
+    match_pos['outcomeBinary'] = (match_pos['outcomeType']=='Successful').astype(int)
+    # لترتيب الفرق حرفياً
+    first_team = match_pos['teamName'].min()
+    match_pos['teamBinary'] = (match_pos['teamName']==first_team).astype(int)
+    match_pos['goalBinary'] = ((match_pos['type']=='Goal').astype(int)
+                               .diff().fillna(0).apply(lambda x: 1 if x<0 else 0))
+
+    # بناء pos_chain_df
+    pos_chain = pd.DataFrame(index=match_pos.index)
+    # تحقق من نفس الفريق عبر n أحداث
+    for n in range(1, chain_check):
+        col = f'evt_{n}_same_team'
+        pos_chain[col] = abs(match_pos['teamBinary'].diff(-n))
+        pos_chain[col] = pos_chain[col].apply(lambda x: 1 if x>1 else x)
+    pos_chain['enough_evt_same_team'] = pos_chain.sum(axis=1).apply(
+        lambda x: 1 if x < chain_check - suc_evts_in_chain else 0)
+    pos_chain['enough_evt_same_team'] = pos_chain['enough_evt_same_team'].diff().fillna(pos_chain['enough_evt_same_team'])
+
         
         df = get_possession_chains(df, 5, 3)
         
