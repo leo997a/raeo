@@ -834,68 +834,68 @@ if match_url and st.session_state.confirmed:
 # تعريف التبويبات
         tab1, tab2, tab3, tab4 = st.tabs([reshape_arabic_text('تحليل الفريق'), reshape_arabic_text('تحليل اللاعبين'), reshape_arabic_text('إحصائيات المباراة'), reshape_arabic_text('أفضل اللاعبين')])
 
-with tab1:
-    an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
-        reshape_arabic_text('شبكة التمريرات'),
-        reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'),
-        reshape_arabic_text('التمريرات التقدمية'),
-        reshape_arabic_text('حمل الكرة التقدمي'),
-        reshape_arabic_text('خريطة التسديدات'),
-        reshape_arabic_text('إحصائيات الحراس'),
-        reshape_arabic_text('زخم المباراة'),
-        reshape_arabic_text('تمريرات المنطقة 14 ونصف المساحات'),
-        reshape_arabic_text('الدخول للثلث الأخير'),
-        reshape_arabic_text('الدخول لمنطقة الجزاء'),
-        reshape_arabic_text('الاستعادات العالية'),
-        reshape_arabic_text('مناطق خلق الفرص'),
-        reshape_arabic_text('العرضيات'),
-        reshape_arabic_text('مناطق سيطرة الفريق'),
-        reshape_arabic_text('مناطق استهداف التمريرات'),
-        reshape_arabic_text('الثلث الهجومي')
-    ], index=0, key='analysis_type')
+        with tab1:
+            an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
+                reshape_arabic_text('شبكة التمريرات'),
+                reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'),
+                reshape_arabic_text('التمريرات التقدمية'),
+                reshape_arabic_text('حمل الكرة التقدمي'),
+                reshape_arabic_text('خريطة التسديدات'),
+                reshape_arabic_text('إحصائيات الحراس'),
+                reshape_arabic_text('زخم المباراة'),
+                reshape_arabic_text('تمريرات المنطقة 14 ونصف المساحات'),
+                reshape_arabic_text('الدخول للثلث الأخير'),
+                reshape_arabic_text('الدخول لمنطقة الجزاء'),
+                reshape_arabic_text('الاستعادات العالية'),
+                reshape_arabic_text('مناطق خلق الفرص'),
+                reshape_arabic_text('العرضيات'),
+                reshape_arabic_text('مناطق سيطرة الفريق'),
+                reshape_arabic_text('مناطق استهداف التمريرات'),
+                reshape_arabic_text('الثلث الهجومي')
+            ], index=0, key='analysis_type')
 
-    if an_tp == reshape_arabic_text('شبكة التمريرات'):
-        st.header(reshape_arabic_text('شبكة التمريرات'))
-        pn_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
+            if an_tp == reshape_arabic_text('شبكة التمريرات'):
+                st.header(reshape_arabic_text('شبكة التمريرات'))
+                pn_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pn_time_pill')
 
-        fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-        home_pass_btn = None
-        away_pass_btn = None
+                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+                home_pass_btn = None
+                away_pass_btn = None
 
-        phase_map = {
-            reshape_arabic_text('الوقت الكامل'): 'Full Time',
-            reshape_arabic_text('الشوط الأول'): 'First Half',
-            reshape_arabic_text('الشوط الثاني'): 'Second Half'
-        }
+                phase_map = {
+                    reshape_arabic_text('الوقت الكامل'): 'Full Time',
+                    reshape_arabic_text('الشوط الأول'): 'First Half',
+                    reshape_arabic_text('الشوط الثاني'): 'Second Half'
+                }
 
-        home_pass_btn = pass_network(axs[0], hteamName, hcol, phase_map[pn_time_phase])
-        away_pass_btn = pass_network(axs[1], ateamName, acol, phase_map[pn_time_phase])
+                home_pass_btn = pass_network(axs[0], hteamName, hcol, phase_map[pn_time_phase])
+                away_pass_btn = pass_network(axs[1], ateamName, acol, phase_map[pn_time_phase])
 
-        home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
-        away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
-        title = f"<{home_part}> - <{away_part}>"
-        fig_text(0.5, 1.05, title, highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=28, fontweight='bold', ha='center', va='center')
-        fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
-        fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', fontsize=14, fontfamily='Roboto', fontweight='bold', color='#FFD700', ha='center', va='center',
-                 bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
-                 path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
+                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+                title = f"<{home_part}> - <{away_part}>"
+                fig_text(0.5, 1.05, title, highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=28, fontweight='bold', ha='center', va='center')
+                fig.text(0.5, 1.01, reshape_arabic_text('شبكة التمريرات'), fontsize=18, ha='center', va='center', color='white', weight='bold')
+                fig.text(0.5, 0.97, '✦ @REO_SHOW ✦', fontsize=14, fontfamily='Roboto', fontweight='bold', color='#FFD700', ha='center', va='center',
+                         bbox=dict(facecolor='black', alpha=0.8, edgecolor='none', pad=2),
+                         path_effects=[patheffects.withStroke(linewidth=2, foreground='white')])
 
-        fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-        fig.text(0.5, 0.00, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                fig.text(0.5, 0.02, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                fig.text(0.5, 0.00, reshape_arabic_text('*عرض وإضاءة الخطوط تمثل عدد التمريرات الناجحة في اللعب المفتوح بين اللاعبين'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
 
-        try:
-            himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
-            himage = Image.open(himage)
-            ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+                try:
+                    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+                    himage = Image.open(himage)
+                    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
 
-            aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
-            aimage = Image.open(aimage)
-            ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
-        except:
-            st.warning(reshape_arabic_text("تعذر تحميل شعارات الفرق"))
+                    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+                    aimage = Image.open(aimage)
+                    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+                except:
+                    st.warning(reshape_arabic_text("تعذر تحميل شعارات الفرق"))
 
-        plt.subplots_adjust(top=0.85, bottom=0.15)
-        st.pyplot(fig)
+                plt.subplots_adjust(top=0.85, bottom=0.15)
+                st.pyplot(fig)
 
         col1, col2 = st.columns(2)
         with col1:
