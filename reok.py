@@ -96,7 +96,7 @@ else:
 
 # إذا تم تأكيد الرابط، جلب البيانات
 @st.cache_data
-    def get_event_data(match_url):
+        def get_event_data(match_url):
         def extract_json_from_html(html_path):
         try:
             response = requests.get(html_path)
