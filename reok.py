@@ -830,28 +830,28 @@ if match_url and st.session_state.confirmed:
         st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
         st.text(reshape_arabic_text('تحليل المباراة بناءً على الرابط'))
 
-# تبويبات التحليل
-tab1, tab2, tab3, tab4 = st.tabs([reshape_arabic_text('تحليل الفريق'), reshape_arabic_text('تحليل اللاعبين'), reshape_arabic_text('إحصائيات المباراة'), reshape_arabic_text('أفضل اللاعبين')])
+    # تبويبات التحليل
+    tab1, tab2, tab3, tab4 = st.tabs([reshape_arabic_text('تحليل الفريق'), reshape_arabic_text('تحليل اللاعبين'), reshape_arabic_text('إحصائيات المباراة'), reshape_arabic_text('أفضل اللاعبين')])
 
-with tab1:
-    an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
-        reshape_arabic_text('شبكة التمريرات'),
-        reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'),
-        reshape_arabic_text('التمريرات التقدمية'),
-        reshape_arabic_text('حمل الكرة التقدمي'),
-        reshape_arabic_text('خريطة التسديدات'),
-        reshape_arabic_text('إحصائيات الحراس'),
-        reshape_arabic_text('زخم المباراة'),
-        reshape_arabic_text('تمريرات المنطقة 14 ونصف المساحات'),
-        reshape_arabic_text('الدخول للثلث الأخير'),
-        reshape_arabic_text('الدخول لمنطقة الجزاء'),
-        reshape_arabic_text('الاستعادات العالية'),
-        reshape_arabic_text('مناطق خلق الفرص'),
-        reshape_arabic_text('العرضيات'),
-        reshape_arabic_text('مناطق سيطرة الفريق'),
-        reshape_arabic_text('مناطق استهداف التمريرات'),
-        reshape_arabic_text('الثلث الهجومي')
-    ], index=0, key='analysis_type')
+    with tab1:
+        an_tp = st.selectbox(reshape_arabic_text('نوع التحليل:'), [
+            reshape_arabic_text('شبكة التمريرات'),
+            reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'),
+            reshape_arabic_text('التمريرات التقدمية'),
+            reshape_arabic_text('حمل الكرة التقدمي'),
+            reshape_arabic_text('خريطة التسديدات'),
+            reshape_arabic_text('إحصائيات الحراس'),
+            reshape_arabic_text('زخم المباراة'),
+            reshape_arabic_text('تمريرات المنطقة 14 ونصف المساحات'),
+            reshape_arabic_text('الدخول للثلث الأخير'),
+            reshape_arabic_text('الدخول لمنطقة الجزاء'),
+            reshape_arabic_text('الاستعادات العالية'),
+            reshape_arabic_text('مناطق خلق الفرص'),
+            reshape_arabic_text('العرضيات'),
+            reshape_arabic_text('مناطق سيطرة الفريق'),
+            reshape_arabic_text('مناطق استهداف التمريرات'),
+            reshape_arabic_text('الثلث الهجومي')
+        ], index=0, key='analysis_type')
 
     if an_tp == reshape_arabic_text('شبكة التمريرات'):
         st.header(reshape_arabic_text('شبكة التمريرات'))
