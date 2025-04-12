@@ -593,7 +593,7 @@ def pass_network(ax, team_name, col, phase_tag):
 # الجزء الخارجي من الكود مع معالجة النصوص العربية وضبط الإحداثيات
 tab1, tab2, tab3, tab4 = st.tabs(['Team Analysis', 'Player Analysis', 'Match Statistics', 'Top Players'])
 
-        with tab1:
+     with tab1:
             an_tp = st.selectbox('نوع التحليل:', [
                 'شبكة التمريرات', 
                 'Defensive Actions Heatmap', 
@@ -665,17 +665,17 @@ tab1, tab2, tab3, tab4 = st.tabs(['Team Analysis', 'Player Analysis', 'Match Sta
                 col1, col2 = st.columns(2)
                 with col1:
                     st.write(reshape_arabic_text(f'أزواج التمرير لفريق {hteamName}:'))
-                    if home_pass_btn is not None:
+                if home_pass_btn is not None:
                         st.dataframe(home_pass_btn, hide_index=True)
-                    else:
+                else:
                         st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
-                with col2:
+            with col2:
                     st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
                     if away_pass_btn is not None:
                         st.dataframe(away_pass_btn, hide_index=True)
-                    else:
+                else:
                         st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
-            elif an_tp == 'Defensive Actions Heatmap':
+    elif an_tp == 'Defensive Actions Heatmap':
                 st.header(f'{an_tp}')
                 # أضف الكود الخاص بـ Defensive Actions Heatmap هنا إذا كان لديك
     else:
