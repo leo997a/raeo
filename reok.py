@@ -830,9 +830,6 @@ if match_url and st.session_state.confirmed:
         st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
         st.text(reshape_arabic_text('تحليل المباراة بناءً على الرابط'))
 
-        # تبويبات التحليل
-        tab1, tab2, tab3, tab4 = st.tabs([reshape_arabic_text('تحليل الفريق'), reshape_arabic_text('تحليل اللاعبين'), reshape_arabic_text('إحصائيات المباراة'), reshape_arabic_text('أفضل اللاعبين')])
-
 # تبويبات التحليل
 tab1, tab2, tab3, tab4 = st.tabs([reshape_arabic_text('تحليل الفريق'), reshape_arabic_text('تحليل اللاعبين'), reshape_arabic_text('إحصائيات المباراة'), reshape_arabic_text('أفضل اللاعبين')])
 
