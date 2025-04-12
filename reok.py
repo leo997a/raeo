@@ -1383,3 +1383,60 @@ if match_url and st.session_state.confirmed:
         with col2:
             st.write(reshape_arabic_text(f'أفضل المسددين في فريق {ateamName}:'))
             st.dataframe(away_shots_stats, hide_index=True)
+
+# # Space
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+# st.sidebar.text('')
+
+
+
+# # File to store feedback
+# FEEDBACK_FILE = "feedback.csv"
+
+# # Function to load existing feedback
+# def load_feedback():
+#     if os.path.exists(FEEDBACK_FILE):
+#         return pd.read_csv(FEEDBACK_FILE)
+#     else:
+#         return pd.DataFrame(columns=["Rating", "Feedback"])
+
+# # Function to save feedback
+# def save_feedback(rating, feedback_text):
+#     df = load_feedback()
+#     new_entry = pd.DataFrame([[rating+1, feedback_text]], columns=["Rating", "Feedback"])
+#     df = pd.concat([df, new_entry], ignore_index=True)
+#     df.to_csv(FEEDBACK_FILE, index=False)
+
+# # Streamlit UI
+# st.sidebar.header("Feedback Section")
+
+# # Star rating using st.feedback()
+# rating = st.sidebar.feedback("stars")  # Use "stars" as the correct option
+
+# # Text feedback input
+# feedback_text = st.sidebar.text_area("Leave your feedback here: What more features you want to see")
+
+# # Submit button
+# if st.sidebar.button("Submit Feedback"):
+#     if rating is not None and feedback_text.strip():
+#         save_feedback(rating, feedback_text)  # Store rating (adjusted index)
+#         st.sidebar.success("Thank you for your feedback!")
+#     else:
+#         st.sidebar.warning("Please select a rating and enter some feedback before submitting.")
+    
+    
+    
+    
