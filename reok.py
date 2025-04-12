@@ -84,8 +84,9 @@ def reset_confirmed():
 if match_input:
     st.session_state.confirmed = True
 
-# دالة لاستخراج JSON من URL
-def extract_json_from_url(match_url):
+# دالة لاستخراج JSON من URL (مدمجة مع extract_match_dict)
+def extract_match_dict(match_url):
+    """Extract match event from WhoScored match center"""
     driver = None
     try:
         chrome_options = Options()
@@ -102,13 +103,16 @@ def extract_json_from_url(match_url):
         driver.get(match_url)
         time.sleep(5)  # انتظر لتحميل الصفحة بالكامل
         soup = BeautifulSoup(driver.page_source, 'html.parser')
-        script_tags = soup.find_all('script')
-        for script in script_tags:
-            if 'matchCentreData' in script.text:
-                json_str = script.text.split('matchCentreData = ')[1].split('};')[0] + '}'
-                return json.loads(json_str)
-        logger.warning(f"No matchCentreData found in {match_url}")
-        return None
+        element = soup.select_one('script:-soup-contains("matchCentreData")')
+        
+        if element is None:
+            logger.error("لم يتم العثور على matchCentreData في الصفحة.")
+            return None
+
+        # معالجة النص لاستخراج JSON
+        json_str = element.text.split("matchCentreData: ")[1].split(',\n')[0]
+        match_dict = json.loads(json_str)
+        return match_dict
     except Exception as e:
         logger.error(f"Error extracting JSON: {str(e)}")
         return None
@@ -116,43 +120,47 @@ def extract_json_from_url(match_url):
         if driver is not None:
             driver.quit()
 
-# دالة لاستخراج البيانات من القاموس
+# دالة لاستخراج البيانات من القاموس (مدمجة مع extract_data_from_dict)
 def extract_data_from_dict(data):
-    events_dict = data["events"]
-    teams_dict = {
-        data['home']['teamId']: data['home']['name'],
-        data['away']['teamId']: data['away']['name']
-    }
-    
-    players_home_df = pd.DataFrame(data['home']['players'])
-    players_home_df["teamId"] = data['home']['teamId']
-    players_away_df = pd.DataFrame(data['away']['players'])
-    players_away_df["teamId"] = data['away']['teamId']
-    players_df = pd.concat([players_home_df, players_away_df])
-    players_df['name'] = players_df['name'].astype(str)
-    players_df['name'] = players_df['name'].apply(unidecode)
-    
-    return events_dict, players_df, teams_dict
+    """Extract events, players, and teams from match dictionary"""
+    try:
+        events_dict = data["events"]
+        teams_dict = {
+            data['home']['teamId']: data['home']['name'],
+            data['away']['teamId']: data['away']['name']
+        }
+        
+        # إنشاء إطار بيانات اللاعبين
+        players_home_df = pd.DataFrame(data['home']['players'])
+        players_home_df["teamId"] = data['home']['teamId']
+        players_away_df = pd.DataFrame(data['away']['players'])
+        players_away_df["teamId"] = data['away']['teamId']
+        players_df = pd.concat([players_home_df, players_away_df], ignore_index=True)
+        players_df['name'] = players_df['name'].astype(str)
+        players_df['name'] = players_df['name'].apply(unidecode)
+        
+        return events_dict, players_df, teams_dict
+    except Exception as e:
+        logger.error(f"خطأ أثناء معالجة البيانات: {str(e)}")
+        return None, None, None
 
 # دالة لجلب بيانات الأحداث مع التخزين المؤقت
 @st.cache_data
 def get_event_data(match_url):
-    json_data = extract_json_from_url(match_url)
+    json_data = extract_match_dict(match_url)
     if json_data is None:
         return None, None, None
     
     events_dict, players_df, teams_dict = extract_data_from_dict(json_data)
+    if events_dict is None:
+        return None, None, None
     
     df = pd.DataFrame(events_dict)
-    dfp = pd.DataFrame(players_df)
     
     # تنظيف البيانات
-    df['type'] = df['type'].astype(str)
-    df['outcomeType'] = df['outcomeType'].astype(str)
-    df['period'] = df['period'].astype(str)
-    df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
-    df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
-    df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
+    df['type'] = df['type'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else str(x))
+    df['outcomeType'] = df['outcomeType'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else str(x))
+    df['period'] = df['period'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else str(x))
     
     df['period'] = df['period'].replace({
         'FirstHalf': 1,
@@ -246,10 +254,10 @@ def get_event_data(match_url):
                     carry['expandedMinute'] = np.floor(((init_next_evt['expandedMinute'] * 60 + init_next_evt['second']) +
                                                         (prev['expandedMinute'] * 60 + prev['second'])) / (2 * 60))
                     carry['period'] = nex['period']
-                    carry['type'] = carry.apply(lambda x: {'value': 99, 'displayName': 'Carry'}, axis=1)
+                    carry['type'] = 'Carry'
                     carry['outcomeType'] = 'Successful'
-                    carry['qualifiers'] = carry.apply(lambda x: {'type': {'value': 999, 'displayName': 'takeOns'}, 'value': str(take_ons)}, axis=1)
-                    carry['satisfiedEventsTypes'] = carry.apply(lambda x: [], axis=1)
+                    carry['qualifiers'] = json.dumps({'type': {'value': 999, 'displayName': 'takeOns'}, 'value': str(take_ons)})
+                    carry['satisfiedEventsTypes'] = json.dumps([])
                     carry['isTouch'] = True
                     carry['playerId'] = nex['playerId']
                     carry['endX'] = nex['x']
@@ -264,7 +272,6 @@ def get_event_data(match_url):
                     carry['isGoal'] = np.nan
                     carry['cardType'] = np.nan
                     carry['isOwnGoal'] = np.nan
-                    carry['type'] = 'Carry'
                     carry['cumulative_mins'] = (prev['cumulative_mins'] + init_next_evt['cumulative_mins']) / 2
                     
                     match_carries = pd.concat([match_carries, carry], ignore_index=True, sort=False)
@@ -296,13 +303,13 @@ def get_event_data(match_url):
     dfxT['x2_bin_xT'] = pd.cut(dfxT['endX'], bins=xT_cols, labels=False)
     dfxT['y2_bin_xT'] = pd.cut(dfxT['endY'], bins=xT_rows, labels=False)
     
-    dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
-    dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
+    dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]] if pd.notnull(x[0]) and pd.notnull(x[1]) else 0, axis=1)
+    dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]] if pd.notnull(x[0]) and pd.notnull(x[1]) else 0, axis=1)
     
     dfxT['xT'] = dfxT['end_zone_value_xT'] - dfxT['start_zone_value_xT']
     columns_to_drop = ['id', 'eventId', 'minute', 'second', 'teamId', 'x', 'y', 'expandedMinute', 'period', 'outcomeType', 'qualifiers', 'type', 'satisfiedEventsTypes', 'isTouch', 'playerId', 'endX', 'endY', 
                        'relatedEventId', 'relatedPlayerId', 'blockedX', 'blockedY', 'goalMouthZ', 'goalMouthY', 'isShot', 'cumulative_mins']
-    dfxT.drop(columns=columns_to_drop, inplace=True)
+    dfxT.drop(columns=[col for col in columns_to_drop if col in dfxT.columns], inplace=True)
     
     df = df.merge(dfxT, on='index', how='left')
     df['teamName'] = df['teamId'].map(teams_dict)
@@ -315,11 +322,11 @@ def get_event_data(match_url):
     df['y'] = df['y'] * 0.68
     df['endX'] = df['endX'] * 1.05
     df['endY'] = df['endY'] * 0.68
-    df['goalMouthY'] = df['goalMouthY'] * 0.68
+    df['goalMouthY'] = df['goalMouthY'] * 0.68 if 'goalMouthY' in df.columns else np.nan
     
     columns_to_drop = ['height', 'weight', 'age', 'isManOfTheMatch', 'field', 'stats', 'subbedInPlayerId', 'subbedOutPeriod', 'subbedOutExpandedMinute', 'subbedInPeriod', 'subbedInExpandedMinute', 'subbedOutPlayerId', 'teamId']
-    dfp.drop(columns=columns_to_drop, inplace=True)
-    df = df.merge(dfp, on='playerId', how='left')
+    players_df.drop(columns=[col for col in columns_to_drop if col in players_df.columns], inplace=True)
+    df = df.merge(players_df, on='playerId', how='left')
     
     df['qualifiers'] = df['qualifiers'].astype(str)
     df['prog_pass'] = np.where((df['type'] == 'Pass'), 
@@ -346,7 +353,7 @@ def get_event_data(match_url):
     
     df['qualifiers'] = df['qualifiers'].astype(str)
     columns_to_drop2 = ['id']
-    df.drop(columns=columns_to_drop2, inplace=True)
+    df.drop(columns=[col for col in columns_to_drop2 if col in df.columns], inplace=True)
     
     def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
         events_out = pd.DataFrame()
@@ -375,7 +382,7 @@ def get_event_data(match_url):
         pos_chain_df['upcoming_ko'] = 0
         for ko in match_pos_events_df[(match_pos_events_df['goalBinary'] == 1) | (match_pos_events_df['period'].diff(periods=1))].index.values:
             ko_pos = match_pos_events_df.index.to_list().index(ko)
-            pos_chain_df.iloc[ko_pos - suc_evts_in_chain:ko_pos, 5] = 1
+            pos_chain_df.iloc[ko_pos - suc_evts_in_chain:ko_pos, pos_chain_df.columns.get_loc('upcoming_ko')] = 1
         
         pos_chain_df['valid_pos_start'] = (pos_chain_df.fillna(0)['enough_evt_same_team'] - pos_chain_df.fillna(0)['upcoming_ko'])
         
@@ -427,7 +434,6 @@ def get_event_data(match_url):
     df = df[df['period'] != 'PenaltyShootout']
     df = df.reset_index(drop=True)
     return df, teams_dict, players_df
-
 # تعريف المتغيرات افتراضيًا
 df = None
 teams_dict = None
