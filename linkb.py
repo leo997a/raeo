@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import warnings
 import streamlit as st
+import time
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -14,15 +15,12 @@ whoscored_url = "https://1xbet.whoscored.com/Matches/1809770/Live/Europe-Europa-
 
 def extract_match_dict(match_url, save_output=False):
     """Extract match event from whoscored match center"""
-    
-    # إعداد خيارات Chrome
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # تشغيل بدون واجهة رسومية
-    chrome_options.add_argument("--no-sandbox")  # ضروري في بيئات Docker
-    chrome_options.add_argument("--disable-dev-shm-usage")  # تجنب مشاكل الذاكرة
-    chrome_options.add_argument("--disable-gpu")  # تعطيل GPU في الوضع headless
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
 
-    # إعداد Chrome WebDriver
     driver = webdriver.Chrome(
         service=Service(ChromeDriverManager().install()),
         options=chrome_options
@@ -30,43 +28,60 @@ def extract_match_dict(match_url, save_output=False):
     
     try:
         driver.get(match_url)
+        time.sleep(5)  # انتظار تحميل الصفحة
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         element = soup.select_one('script:-soup-contains("matchCentreData")')
         
         if element:
             matchdict = json.loads(element.text.split("matchCentreData: ")[1].split(',\n')[0])
+            return matchdict
         else:
-            raise ValueError("Could not find matchCentreData in the page source")
-
-        return matchdict
+            st.error("Could not find matchCentreData in the page source")
+            return None
+    
+    except Exception as e:
+        st.error(f"Error extracting data: {str(e)}")
+        return None
     
     finally:
         driver.quit()
 
 def extract_data_from_dict(data):
     """Extract events, players, and teams from match dictionary"""
-    events_dict = data["events"]
-    teams_dict = {
-        data['home']['teamId']: data['home']['name'],
-        data['away']['teamId']: data['away']['name']
-    }
+    if not data:
+        return None, None, None
     
-    players_home_df = pd.DataFrame(data['home']['players'])
-    players_home_df["teamId"] = data['home']['teamId']
-    players_away_df = pd.DataFrame(data['away']['players'])
-    players_away_df["teamId"] = data['away']['teamId']
-    players_df = pd.concat([players_home_df, players_away_df])
+    try:
+        events_dict = data.get("events", [])
+        teams_dict = {
+            data['home']['teamId']: data['home']['name'],
+            data['away']['teamId']: data['away']['name']
+        } if data.get('home') and data.get('away') else {}
+        
+        players_home_df = pd.DataFrame(data.get('home', {}).get('players', []))
+        players_away_df = pd.DataFrame(data.get('away', {}).get('players', []))
+        
+        if not players_home_df.empty:
+            players_home_df["teamId"] = data['home']['teamId']
+        if not players_away_df.empty:
+            players_away_df["teamId"] = data['away']['teamId']
+        
+        players_df = pd.concat([players_home_df, players_away_df], ignore_index=True) if not (players_home_df.empty and players_away_df.empty) else pd.DataFrame()
+        
+        return events_dict, players_df, teams_dict
     
-    return events_dict, players_df, teams_dict
+    except KeyError as e:
+        st.error(f"Data structure error: Missing key {str(e)}")
+        return None, None, None
 
 # استخراج البيانات
 match_url = whoscored_url
 json_data = extract_match_dict(match_url)
 events_dict, players_df, teams_dict = extract_data_from_dict(json_data)
 
-# إنشاء إطارات البيانات
-df = pd.DataFrame(events_dict)
-dfp = pd.DataFrame(players_df)
-
-# عرض البيانات في Streamlit
-st.dataframe(df.head(), hide_index=True)
+# عرض البيانات
+if events_dict is not None:
+    df = pd.DataFrame(events_dict)
+    st.dataframe(df.head(), hide_index=True)
+else:
+    st.error("Failed to load event data")
