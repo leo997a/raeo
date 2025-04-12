@@ -275,26 +275,36 @@ def get_driver():
 # دالة get_event_data
 @st.cache_data
 def get_event_data(match_url):
-    def extract_json_from_html(html_path):
-        try:
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-            response = requests.get(html_path, headers=headers, timeout=10)
-            response.raise_for_status()
-            html = response.text
-            regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
-            data_txt = re.findall(regex_pattern, html)
-            if not data_txt:
-                raise ValueError("لم يتم العثور على بيانات JSON في الصفحة")
-            data_txt = data_txt[0]
-            data_txt = data_txt.replace('matchId', '"matchId"')
-            data_txt = data_txt.replace('matchCentreData', '"matchCentreData"')
-            data_txt = data_txt.replace('matchCentreEventTypeJson', '"matchCentreEventTypeJson"')
-            data_txt = data_txt.replace('formationIdNameMappings', '"formationIdNameMappings"')
-            data_txt = data_txt.replace('};', '}')
-            return data_txt
-        except Exception as e:
-            st.error(f"خطأ أثناء استخراج البيانات: {str(e)}")
-            raise
+    global df, teams_dict, players_df
+    try:
+        driver = get_driver()
+        driver.get(match_url)
+        time.sleep(5)
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        # استخراج البيانات (كما في الكود الأصلي)
+        script = soup.find('script', string=re.compile('matchCentreData'))
+        if script:
+            match_data = re.search(r'matchCentreData\s*=\s*({.*?});', script.string, re.DOTALL)
+            if match_data:
+                data = eval(match_data.group(1))  # تحويل النص إلى dict
+                df = pd.DataFrame(data['events'])
+                teams_dict = {
+                    data['home']['teamId']: data['home']['name'],
+                    data['away']['teamId']: data['away']['name']
+                }
+                players_df = pd.DataFrame(data['home']['players'] + data['away']['players'])
+            else:
+                raise ValueError("لم يتم العثور على matchCentreData")
+        else:
+            raise ValueError("لم يتم العثور على السكربت")
+        driver.quit()
+        return df, teams_dict, players_df
+    except Exception as e:
+        st.error(reshape_arabic_text(f"خطأ أثناء جلب بيانات المباراة: {str(e)}"))
+        if "403" in str(e):
+            st.error(reshape_arabic_text("الوصول إلى الرابط ممنوع (خطأ 403). جرب رابطًا من www.whoscored.com أو مصدر بيانات آخر."))
+        driver.quit()
+        raise
 
     def extract_data_from_dict(data):
         event_types_json = data["matchCentreEventTypeJson"]
