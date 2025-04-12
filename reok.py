@@ -805,6 +805,7 @@ def progressive_carry(ax, team_name, col, phase_tag):
     return name_counts_df_show
 
 # الجزء الرئيسي
+# الجزء الرئيسي
 if match_url and st.session_state.confirmed:
     try:
         df, teams_dict, players_df = get_event_data(match_url)
@@ -823,15 +824,14 @@ if match_url and st.session_state.confirmed:
         hgoal_count += len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
         agoal_count += len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
 
-        # معرفات الفرق لشعارات FotMob (قيم افتراضية، استبدلها إذا كنت تستخدم API)
+        # معرفات الفرق لشعارات FotMob (قيم افتراضية)
         hftmb_tid = '9879'  # مثال: معرف لبرشلونة
         aftmb_tid = '10267'  # مثال: معرف لريال مدريد
 
         st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
         st.text(reshape_arabic_text('تحليل المباراة بناءً على الرابط'))
 
-# تبويبات التحليل
-# تعريف التبويبات
+        # تبويبات التحليل
         tab1, tab2, tab3, tab4 = st.tabs([reshape_arabic_text('تحليل الفريق'), reshape_arabic_text('تحليل اللاعبين'), reshape_arabic_text('إحصائيات المباراة'), reshape_arabic_text('أفضل اللاعبين')])
 
         with tab1:
@@ -851,8 +851,7 @@ if match_url and st.session_state.confirmed:
                 reshape_arabic_text('العرضيات'),
                 reshape_arabic_text('مناطق سيطرة الفريق'),
                 reshape_arabic_text('مناطق استهداف التمريرات'),
-                reshape_arabic_text('الثلث الهجومي'),
-                'Shotmap'  # Added to match the condition
+                reshape_arabic_text('الثلث الهجومي')
             ], index=0, key='analysis_type')
 
             if an_tp == reshape_arabic_text('شبكة التمريرات'):
@@ -963,6 +962,163 @@ if match_url and st.session_state.confirmed:
                         st.dataframe(away_df_def, hide_index=True)
                     else:
                         st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+
+            elif an_tp == reshape_arabic_text('التمريرات التقدمية'):
+                st.header(reshape_arabic_text('التمريرات التقدمية'))
+                pp_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pp_time_pill')
+
+                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+                phase_map = {
+                    reshape_arabic_text('الوقت الكامل'): 'Full Time',
+                    reshape_arabic_text('الشوط الأول'): 'First Half',
+                    reshape_arabic_text('الشوط الثاني'): 'Second Half'
+                }
+
+                home_prop = progressive_pass(axs[0], hteamName, hcol, phase_map[pp_time_phase])
+                away_prop = progressive_pass(axs[1], ateamName, acol, phase_map[pp_time_phase])
+
+                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+                title = f"<{home_part}> - <{away_part}>"
+                fig_text(0.5, 1.05, title, highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center')
+                fig.text(0.5, 1.01, reshape_arabic_text('التمريرات التقدمية'), fontsize=20, ha='center', va='center', color='white')
+                fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='#FFD700')
+
+                fig.text(0.5, 0.02, reshape_arabic_text('*التمريرات التقدمية: تمريرات ناجحة في اللعب المفتوح تقرب الكرة 10 ياردات على الأقل نحو مركز مرمى الخصم'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                fig.text(0.5, 0.00, reshape_arabic_text('*باستثناء التمريرات التي تبدأ من الثلث الدفاعي للفريق'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+
+                try:
+                    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+                    himage = Image.open(himage)
+                    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+                    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+                    aimage = Image.open(aimage)
+                    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+                except:
+                    st.warning(reshape_arabic_text("تعذر تحميل شعارات الفرق"))
+
+                plt.subplots_adjust(top=0.85, bottom=0.15)
+                st.pyplot(fig)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(reshape_arabic_text(f'أفضل الممررين التقدميين لفريق {hteamName}:'))
+                    if home_prop is not None:
+                        st.dataframe(home_prop, hide_index=True)
+                    else:
+                        st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+                with col2:
+                    st.write(reshape_arabic_text(f'أفضل الممررين التقدميين لفريق {ateamName}:'))
+                    if away_prop is not None:
+                        st.dataframe(away_prop, hide_index=True)
+                    else:
+                        st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+
+            elif an_tp == reshape_arabic_text('حمل الكرة التقدمي'):
+                st.header(reshape_arabic_text('حمل الكرة التقدمي'))
+                pc_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='pc_time_pill')
+
+                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+                phase_map = {
+                    reshape_arabic_text('الوقت الكامل'): 'Full Time',
+                    reshape_arabic_text('الشوط الأول'): 'First Half',
+                    reshape_arabic_text('الشوط الثاني'): 'Second Half'
+                }
+
+                home_proc = progressive_carry(axs[0], hteamName, hcol, phase_map[pc_time_phase])
+                away_proc = progressive_carry(axs[1], ateamName, acol, phase_map[pc_time_phase])
+
+                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+                title = f"<{home_part}> - <{away_part}>"
+                fig_text(0.5, 1.05, title, highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center')
+                fig.text(0.5, 1.01, reshape_arabic_text('حمل الكرة التقدمي'), fontsize=20, ha='center', va='center', color='white')
+                fig.text(0.5, 0.97, '@REO_SHOW', fontsize=10, ha='center', va='center', color='#FFD700')
+
+                fig.text(0.5, 0.02, reshape_arabic_text('*حمل الكرة التقدمي: حمل الكرة الذي يقرب الكرة 10 ياردات على الأقل نحو مركز مرمى الخصم'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+                fig.text(0.5, 0.00, reshape_arabic_text('*باستثناء حمل الكرة الذي ينتهي في الثلث الدفاعي للفريق'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+
+                try:
+                    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+                    himage = Image.open(himage)
+                    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+                    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+                    aimage = Image.open(aimage)
+                    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+                except:
+                    st.warning(reshape_arabic_text("تعذر تحميل شعارات الفرق"))
+
+                plt.subplots_adjust(top=0.85, bottom=0.15)
+                st.pyplot(fig)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(reshape_arabic_text(f'أفضل حاملي الكرة التقدميين لفريق {hteamName}:'))
+                    if home_proc is not None:
+                        st.dataframe(home_proc, hide_index=True)
+                    else:
+                        st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+                with col2:
+                    st.write(reshape_arabic_text(f'أفضل حاملي الكرة التقدميين لفريق {ateamName}:'))
+                    if away_proc is not None:
+                        st.dataframe(away_proc, hide_index=True)
+                    else:
+                        st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+
+            elif an_tp == reshape_arabic_text('خريطة التسديدات'):
+                st.header(reshape_arabic_text('خريطة التسديدات'))
+                sm_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='sm_time_pill')
+
+                fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+                phase_map = {
+                    reshape_arabic_text('الوقت الكامل'): 'Full Time',
+                    reshape_arabic_text('الشوط الأول'): 'First Half',
+                    reshape_arabic_text('الشوط الثاني'): 'Second Half'
+                }
+
+                home_shots_stats = plot_ShotsMap(axs[0], hteamName, hcol, phase_map[sm_time_phase])
+                away_shots_stats = plot_ShotsMap(axs[1], ateamName, acol, phase_map[sm_time_phase])
+
+                home_part = reshape_arabic_text(f"{hteamName} {hgoal_count}")
+                away_part = reshape_arabic_text(f"{agoal_count} {ateamName}")
+                title = f"<{home_part}> - <{away_part}>"
+                fig_text(0.5, 1.05, title, highlight_textprops=[{'color': hcol}, {'color': acol}], fontsize=30, fontweight='bold', ha='center', va='center')
+                fig.text(0.5, 1.01, reshape_arabic_text('خريطة التسديدات'), fontsize=20, ha='center', va='center', color='white')
+                fig.text(0.5, 0.97, '@adnaaan433', fontsize=10, ha='center', va='center', color='#FFD700')
+                fig.text(0.5, 0.08, reshape_arabic_text('*الشكل الأكبر يعني تسديدات من فرص كبيرة'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
+
+                try:
+                    himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
+                    himage = Image.open(himage)
+                    ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
+
+                    aimage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{aftmb_tid}.png")
+                    aimage = Image.open(aimage)
+                    ax_aimage = add_image(aimage, fig, left=0.815, bottom=0.97, width=0.125, height=0.125)
+                except:
+                    st.warning(reshape_arabic_text("تعذر تحميل شعارات الفرق"))
+
+                plt.subplots_adjust(top=0.85, bottom=0.15)
+                st.pyplot(fig)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(reshape_arabic_text(f'أفضل المسددين في فريق {hteamName}:'))
+                    if home_shots_stats is not None:
+                        st.dataframe(home_shots_stats, hide_index=True)
+                    else:
+                        st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+                with col2:
+                    st.write(reshape_arabic_text(f'أفضل المسددين في فريق {ateamName}:'))
+                    if away_shots_stats is not None:
+                        st.dataframe(away_shots_stats, hide_index=True)
+                    else:
+                        st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
+
+    except Exception as e:
+        st.error(reshape_arabic_text(f"حدث خطأ أثناء معالجة البيانات: {str(e)}"))
         def progressive_pass(ax, team_name, col, phase_tag):
             if phase_tag == 'Full Time':
                 df_prop = df[(df['teamName'] == team_name) & (df['outcomeType'] == 'Successful') & (df['prog_pass'] > 9.144) & (~df['qualifiers'].str.contains('Corner|Freekick')) & (df['x'] >= 35)]
@@ -1249,102 +1405,109 @@ if match_url and st.session_state.confirmed:
 
                 
 
-            def plot_ShotsMap(ax, team_name, col, phase_tag, violet_color='#800080'):
-                if phase_tag == 'Full Time':
-                        shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal'))]
-                elif phase_tag == 'First Half':
-                        shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal')) &
-                                      (df['period'] == 'FirstHalf')]
-                elif phase_tag == 'Second Half':
-                        shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal')) &
-                                      (df['period'] == 'SecondHalf')]
+def plot_ShotsMap(ax, team_name, col, phase_tag, violet_color='#800080'):
+    global df
+    if phase_tag == 'Full Time':
+        shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal'))]
+    elif phase_tag == 'First Half':
+        shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal')) & (df['period'] == 'FirstHalf')]
+    elif phase_tag == 'Second Half':
+        shots_df = df[(df['teamName'] == team_name) & (df['type'].isin(['Goal', 'MissedShots', 'SavedShot', 'ShotOnPost'])) & (~df['qualifiers'].str.contains('OwnGoal')) & (df['period'] == 'SecondHalf')]
 
-        goal = shots_df[(shots_df['type'] == 'Goal') & (~shots_df['qualifiers'].str.contains('BigChance')) & (~shots_df['qualifiers'].str.contains('OwnGoal'))]
-        goal_bc = shots_df[(shots_df['type'] == 'Goal') & (shots_df['qualifiers'].str.contains('BigChance')) & (~shots_df['qualifiers'].str.contains('OwnGoal'))]
-        miss = shots_df[(shots_df['type'] == 'MissedShots') & (~shots_df['qualifiers'].str.contains('BigChance'))]
-        miss_bc = shots_df[(shots_df['type'] == 'MissedShots') & (shots_df['qualifiers'].str.contains('BigChance'))]
-        ontr = shots_df[(shots_df['type'] == 'SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & 
-                        (~shots_df['qualifiers'].str.contains('BigChance'))]
-        ontr_bc = shots_df[(shots_df['type'] == 'SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & 
-                        (shots_df['qualifiers'].str.contains('BigChance'))]
-        blkd = shots_df[(shots_df['type'] == 'SavedShot') & (shots_df['qualifiers'].str.contains(': 82,')) & 
-                        (~shots_df['qualifiers'].str.contains('BigChance'))]
-        blkd_bc = shots_df[(shots_df['type'] == 'SavedShot') & (shots_df['qualifiers'].str.contains(': 82,')) & 
-                        (shots_df['qualifiers'].str.contains('BigChance'))]
-        post = shots_df[(shots_df['type'] == 'ShotOnPost') & (~shots_df['qualifiers'].str.contains('BigChance'))]
-        post_bc = shots_df[(shots_df['type'] == 'ShotOnPost') & (shots_df['qualifiers'].str.contains('BigChance'))]
+    goal = shots_df[(shots_df['type'] == 'Goal') & (~shots_df['qualifiers'].str.contains('BigChance')) & (~shots_df['qualifiers'].str.contains('OwnGoal'))]
+    goal_bc = shots_df[(shots_df['type'] == 'Goal') & (shots_df['qualifiers'].str.contains('BigChance')) & (~shots_df['qualifiers'].str.contains('OwnGoal'))]
+    miss = shots_df[(shots_df['type'] == 'MissedShots') & (~shots_df['qualifiers'].str.contains('BigChance'))]
+    miss_bc = shots_df[(shots_df['type'] == 'MissedShots') & (shots_df['qualifiers'].str.contains('BigChance'))]
+    ontr = shots_df[(shots_df['type'] == 'SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
+    ontr_bc = shots_df[(shots_df['type'] == 'SavedShot') & (~shots_df['qualifiers'].str.contains(': 82,')) & (shots_df['qualifiers'].str.contains('BigChance'))]
+    blkd = shots_df[(shots_df['type'] == 'SavedShot') & (shots_df['qualifiers'].str.contains(': 82,')) & (~shots_df['qualifiers'].str.contains('BigChance'))]
+    blkd_bc = shots_df[(shots_df['type'] == 'SavedShot') & (shots_df['qualifiers'].str.contains(': 82,')) & (shots_df['qualifiers'].str.contains('BigChance'))]
+    post = shots_df[(shots_df['type'] == 'ShotOnPost') & (~shots_df['qualifiers'].str.contains('BigChance'))]
+    post_bc = shots_df[(shots_df['type'] == 'ShotOnPost') & (shots_df['qualifiers'].str.contains('BigChance'))]
 
-        sotb = shots_df[(shots_df['qualifiers'].str.contains('OutOfBox'))]
-        opsh = shots_df[(shots_df['qualifiers'].str.contains('RegularPlay'))]
-        ogdf = df[(df['type'] == 'Goal') & (df['qualifiers'].str.contains('OwnGoal')) & (df['teamName'] != team_name)]
+    sotb = shots_df[(shots_df['qualifiers'].str.contains('OutOfBox'))]
+    opsh = shots_df[(shots_df['qualifiers'].str.contains('RegularPlay'))]
+    ogdf = df[(df['type'] == 'Goal') & (df['qualifiers'].str.contains('OwnGoal')) & (df['teamName'] != team_name)]
 
-        pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
-        pitch.draw(ax=ax)
-        xps = [0, 0, 68, 68]
-        yps = [0, 35, 35, 0]
-        ax.fill(xps, yps, color=bg_color, edgecolor=line_color, lw=3, ls='--', alpha=1, zorder=5)
-        ax.vlines(34, ymin=0, ymax=35, color=line_color, ls='--', lw=3, zorder=5)
+    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+    pitch.draw(ax=ax)
+    xps = [0, 0, 68, 68]
+    yps = [0, 35, 35, 0]
+    ax.fill(xps, yps, color=bg_color, edgecolor=line_color, lw=3, ls='--', alpha=1, zorder=5)
+    ax.vlines(34, ymin=0, ymax=35, color=line_color, ls='--', lw=3, zorder=5)
 
-        pitch.scatter(post.x, post.y, s=200, edgecolors=col, c=col, marker='o', ax=ax)
-        pitch.scatter(ontr.x, ontr.y, s=200, edgecolors=col, c='None', hatch='///////', marker='o', ax=ax)
-        pitch.scatter(blkd.x, blkd.y, s=200, edgecolors=col, c='None', hatch='///////', marker='s', ax=ax)
-        pitch.scatter(miss.x, miss.y, s=200, edgecolors=col, c='None', marker='o', ax=ax)
-        pitch.scatter(goal.x, goal.y, s=350, edgecolors='green', linewidths=0.6, c='None', marker='football', zorder=3, ax=ax)
-        pitch.scatter((105 - ogdf.x), (68 - ogdf.y), s=350, edgecolors='orange', linewidths=0.6, c='None', marker='football', zorder=3, ax=ax)
+    pitch.scatter(post.x, post.y, s=200, edgecolors=col, c=col, marker='o', ax=ax)
+    pitch.scatter(ontr.x, ontr.y, s=200, edgecolors=col, c='None', hatch='///////', marker='o', ax=ax)
+    pitch.scatter(blkd.x, blkd.y, s=200, edgecolors=col, c='None', hatch='///////', marker='s', ax=ax)
+    pitch.scatter(miss.x, miss.y, s=200, edgecolors=col, c='None', marker='o', ax=ax)
+    pitch.scatter(goal.x, goal.y, s=350, edgecolors='green', linewidths=0.6, c='None', marker='football', zorder=3, ax=ax)
+    pitch.scatter((105 - ogdf.x), (68 - ogdf.y), s=350, edgecolors='orange', linewidths=0.6, c='None', marker='football', zorder=3, ax=ax)
 
-        pitch.scatter(post_bc.x, post_bc.y, s=700, edgecolors=col, c=col, marker='o', ax=ax)
-        pitch.scatter(ontr_bc.x, ontr_bc.y, s=700, edgecolors=col, c='None', hatch='///////', marker='o', ax=ax)
-        pitch.scatter(blkd_bc.x, blkd_bc.y, s=700, edgecolors=col, c='None', hatch='///////', marker='s', ax=ax)
-        pitch.scatter(miss_bc.x, miss_bc.y, s=700, edgecolors=col, c='None', marker='o', ax=ax)
-        pitch.scatter(goal_bc.x, goal_bc.y, s=850, edgecolors='green', linewidths=0.6, c='None', marker='football', ax=ax)
+    pitch.scatter(post_bc.x, post_bc.y, s=700, edgecolors=col, c=col, marker='o', ax=ax)
+    pitch.scatter(ontr_bc.x, ontr_bc.y, s=700, edgecolors=col, c='None', hatch='///////', marker='o', ax=ax)
+    pitch.scatter(blkd_bc.x, blkd_bc.y, s=700, edgecolors=col, c='None', hatch='///////', marker='s', ax=ax)
+    pitch.scatter(miss_bc.x, miss_bc.y, s=700, edgecolors=col, c='None', marker='o', ax=ax)
+    pitch.scatter(goal_bc.x, goal_bc.y, s=850, edgecolors='green', linewidths=0.6, c='None', marker='football', ax=ax)
 
-        if phase_tag == 'Full Time':
-            ax.text(34, 112, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
-        elif phase_tag == 'First Half':
-            ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=13, ha='center', va='center')
-        elif phase_tag == 'Second Half':
-            ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
-        ax.text(34, 108, reshape_arabic_text(f'إجمالي التسديدات: {len(shots_df)} | على المرمى: {len(goal) + len(goal_bc) + len(ontr) + len(ontr_bc)}'), color=col, fontsize=13, ha='center', va='center')
+    if phase_tag == 'Full Time':
+        ax.text(34, 112, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+    elif phase_tag == 'First Half':
+        ax.text(34, 112, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+    elif phase_tag == 'Second Half':
+        ax.text(34, 112, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+    ax.text(34, 108, reshape_arabic_text(f'إجمالي التسديدات: {len(shots_df)} | على المرمى: {len(goal) + len(goal_bc) + len(ontr) + len(ontr_bc)}'), color=col, fontsize=13, ha='center', va='center')
 
-        pitch.scatter(12 + (4 * 0), 64, s=200, zorder=6, edgecolors=col, c=col, marker='o', ax=ax)
-        pitch.scatter(12 + (4 * 1), 64, s=200, zorder=6, edgecolors=col, c='None', hatch='///////', marker='s', ax=ax)
-        pitch.scatter(12 + (4 * 2), 64, s=200, zorder=6, edgecolors=col, c='None', marker='o', ax=ax)
-        pitch.scatter(12 + (4 * 3), 64, s=200, zorder=6, edgecolors=col, c='None', hatch='///////', marker='o', ax=ax)
-        pitch.scatter(12 + (4 * 4), 64, s=350, zorder=6, edgecolors='green', linewidths=0.6, c='None', marker='football', ax=ax)
+    pitch.scatter(12 + (4 * 0), 64, s=200, zorder=6, edgecolors=col, c=col, marker='o', ax=ax)
+    pitch.scatter(12 + (4 * 1), 64, s=200, zorder=6, edgecolors=col, c='None', hatch='///////', marker='s', ax=ax)
+    pitch.scatter(12 + (4 * 2), 64, s=200, zorder=6, edgecolors=col, c='None', marker='o', ax=ax)
+    pitch.scatter(12 + (4 * 3), 64, s=200, zorder=6, edgecolors=col, c='None', hatch='///////', marker='o', ax=ax)
+    pitch.scatter(12 + (4 * 4), 64, s=350, zorder=6, edgecolors='green', linewidths=0.6, c='None', marker='football', ax=ax)
 
-        ax.text(34, 39, reshape_arabic_text('إحصائيات التسديد'), fontsize=15, fontweight='bold', zorder=7, ha='center', va='center')
+    ax.text(34, 39, reshape_arabic_text('إحصائيات التسديد'), fontsize=15, fontweight='bold', zorder=7, ha='center', va='center')
 
-        ax.text(60, 12 + (4 * 4), reshape_arabic_text(f'الأهداف: {len(goal) + len(goal_bc)}'), zorder=6, ha='left', va='center')
-        ax.text(60, 12 + (4 * 3), reshape_arabic_text(f'التسديدات المصدودة: {len(ontr) + len(ontr_bc)}'), zorder=6, ha='left', va='center')
-        ax.text(60, 12 + (4 * 2), reshape_arabic_text(f'التسديدات خارج المرمى: {len(miss) + len(miss_bc)}'), zorder=6, ha='left', va='center')
-        ax.text(60, 12 + (4 * 1), reshape_arabic_text(f'التسديدات المحجوبة: {len(blkd) + len(blkd_bc)}'), zorder=6, ha='left', va='center')
-        ax.text(60, 12 + (4 * 0), reshape_arabic_text(f'التسديدات على العارضة: {len(post) + len(post_bc)}'), zorder=6, ha='left', va='center')
-        ax.text(30, 12 + (4 * 4), reshape_arabic_text(f'التسديدات خارج الصندوق: {len(sotb)}'), zorder=6, ha='left', va='center')
-        ax.text(30, 12 + (4 * 3), reshape_arabic_text(f'التسديدات داخل الصندوق: {len(shots_df) - len(sotb)}'), zorder=6, ha='left', va='center')
-        ax.text(30, 12 + (4 * 2), reshape_arabic_text(f'إجمالي الفرص الكبيرة: {len(goal_bc) + len(ontr_bc) + len(miss_bc) + len(blkd_bc) + len(post_bc)}'), zorder=6, ha='left', va='center')
-        ax.text(30, 12 + (4 * 1), reshape_arabic_text(f'الفرص الكبيرة المهدرة: {len(ontr_bc) + len(miss_bc) + len(blkd_bc) + len(post_bc)}'), zorder=6, ha='left', va='center')
-        ax.text(30, 12 + (4 * 0), reshape_arabic_text(f'التسديدات من اللعب المفتوح: {len(opsh)}'), zorder=6, ha='left', va='center')
+    ax.text(60, 12 + (4 * 4), reshape_arabic_text(f'الأهداف: {len(goal) + len(goal_bc)}'), zorder=6, ha='left', va='center')
+    ax.text(60, 12 + (4 * 3), reshape_arabic_text(f'التسديدات المصدودة: {len(ontr) + len(ontr_bc)}'), zorder=6, ha='left', va='center')
+    ax.text(60, 12 + (4 * 2), reshape_arabic_text(f'التسديدات خارج المرمى: {len(miss) + len(miss_bc)}'), zorder=6, ha='left', va='center')
+    ax.text(60, 12 + (4 * 1), reshape_arabic_text(f'التسديدات المحجوبة: {len(blkd) + len(blkd_bc)}'), zorder=6, ha='left', va='center')
+    ax.text(60, 12 + (4 * 0), reshape_arabic_text(f'التسديدات على العارضة: {len(post) + len(post_bc)}'), zorder=6, ha='left', va='center')
+    ax.text(30, 12 + (4 * 4), reshape_arabic_text(f'التسديدات خارج الصندوق: {len(sotb)}'), zorder=6, ha='left', va='center')
+    ax.text(30, 12 + (4 * 3), reshape_arabic_text(f'التسديدات داخل الصندوق: {len(shots_df) - len(sotb)}'), zorder=6, ha='left', va='center')
+    ax.text(30, 12 + (4 * 2), reshape_arabic_text(f'إجمالي الفرص الكبيرة: {len(goal_bc) + len(ontr_bc) + len(miss_bc) + len(blkd_bc) + len(post_bc)}'), zorder=6, ha='left', va='center')
+    ax.text(30, 12 + (4 * 1), reshape_arabic_text(f'الفرص الكبيرة المهدرة: {len(ontr_bc) + len(miss_bc) + len(blkd_bc) + len(post_bc)}'), zorder=6, ha='left', va='center')
+    ax.text(30, 12 + (4 * 0), reshape_arabic_text(f'التسديدات من اللعب المفتوح: {len(opsh)}'), zorder=6, ha='left', va='center')
 
-        p_list = shots_df.name.unique()
-        player_stats = {'Name': p_list, 'Total Shots': [], 'Goals': [], 'Shots Saved': [], 'Shots Off Target': [], 'Shots Blocked': [], 'Shots On Post': [],
-                        'Shots outside the box': [], 'Shots inside the box': [], 'Total Big Chances': [], 'Big Chances Missed': [], 'Open-Play Shots': []}
-        for name in p_list:
-            p_df = shots_df[shots_df['name'] == name]
-            player_stats['Total Shots'].append(len(p_df[p_df['type'].isin(['Goal', 'SavedShot', 'MissedShots', 'ShotOnPost'])]))
-            player_stats['Goals'].append(len(p_df[p_df['type'] == 'Goal']))
-            player_stats['Shots Saved'].append(len(p_df[(p_df['type'] == 'SavedShot') & (~p_df['qualifiers'].str.contains(': 82'))]))
-            player_stats['Shots Off Target'].append(len(p_df[p_df['type'] == 'MissedShots']))
-            player_stats['Shots Blocked'].append(len(p_df[(p_df['type'] == 'SavedShot') & (p_df['qualifiers'].str.contains(': 82'))]))
-            player_stats['Shots On Post'].append(len(p_df[p_df['type'] == 'ShotOnPost']))
-            player_stats['Shots outside the box'].append(len(p_df[p_df['qualifiers'].str.contains('OutOfBox')]))
-            player_stats['Shots inside the box'].append(len(p_df[~p_df['qualifiers'].str.contains('OutOfBox')]))
-            player_stats['Total Big Chances'].append(len(p_df[p_df['qualifiers'].str.contains('BigChance')]))
-            player_stats['Big Chances Missed'].append(len(p_df[(p_df['type'] != 'Goal') & (p_df['qualifiers'].str.contains('BigChance'))]))
-            player_stats['Open-Play Shots'].append(len(p_df[p_df['qualifiers'].str.contains('RegularPlay')]))
+    p_list = shots_df.name.unique()
+    player_stats = {
+        'Name': p_list,
+        'Total Shots': [],
+        'Goals': [],
+        'Shots Saved': [],
+        'Shots Off Target': [],
+        'Shots Blocked': [],
+        'Shots On Post': [],
+        'Shots outside the box': [],
+        'Shots inside the box': [],
+        'Total Big Chances': [],
+        'Big Chances Missed': [],
+        'Open-Play Shots': []
+    }
+    for name in p_list:
+        p_df = shots_df[shots_df['name'] == name]
+        player_stats['Total Shots'].append(len(p_df[p_df['type'].isin(['Goal', 'SavedShot', 'MissedShots', 'ShotOnPost'])]))
+        player_stats['Goals'].append(len(p_df[p_df['type'] == 'Goal']))
+        player_stats['Shots Saved'].append(len(p_df[(p_df['type'] == 'SavedShot') & (~p_df['qualifiers'].str.contains(': 82'))]))
+        player_stats['Shots Off Target'].append(len(p_df[p_df['type'] == 'MissedShots']))
+        player_stats['Shots Blocked'].append(len(p_df[(p_df['type'] == 'SavedShot') & (p_df['qualifiers'].str.contains(': 82'))]))
+        player_stats['Shots On Post'].append(len(p_df[p_df['type'] == 'ShotOnPost']))
+        player_stats['Shots outside the box'].append(len(p_df[p_df['qualifiers'].str.contains('OutOfBox')]))
+        player_stats['Shots inside the box'].append(len(p_df[~p_df['qualifiers'].str.contains('OutOfBox')]))
+        player_stats['Total Big Chances'].append(len(p_df[p_df['qualifiers'].str.contains('BigChance')]))
+        player_stats['Big Chances Missed'].append(len(p_df[(p_df['type'] != 'Goal') & (p_df['qualifiers'].str.contains('BigChance'))]))
+        player_stats['Open-Play Shots'].append(len(p_df[p_df['qualifiers'].str.contains('RegularPlay')]))
 
-        player_stats_df = pd.DataFrame(player_stats)
-        player_stats_df = player_stats_df.sort_values(by='Total Shots', ascending=False)
-        return player_stats_df
+    player_stats_df = pd.DataFrame(player_stats)
+    player_stats_df = player_stats_df.sort_values(by='Total Shots', ascending=False)
+    return player_stats_df
 
     # الكود التالي يجب أن يكون داخل كتلة if an_tp == 'Shotmap':
         sm_time_phase = st.radio(" ", ['Full Time', 'First Half', 'Second Half'], index=0, key='sm_time_pill')  # استبدلت st.pills بـ st.radio لأن st.pills غير مدعوم افتراضيًا
