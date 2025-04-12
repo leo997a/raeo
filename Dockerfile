@@ -1,31 +1,31 @@
-# Use a slim Debian-based Python image
-FROM python:3.9-slim-bullseye
+# استخدام صورة Python رسمية
+FROM python:3.12-slim
 
-# Install system dependencies
+# إعداد دليل العمل
+WORKDIR /app
+
+# نسخ ملفات المشروع
+COPY . .
+
+# تثبيت تبعيات النظام اللازمة لـ Chrome و chromedriver
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
-    ca-certificates \
+    unzip \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
+    && wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/129.0.6668.100/linux64/chromedriver-linux64.zip \
+    && unzip chromedriver-linux64.zip \
+    && mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
+    && chmod +x /usr/local/bin/chromedriver \
+    && rm -rf chromedriver-linux64.zip \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Add Google Chrome repository
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
-
-# Install Chrome and chromedriver
-RUN apt-get update && apt-get install -y \
-    google-chrome-stable \
-    chromedriver \
-    fonts-noto \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set up Python environment
-WORKDIR /app
-COPY requirements.txt .
+# تثبيت تبعيات Python من requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
-
-# Run Streamlit
-CMD ["streamlit", "run", "reok.py", "--server.port=8501"]
+# تعيين أمر التشغيل
+CMD ["bash", "setup.sh"]
