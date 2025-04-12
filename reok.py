@@ -96,8 +96,7 @@ else:
 
 # إذا تم تأكيد الرابط، جلب البيانات
 if match_url and st.session_state.confirmed:
-     @st.cache_data
-    
+@st.cache_data
 def get_event_data(match_url):
     def extract_json_from_html(html_path):
         try:
@@ -155,7 +154,6 @@ def get_event_data(match_url):
         'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 'PreMatch': 16
     })
 
-    # ... (باقي دوال معالجة البيانات: cumulative_match_mins, insert_ball_carries, إلخ)
     df = cumulative_match_mins(df)
     df = insert_ball_carries(df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50)
     df = df.reset_index(drop=True)
