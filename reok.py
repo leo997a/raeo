@@ -1104,48 +1104,48 @@ if match_url and st.session_state.confirmed:
             if an_tp == 'Progressive Carries':
                     # st.header(f'{st.session_state.analysis_type}')
                     st.header(f'{an_tp}')
-def progressive_carry(ax, team_name, col, phase_tag):
-    if phase_tag == 'Full Time':
-            df_proc = df[(df['teamName']==team_name) & (df['prog_carry']>9.144) & (df['endX']>=35)]
-    elif phase_tag == 'First Half':
-            df_fh = df[df['period'] == 'FirstHalf']
-            df_proc = df_fh[(df_fh['teamName']==team_name) & (df_fh['prog_carry']>9.11) & (df_fh['endX']>=35)]
-    elif phase_tag == 'Second Half':
-            df_sh = df[df['period'] == 'SecondHalf']
-            df_proc = df_sh[(df_sh['teamName']==team_name) & (df_sh['prog_carry']>9.11) & (df_sh['endX']>=35)]
+        def progressive_carry(ax, team_name, col, phase_tag):
+            if phase_tag == 'Full Time':
+                    df_proc = df[(df['teamName']==team_name) & (df['prog_carry']>9.144) & (df['endX']>=35)]
+            elif phase_tag == 'First Half':
+                    df_fh = df[df['period'] == 'FirstHalf']
+                    df_proc = df_fh[(df_fh['teamName']==team_name) & (df_fh['prog_carry']>9.11) & (df_fh['endX']>=35)]
+            elif phase_tag == 'Second Half':
+                    df_sh = df[df['period'] == 'SecondHalf']
+                    df_proc = df_sh[(df_sh['teamName']==team_name) & (df_sh['prog_carry']>9.11) & (df_sh['endX']>=35)]
                 
-    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
-    pitch.draw(ax=ax)
+            pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+            pitch.draw(ax=ax)
             
-    left_proc = df_proc[df_proc['y']>136/3]
-    midd_proc = df_proc[(df_proc['y']<=136/3) & (df_proc['y']>=68/3)]
-    rigt_proc = df_proc[df_proc['y']<68/3]
+            left_proc = df_proc[df_proc['y']>136/3]
+            midd_proc = df_proc[(df_proc['y']<=136/3) & (df_proc['y']>=68/3)]
+            rigt_proc = df_proc[df_proc['y']<68/3]
             
-    if len(df_proc) != 0:
-            name_counts = df_proc['shortName'].value_counts()
-            name_counts_df = name_counts.reset_index()
-            name_counts_df.columns = ['name', 'count']
-            name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-            name_counts_df_show = name_counts_df.reset_index(drop=True)
-            most_name = name_counts_df_show['name'][0]
-            most_count = name_counts_df_show['count'][0]
-    else:
-            most_name = 'None'
-            most_count = 0  
-                
-    if len(left_proc) != 0:
-                    name_counts = left_proc['shortName'].value_counts()
+            if len(df_proc) != 0:
+                    name_counts = df_proc['shortName'].value_counts()
                     name_counts_df = name_counts.reset_index()
                     name_counts_df.columns = ['name', 'count']
                     name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-                    name_counts_df = name_counts_df.reset_index()
-                    l_name = name_counts_df['name'][0]
-                    l_count = name_counts_df['count'][0]
-    else:
-                    l_name = 'None'
-                    l_count = 0   
+                    name_counts_df_show = name_counts_df.reset_index(drop=True)
+                    most_name = name_counts_df_show['name'][0]
+                    most_count = name_counts_df_show['count'][0]
+            else:
+                    most_name = 'None'
+                    most_count = 0  
+                
+            if len(left_proc) != 0:
+                            name_counts = left_proc['shortName'].value_counts()
+                            name_counts_df = name_counts.reset_index()
+                            name_counts_df.columns = ['name', 'count']
+                            name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
+                            name_counts_df = name_counts_df.reset_index()
+                            l_name = name_counts_df['name'][0]
+                            l_count = name_counts_df['count'][0]
+            else:
+                            l_name = 'None'
+                            l_count = 0   
             
-    if len(midd_proc) != 0:
+            if len(midd_proc) != 0:
                     name_counts = midd_proc['shortName'].value_counts()
                     name_counts_df = name_counts.reset_index()
                     name_counts_df.columns = ['name', 'count']
@@ -1158,43 +1158,43 @@ def progressive_carry(ax, team_name, col, phase_tag):
                     m_count = 0   
             
     if len(rigt_proc) != 0:
-                    name_counts = rigt_proc['shortName'].value_counts()
-                    name_counts_df = name_counts.reset_index()
-                    name_counts_df.columns = ['name', 'count']
-                    name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
-                    name_counts_df = name_counts_df.reset_index()
-                    r_name = name_counts_df['name'][0]
-                    r_count = name_counts_df['count'][0]
-    else:
-                    r_name = 'None'
-                    r_count = 0   
+                            name_counts = rigt_proc['shortName'].value_counts()
+                            name_counts_df = name_counts.reset_index()
+                            name_counts_df.columns = ['name', 'count']
+                            name_counts_df = name_counts_df.sort_values(by='count', ascending=False)  
+                            name_counts_df = name_counts_df.reset_index()
+                            r_name = name_counts_df['name'][0]
+                            r_count = name_counts_df['count'][0]
+            else:
+                            r_name = 'None'
+                            r_count = 0   
             
-    for index, row in df_proc.iterrows():
-                    arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color=col, zorder=4, mutation_scale=20, 
-                                                    alpha=0.9, linewidth=2, linestyle='--')
-                    ax.add_patch(arrow)
+            for index, row in df_proc.iterrows():
+                            arrow = patches.FancyArrowPatch((row['y'], row['x']), (row['endY'], row['endX']), arrowstyle='->', color=col, zorder=4, mutation_scale=20, 
+                                                            alpha=0.9, linewidth=2, linestyle='--')
+                            ax.add_patch(arrow)
             
-    if phase_tag == 'Full Time':
-                    ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
-    elif phase_tag == 'First Half':
-                    ax.text(34, 116, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
-    elif phase_tag == 'Second Half':
-                    ax.text(34, 116, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
-                    ax.text(34, 112, f'Progressive Carries: {len(df_proc)}', color=col, fontsize=13, ha='center', va='center')
-                    ax.text(34, 108, f'Most by: {most_name}({most_count})', color=col, fontsize=13, ha='center', va='center')
+            if phase_tag == 'Full Time':
+                            ax.text(34, 116, 'Full Time: 0-90 minutes', color=col, fontsize=13, ha='center', va='center')
+            elif phase_tag == 'First Half':
+                            ax.text(34, 116, 'First Half: 0-45 minutes', color=col, fontsize=13, ha='center', va='center')
+            elif phase_tag == 'Second Half':
+                            ax.text(34, 116, 'Second Half: 45-90 minutes', color=col, fontsize=13, ha='center', va='center')
+                            ax.text(34, 112, f'Progressive Carries: {len(df_proc)}', color=col, fontsize=13, ha='center', va='center')
+                            ax.text(34, 108, f'Most by: {most_name}({most_count})', color=col, fontsize=13, ha='center', va='center')
             
-                    ax.vlines(136/3, ymin=0, ymax=105, color='gray', ls='dashed', lw=2)
-                    ax.vlines(68/3, ymin=0, ymax=105, color='gray', ls='dashed', lw=2)
+                            ax.vlines(136/3, ymin=0, ymax=105, color='gray', ls='dashed', lw=2)
+                            ax.vlines(68/3, ymin=0, ymax=105, color='gray', ls='dashed', lw=2)
             
-                    ax.text(340/6, -5, f'From Left: {len(left_proc)}', color=col, ha='center', va='center')
-                    ax.text(34, -5, f'From Mid: {len(midd_proc)}', color=col, ha='center', va='center')
-                    ax.text(68/6, -5, f'From Right: {len(rigt_proc)}', color=col, ha='center', va='center')
+                            ax.text(340/6, -5, f'From Left: {len(left_proc)}', color=col, ha='center', va='center')
+                            ax.text(34, -5, f'From Mid: {len(midd_proc)}', color=col, ha='center', va='center')
+                            ax.text(68/6, -5, f'From Right: {len(rigt_proc)}', color=col, ha='center', va='center')
             
-                    ax.text(340/6, -7, f'Most by:\n{l_name}({l_count})', color=col, ha='center', va='top')
-                    ax.text(34, -7, f'Most by:\n{m_name}({m_count})', color=col, ha='center', va='top')
-                    ax.text(68/6, -7, f'Most by:\n{r_name}({r_count})', color=col, ha='center', va='top')
+                            ax.text(340/6, -7, f'Most by:\n{l_name}({l_count})', color=col, ha='center', va='top')
+                            ax.text(34, -7, f'Most by:\n{m_name}({m_count})', color=col, ha='center', va='top')
+                            ax.text(68/6, -7, f'Most by:\n{r_name}({r_count})', color=col, ha='center', va='top')
                  
-    return name_counts_df_show
+            return name_counts_df_show
             
     pc_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pc_time_pill')
     if pc_time_phase == 'Full Time':
