@@ -990,7 +990,7 @@ if match_url and st.session_state.confirmed:
 
             if total_prop != 0:
                 name_counts = df_prop['shortName'].value_counts()
-               name_counts_df = name_counts.reset_index()
+                name_counts_df = name_counts.reset_index()
                 name_counts_df.columns = ['name', 'count']
                 name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
                 name_counts_df_show = name_counts_df.reset_index(drop=True)
