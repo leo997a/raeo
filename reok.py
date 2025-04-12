@@ -851,7 +851,8 @@ if match_url and st.session_state.confirmed:
                 reshape_arabic_text('العرضيات'),
                 reshape_arabic_text('مناطق سيطرة الفريق'),
                 reshape_arabic_text('مناطق استهداف التمريرات'),
-                reshape_arabic_text('الثلث الهجومي')
+                reshape_arabic_text('الثلث الهجومي'),
+                'Shotmap'  # Added to match the condition
             ], index=0, key='analysis_type')
 
             if an_tp == reshape_arabic_text('شبكة التمريرات'):
