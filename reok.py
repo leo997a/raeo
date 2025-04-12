@@ -96,146 +96,141 @@ else:
 
 # إذا تم تأكيد الرابط، جلب البيانات
 if match_url and st.session_state.confirmed:
-    @st.cache_data
-    def get_event_data(match_url):
-        def extract_json_from_html(html_path):
-            try:
-                response = requests.get(html_path)
-                response.raise_for_status()
-                html = response.text
-                regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
-                data_txt = re.findall(regex_pattern, html)
-                if not data_txt:
-                    raise ValueError("لم يتم العثور على بيانات JSON في الصفحة")
-                data_txt = data_txt[0]
-                data_txt = data_txt.replace('matchId', '"matchId"')
-                data_txt = data_txt.replace('matchCentreData', '"matchCentreData"')
-                data_txt = data_txt.replace('matchCentreEventTypeJson', '"matchCentreEventTypeJson"')
-                data_txt = data_txt.replace('formationIdNameMappings', '"formationIdNameMappings"')
-                data_txt = data_txt.replace('};', '}')
-                return data_txt
-            except Exception as e:
-                st.error(f"خطأ أثناء استخراج البيانات: {str(e)}")
-                raise
+@st.cache_data
+def get_event_data(match_url):
+    def extract_json_from_html(html_path):
+        try:
+            response = requests.get(html_path)
+            response.raise_for_status()
+            html = response.text
+            regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
+            data_txt = re.findall(regex_pattern, html)
+            if not data_txt:
+                raise ValueError("لم يتم العثور على بيانات JSON في الصفحة")
+            data_txt = data_txt[0]
+            data_txt = data_txt.replace('matchId', '"matchId"')
+            data_txt = data_txt.replace('matchCentreData', '"matchCentreData"')
+            data_txt = data_txt.replace('matchCentreEventTypeJson', '"matchCentreEventTypeJson"')
+            data_txt = data_txt.replace('formationIdNameMappings', '"formationIdNameMappings"')
+            data_txt = data_txt.replace('};', '}')
+            return data_txt
+        except Exception as e:
+            st.error(f"خطأ أثناء استخراج البيانات: {str(e)}")
+            raise
 
-        def extract_data_from_dict(data):
-            event_types_json = data["matchCentreEventTypeJson"]
-            formation_mappings = data["formationIdNameMappings"]
-            events_dict = data["matchCentreData"]["events"]
-            teams_dict = {
-                data["matchCentreData"]['home']['teamId']: data["matchCentreData"]['home']['name'],
-                data["matchCentreData"]['away']['teamId']: data["matchCentreData"]['away']['name']
-            }
-            players_dict = data["matchCentreData"]["playerIdNameDictionary"]
-            players_home_df = pd.DataFrame(data["matchCentreData"]['home']['players'])
-            players_home_df["teamId"] = data["matchCentreData"]['home']['teamId']
-            players_away_df = pd.DataFrame(data["matchCentreData"]['away']['players'])
-            players_away_df["teamId"] = data["matchCentreData"]['away']['teamId']
-            players_df = pd.concat([players_home_df, players_away_df])
-            players_df['name'] = players_df['name'].astype(str)
-            players_df['name'] = players_df['name'].apply(unidecode)
-            return events_dict, players_df, teams_dict
+    def extract_data_from_dict(data):
+        event_types_json = data["matchCentreEventTypeJson"]
+        formation_mappings = data["formationIdNameMappings"]
+        events_dict = data["matchCentreData"]["events"]
+        teams_dict = {
+            data["matchCentreData"]['home']['teamId']: data["matchCentreData"]['home']['name'],
+            data["matchCentreData"]['away']['teamId']: data["matchCentreData"]['away']['name']
+        }
+        players_dict = data["matchCentreData"]["playerIdNameDictionary"]
+        players_home_df = pd.DataFrame(data["matchCentreData"]['home']['players'])
+        players_home_df["teamId"] = data["matchCentreData"]['home']['teamId']
+        players_away_df = pd.DataFrame(data["matchCentreData"]['away']['players'])
+        players_away_df["teamId"] = data["matchCentreData"]['away']['teamId']
+        players_df = pd.concat([players_home_df, players_away_df])
+        players_df['name'] = players_df['name'].astype(str)
+        players_df['name'] = players_df['name'].apply(unidecode)
+        return events_dict, players_df, teams_dict
 
-        json_data_txt = extract_json_from_html(match_url)
-        data = json.loads(json_data_txt)
-        events_dict, players_df, teams_dict = extract_data_from_dict(data)
-        df = pd.DataFrame(events_dict)
-        dfp = pd.DataFrame(players_df)
+    json_data_txt = extract_json_from_html(match_url)
+    data = json.loads(json_data_txt)
+    events_dict, players_df, teams_dict = extract_data_from_dict(data)
+    df = pd.DataFrame(events_dict)
+    dfp = pd.DataFrame(players_df)
 
-        # معالجة البيانات (كما في الكود الأصلي)
-        df['type'] = df['type'].astype(str)
-        df['outcomeType'] = df['outcomeType'].astype(str)
-        df['period'] = df['period'].astype(str)
-        df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
-    df['outcomeType'] --outType'].str.extract(r"'displayName': '([^']+)")
-        df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
-        df['period'] = df['period'].replace({
-            'FirstHalf': 1, 'SecondHalf': df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
-        df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
-        df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
-        df['period'] = df['period'].replace({
-            'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3,
-            'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 'PreMatch': 16
-        })
+    # معالجة البيانات
+    df['type'] = df['type'].astype(str)
+    df['outcomeType'] = df['outcomeType'].astype(str)
+    df['period'] = df['period'].astype(str)
+    df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
+    df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
+    df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
+    df['period'] = df['period'].replace({
+        'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3,
+        'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 'PreMatch': 16
+    })
 
-        # ... (باقي دوال معالجة البيانات كما هي: cumulative_match_mins, insert_ball_carries, إلخ)
-        df = cumulative_match_mins(df)
-        df = insert_ball_carries(df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50)
-        df = df.reset_index(drop=True)
-        df['index'] = range(1, len(df) + 1)
-        df = df[['index'] + [col for col in df.columns if col != 'index']]
+    # ... (باقي دوال معالجة البيانات: cumulative_match_mins, insert_ball_carries, إلخ)
+    df = cumulative_match_mins(df)
+    df = insert_ball_carries(df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50)
+    df = df.reset_index(drop=True)
+    df['index'] = range(1, len(df) + 1)
+    df = df[['index'] + [col for col in df.columns if col != 'index']]
 
-        # معالجة xT
-        dfxT = df.copy()
-        dfxT['qualifiers'] = dfxT['qualifiers'].astype(str)
-        dfxT = dfxT[(~dfxT['qualifiers'].str.contains('Corner'))]
-        dfxT = dfxT[(dfxT['type'].isin(['Pass', 'Carry'])) & (dfxT['outcomeType'] == 'Successful')]
-        xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/refs/heads/main/xT_Grid.csv", header=None)
-        xT = np.array(xT)
-        xT_rows, xT_cols = xT.shape
-        dfxT['x1_bin_xT'] = pd.cut(dfxT['x'], bins=xT_cols, labels=False)
-        dfxT['y1_bin_xT'] = pd.cut(dfxT['y'], bins=xT_rows, labels=False)
-        dfxT['x2_bin_xT'] = pd.cut(dfxT['endX'], bins=xT_cols, labels=False)
-        dfxT['y2_bin_xT'] = pd.cut(dfxT['endY'], bins=xT_rows, labels=False)
-        dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
-        dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
-        dfxT['xT'] = dfxT['end_zone_value_xT'] - dfxT['start_zone_value_xT']
-        columns_to_drop = ['id', 'eventId', 'minute', 'second', 'teamId', 'x', 'y', 'expandedMinute', 'period',
-                           'outcomeType', 'qualifiers', 'type', 'satisfiedEventsTypes', 'isTouch', 'playerId', 'endX',
-                           'endY', 'relatedEventId', 'relatedPlayerId', 'blockedX', 'blockedY', 'goalMouthZ', 'goalMouthY', 'isShot', 'cumulative_mins']
-        dfxT.drop(columns=columns_to_drop, inplace=True)
-        df = df.merge(dfxT, on='index', how='left')
-        df['teamName'] = df['teamId'].map(teams_dict)
-        team_names = list(teams_dict.values())
-        opposition_dict = {team_names[i]: team_names[1-i] for i in range(len(team_names))}
-        df['oppositionTeamName'] = df['teamName'].map(opposition_dict)
+    # معالجة xT
+    dfxT = df.copy()
+    dfxT['qualifiers'] = dfxT['qualifiers'].astype(str)
+    dfxT = dfxT[(~dfxT['qualifiers'].str.contains('Corner'))]
+    dfxT = dfxT[(dfxT['type'].isin(['Pass', 'Carry'])) & (dfxT['outcomeType'] == 'Successful')]
+    xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/refs/heads/main/xT_Grid.csv", header=None)
+    xT = np.array(xT)
+    xT_rows, xT_cols = xT.shape
+    dfxT['x1_bin_xT'] = pd.cut(dfxT['x'], bins=xT_cols, labels=False)
+    dfxT['y1_bin_xT'] = pd.cut(dfxT['y'], bins=xT_rows, labels=False)
+    dfxT['x2_bin_xT'] = pd.cut(dfxT['endX'], bins=xT_cols, labels=False)
+    dfxT['y2_bin_xT'] = pd.cut(dfxT['endY'], bins=xT_rows, labels=False)
+    dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
+    dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
+    dfxT['xT'] = dfxT['end_zone_value_xT'] - dfxT['start_zone_value_xT']
+    columns_to_drop = ['id', 'eventId', 'minute', 'second', 'teamId', 'x', 'y', 'expandedMinute', 'period',
+                       'outcomeType', 'qualifiers', 'type', 'satisfiedEventsTypes', 'isTouch', 'playerId', 'endX',
+                       'endY', 'relatedEventId', 'relatedPlayerId', 'blockedX', 'blockedY', 'goalMouthZ', 'goalMouthY', 'isShot', 'cumulative_mins']
+    dfxT.drop(columns=columns_to_drop, inplace=True)
+    df = df.merge(dfxT, on='index', how='left')
+    df['teamName'] = df['teamId'].map(teams_dict)
+    team_names = list(teams_dict.values())
+    opposition_dict = {team_names[i]: team_names[1-i] for i in range(len(team_names))}
+    df['oppositionTeamName'] = df['teamName'].map(opposition_dict)
 
-        # تحويل الإحداثيات
-        df['x'] = df['x'] * 1.05
-        df['y'] = df['y'] * 0.68
-        df['endX'] = df['endX'] * 1.05
-        df['endY'] = df['endY'] * 0.68
-        df['goalMouthY'] = df['goalMouthY'] * 0.68
+    # تحويل الإحداثيات
+    df['x'] = df['x'] * 1.05
+    df['y'] = df['y'] * 0.68
+    df['endX'] = df['endX'] * 1.05
+    df['endY'] = df['endY'] * 0.68
+    df['goalMouthY'] = df['goalMouthY'] * 0.68
 
-        columns_to_drop = ['height', 'weight', 'age', 'isManOfTheMatch', 'field', 'stats', 'subbedInPlayerId',
-                           'subbedOutPeriod', 'subbedOutExpandedMinute', 'subbedInPeriod', 'subbedInExpandedMinute',
-                           'subbedOutPlayerId', 'teamId']
-        dfp.drop(columns=columns_to_drop, inplace=True)
-        df = df.merge(dfp, on='playerId', how='left')
+    columns_to_drop = ['height', 'weight', 'age', 'isManOfTheMatch', 'field', 'stats', 'subbedInPlayerId',
+                       'subbedOutPeriod', 'subbedOutExpandedMinute', 'subbedInPeriod', 'subbedInExpandedMinute',
+                       'subbedOutPlayerId', 'teamId']
+    dfp.drop(columns=columns_to_drop, inplace=True)
+    df = df.merge(dfp, on='playerId', how='left')
 
-        df['qualifiers'] = df['qualifiers'].astype(str)
-        df['prog_pass'] = np.where((df['type'] == 'Pass'),
-                                   np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
-        df['prog_carry'] = np.where((df['type'] == 'Carry'),
-                                    np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
-        df['pass_or_carry_angle'] = np.degrees(np.arctan2(df['endY'] - df['y'], df['endX'] - df['x']))
-        df['name'] = df['name'].astype(str)
-        df['name'] = df['name'].apply(unidecode)
+    df['qualifiers'] = df['qualifiers'].astype(str)
+    df['prog_pass'] = np.where((df['type'] == 'Pass'),
+                               np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
+    df['prog_carry'] = np.where((df['type'] == 'Carry'),
+                                np.sqrt((105 - df['x'])**2 + (34 - df['y'])**2) - np.sqrt((105 - df['endX'])**2 + (34 - df['endY'])**2), 0)
+    df['pass_or_carry_angle'] = np.degrees(np.arctan2(df['endY'] - df['y'], df['endX'] - df['x']))
+    df['name'] = df['name'].astype(str)
+    df['name'] = df['name'].apply(unidecode)
 
-        def get_short_name(full_name):
-            if pd.isna(full_name):
-                return full_name
-            parts = full_name.split()
-            if len(parts) == 1:
-                return full_name
-            elif len(parts) == 2:
-                return parts[0][0] + ". " + parts[1]
-            else:
-                return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
-        df['shortName'] = df['name'].apply(get_short_name)
-        df['qualifiers'] = df['qualifiers'].astype(str)
-        columns_to_drop2 = ['id']
-        df.drop(columns=columns_to_drop2, inplace=True)
+    def get_short_name(full_name):
+        if pd.isna(full_name):
+            return full_name
+        parts = full_name.split()
+        if len(parts) == 1:
+            return full_name
+        elif len(parts) == 2:
+            return parts[0][0] + ". " + parts[1]
+        else:
+            return parts[0][0] + ". " + parts[1][0] + ". " + " ".join(parts[2:])
+    df['shortName'] = df['name'].apply(get_short_name)
+    df['qualifiers'] = df['qualifiers'].astype(str)
+    columns_to_drop2 = ['id']
+    df.drop(columns=columns_to_drop2, inplace=True)
 
-        df = get_possession_chains(df, 5, 3)
-        df['period'] = df['period'].replace({
-            1: 'FirstHalf', 2: 'SecondHalf', 3: 'FirstPeriodOfExtraTime',
-            4: 'SecondPeriodOfExtraTime', 5: 'PenaltyShootout', 14: 'PostGame', 16: 'PreMatch'
-        })
-        df = df[df['period'] != 'PenaltyShootout']
-        df = df.reset_index(drop=True)
-        return df, teams_dict, players_df
-
+    df = get_possession_chains(df, 5, 3)
+    df['period'] = df['period'].replace({
+        1: 'FirstHalf', 2: 'SecondHalf', 3: 'FirstPeriodOfExtraTime',
+        4: 'SecondPeriodOfExtraTime', 5: 'PenaltyShootout', 14: 'PostGame', 16: 'PreMatch'
+    })
+    df = df[df['period'] != 'PenaltyShootout']
+    df = df.reset_index(drop=True)
+    return df, teams_dict, players_df
     # جلب البيانات باستخدام الرابط
     df, teams_dict, players_df = get_event_data(match_url)
 
