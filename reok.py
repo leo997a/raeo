@@ -962,54 +962,54 @@ if match_url and st.session_state.confirmed:
                         st.dataframe(away_df_def, hide_index=True)
                     else:
                         st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
-def progressive_pass(ax, team_name, col, phase_tag):
-    if phase_tag == 'Full Time':
-        df_prop = df[(df['teamName'] == team_name) & (df['outcomeType'] == 'Successful') & (df['prog_pass'] > 9.144) & (~df['qualifiers'].str.contains('Corner|Freekick')) & (df['x'] >= 35)]
-    elif phase_tag == 'First Half':
-        df_fh = df[df['period'] == 'FirstHalf']
-        df_prop = df_fh[(df_fh['teamName'] == team_name) & (df_fh['outcomeType'] == 'Successful') & (df_fh['prog_pass'] > 9.144) & (~df_fh['qualifiers'].str.contains('Corner|Freekick')) & (df_fh['x'] >= 35)]
-    elif phase_tag == 'Second Half':
-        df_sh = df[df['period'] == 'SecondHalf']
-        df_prop = df_sh[(df_sh['teamName'] == team_name) & (df_sh['outcomeType'] == 'Successful') & (df_sh['prog_pass'] > 9.144) & (~df_sh['qualifiers'].str.contains('Corner|Freekick')) & (df_sh['x'] >= 35)]
+        def progressive_pass(ax, team_name, col, phase_tag):
+            if phase_tag == 'Full Time':
+                df_prop = df[(df['teamName'] == team_name) & (df['outcomeType'] == 'Successful') & (df['prog_pass'] > 9.144) & (~df['qualifiers'].str.contains('Corner|Freekick')) & (df['x'] >= 35)]
+            elif phase_tag == 'First Half':
+                df_fh = df[df['period'] == 'FirstHalf']
+                df_prop = df_fh[(df_fh['teamName'] == team_name) & (df_fh['outcomeType'] == 'Successful') & (df_fh['prog_pass'] > 9.144) & (~df_fh['qualifiers'].str.contains('Corner|Freekick')) & (df_fh['x'] >= 35)]
+            elif phase_tag == 'Second Half':
+                df_sh = df[df['period'] == 'SecondHalf']
+                df_prop = df_sh[(df_sh['teamName'] == team_name) & (df_sh['outcomeType'] == 'Successful') & (df_sh['prog_pass'] > 9.144) & (~df_sh['qualifiers'].str.contains('Corner|Freekick')) & (df_sh['x'] >= 35)]
 
-    pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
-    pitch.draw(ax=ax)
+            pitch = VerticalPitch(pitch_type='uefa', corner_arcs=True, pitch_color=bg_color, line_color=line_color, line_zorder=3, linewidth=2)
+            pitch.draw(ax=ax)
 
-    left_prop = df_prop[df_prop['y'] > 136/3]
-    midd_prop = df_prop[(df_prop['y'] <= 136/3) & (df_prop['y'] >= 68/3)]
-    rigt_prop = df_prop[df_prop['y'] < 68/3]
+            left_prop = df_prop[df_prop['y'] > 136/3]
+            midd_prop = df_prop[(df_prop['y'] <= 136/3) & (df_prop['y'] >= 68/3)]
+            rigt_prop = df_prop[df_prop['y'] < 68/3]
 
-    total_prop = len(df_prop)
-    prop_left = len(left_prop)
-    prop_mid = len(midd_prop)
-    prop_right = len(rigt_prop)
+            total_prop = len(df_prop)
+            prop_left = len(left_prop)
+            prop_mid = len(midd_prop)
+            prop_right = len(rigt_prop)
 
-    prop_left_per = round((prop_left / total_prop * 100), 2) if total_prop > 0 else 0
-    prop_mid_per = round((prop_mid / total_prop * 100), 2) if total_prop > 0 else 0
-    prop_right_per = round((prop_right / total_prop * 100), 2) if total_prop > 0 else 0
+            prop_left_per = round((prop_left / total_prop * 100), 2) if total_prop > 0 else 0
+            prop_mid_per = round((prop_mid / total_prop * 100), 2) if total_prop > 0 else 0
+            prop_right_per = round((prop_right / total_prop * 100), 2) if total_prop > 0 else 0
 
-    if total_prop != 0:
-        name_counts = df_prop['shortName'].value_counts()
-        name_counts_df = name_counts.reset_index()
-        name_counts_df.columns = ['name', 'count']
-        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
-        name_counts_df_show = name_counts_df.reset_index(drop=True)
-        most_name = name_counts_df_show['name'][0]
-        most_count = name_counts_df_show['count'][0]
-    else:
-        most_name = 'None'
-        most_count = 0
+            if total_prop != 0:
+                name_counts = df_prop['shortName'].value_counts()
+               name_counts_df = name_counts.reset_index()
+                name_counts_df.columns = ['name', 'count']
+                name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
+                name_counts_df_show = name_counts_df.reset_index(drop=True)
+                most_name = name_counts_df_show['name'][0]
+                most_count = name_counts_df_show['count'][0]
+            else:
+                most_name = 'None'
+                most_count = 0
 
-    if prop_left != 0:
-        name_counts = left_prop['shortName'].value_counts()
-        name_counts_df = name_counts.reset_index()
-        name_counts_df.columns = ['name', 'count']
-        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
-        l_name = name_counts_df['name'][0]
-        l_count = name_counts_df['count'][0]
-    else:
-        l_name = 'None'
-        l_count = 0
+            if prop_left != 0:
+                name_counts = left_prop['shortName'].value_counts()
+                name_counts_df = name_counts.reset_index()
+                name_counts_df.columns = ['name', 'count']
+                name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
+                l_name = name_counts_df['name'][0]
+                l_count = name_counts_df['count'][0]
+            else:
+                l_name = 'None'
+                l_count = 0
 
     if prop_mid != 0:
         name_counts = midd_prop['shortName'].value_counts()
