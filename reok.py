@@ -82,7 +82,7 @@ def extract_data_from_dict(data):
     return mc['events'], players, teams
 
 
-        def cumulative_match_mins(events_df):
+def cumulative_match_mins(events_df):
             events_out = pd.DataFrame()
             # Add cumulative time to events data, resetting for each unique match
             match_events = events_df.copy()
