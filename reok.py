@@ -1011,65 +1011,65 @@ if match_url and st.session_state.confirmed:
                 l_name = 'None'
                 l_count = 0
 
-    if prop_mid != 0:
-        name_counts = midd_prop['shortName'].value_counts()
-        name_counts_df = name_counts.reset_index()
-        name_counts_df.columns = ['name', 'count']
-        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
-        m_name = name_counts_df['name'][0]
-        m_count = name_counts_df['count'][0]
-    else:
-        m_name = 'None'
-        m_count = 0
+            if prop_mid != 0:
+                name_counts = midd_prop['shortName'].value_counts()
+                name_counts_df = name_counts.reset_index()
+                name_counts_df.columns = ['name', 'count']
+                name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
+                m_name = name_counts_df['name'][0]
+                m_count = name_counts_df['count'][0]
+            else:
+                m_name = 'None'
+                m_count = 0
 
-    if prop_right != 0:
-        name_counts = rigt_prop['shortName'].value_counts()
-        name_counts_df = name_counts.reset_index()
-        name_counts_df.columns = ['name', 'count']
-        name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
-        r_name = name_counts_df['name'][0]
-        r_count = name_counts_df['count'][0]
-    else:
-        r_name = 'None'
-        r_count = 0
+            if prop_right != 0:
+                name_counts = rigt_prop['shortName'].value_counts()
+                name_counts_df = name_counts.reset_index()
+                name_counts_df.columns = ['name', 'count']
+                name_counts_df = name_counts_df.sort_values(by='count', ascending=False)
+                r_name = name_counts_df['name'][0]
+                r_count = name_counts_df['count'][0]
+            else:
+                r_name = 'None'
+                r_count = 0
 
-    pitch.lines(df_prop.x, df_prop.y, df_prop.endX, df_prop.endY, comet=True, lw=4, color=col, ax=ax)
-    pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=bg_color, ec=col, lw=1.5, ax=ax)
+            pitch.lines(df_prop.x, df_prop.y, df_prop.endX, df_prop.endY, comet=True, lw=4, color=col, ax=ax)
+            pitch.scatter(df_prop.endX, df_prop.endY, s=75, zorder=3, color=bg_color, ec=col, lw=1.5, ax=ax)
 
-    if phase_tag == 'Full Time':
-        ax.text(34, 116, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
-    elif phase_tag == 'First Half':
-        ax.text(34, 116, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=13, ha='center', va='center')
-    elif phase_tag == 'Second Half':
-        ax.text(34, 116, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+            if phase_tag == 'Full Time':
+                ax.text(34, 116, reshape_arabic_text('الوقت الكامل: 0-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+            elif phase_tag == 'First Half':
+                ax.text(34, 116, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color=col, fontsize=13, ha='center', va='center')
+            elif phase_tag == 'Second Half':
+                ax.text(34, 116, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color=col, fontsize=13, ha='center', va='center')
 
-    ax.text(34, 112, reshape_arabic_text(f'التمريرات التقدمية في اللعب المفتوح: {total_prop}'), color=col, fontsize=13, ha='center', va='center')
-    ax.text(34, 108, reshape_arabic_text(f'الأكثر: {most_name} ({most_count})'), color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 112, reshape_arabic_text(f'التمريرات التقدمية في اللعب المفتوح: {total_prop}'), color=col, fontsize=13, ha='center', va='center')
+            ax.text(34, 108, reshape_arabic_text(f'الأكثر: {most_name} ({most_count})'), color=col, fontsize=13, ha='center', va='center')
 
-    ax.text(10, 10, reshape_arabic_text(f'التقدم من الجهة اليسرى\n{prop_left} تقدم ({prop_left_per}%)'), color=col, fontsize=12, ha='center', va='center')
-    ax.text(34, 10, reshape_arabic_text(f'التقدم من الوسط\n{prop_mid} تقدم ({prop_mid_per}%)'), color=col, fontsize=12, ha='center', va='center')
-    ax.text(58, 10, reshape_arabic_text(f'التقدم من الجهة اليمنى\n{prop_right} تقدم ({prop_right_per}%)'), color=col, fontsize=12, ha='center', va='center')
+            ax.text(10, 10, reshape_arabic_text(f'التقدم من الجهة اليسرى\n{prop_left} تقدم ({prop_left_per}%)'), color=col, fontsize=12, ha='center', va='center')
+            ax.text(34, 10, reshape_arabic_text(f'التقدم من الوسط\n{prop_mid} تقدم ({prop_mid_per}%)'), color=col, fontsize=12, ha='center', va='center')
+            ax.text(58, 10, reshape_arabic_text(f'التقدم من الجهة اليمنى\n{prop_right} تقدم ({prop_right_per}%)'), color=col, fontsize=12, ha='center', va='center')
 
-    ax.text(340/6, -5, reshape_arabic_text(f'من اليسار: {prop_left}'), color=col, ha='center', va='center')
-    ax.text(34, -5, reshape_arabic_text(f'من الوسط: {prop_mid}'), color=col, ha='center', va='center')
-    ax.text(68/6, -5, reshape_arabic_text(f'من اليمين: {prop_right}'), color=col, ha='center', va='center')
+            ax.text(340/6, -5, reshape_arabic_text(f'من اليسار: {prop_left}'), color=col, ha='center', va='center')
+            ax.text(34, -5, reshape_arabic_text(f'من الوسط: {prop_mid}'), color=col, ha='center', va='center')
+            ax.text(68/6, -5, reshape_arabic_text(f'من اليمين: {prop_right}'), color=col, ha='center', va='center')
 
-    ax.text(340/6, -7, reshape_arabic_text(f'الأكثر:\n{l_name} ({l_count})'), color=col, ha='center', va='top')
-    ax.text(34, -7, reshape_arabic_text(f'الأكثر:\n{m_name} ({m_count})'), color=col, ha='center', va='top')
-    ax.text(68/6, -7, reshape_arabic_text(f'الأكثر:\n{r_name} ({r_count})'), color=col, ha='center', va='top')
+            ax.text(340/6, -7, reshape_arabic_text(f'الأكثر:\n{l_name} ({l_count})'), color=col, ha='center', va='top')
+            ax.text(34, -7, reshape_arabic_text(f'الأكثر:\n{m_name} ({m_count})'), color=col, ha='center', va='top')
+            ax.text(68/6, -7, reshape_arabic_text(f'الأكثر:\n{r_name} ({r_count})'), color=col, ha='center', va='top')
 
-    return name_counts_df_show
+            return name_counts_df_show
             
-    pp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pp_time_pill')
-    if pp_time_phase == 'Full Time':
-            fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
-            shotmap(axs[0], hteamName, hcol, 'Full Time')
-            shotmap(axs[1], ateamName, acol, 'Full Time')
+            pp_time_phase = st.pills(" ", ['Full Time', 'First Half', 'Second Half'], default='Full Time', key='pp_time_pill')
+            if pp_time_phase == 'Full Time':
+                    fig, axs = plt.subplots(1, 2, figsize=(15, 10), facecolor=bg_color)
+                    shotmap(axs[0], hteamName, hcol, 'Full Time')
+                    shotmap(axs[1], ateamName, acol, 'Full Time')
         
-    if pp_time_phase == 'First Half':
-            fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
-            home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
-            away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
+            if pp_time_phase == 'First Half':
+                    fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
+                    home_prop = progressive_pass(axs[0], hteamName, hcol, 'First Half')
+                    away_prop = progressive_pass(axs[1], ateamName, acol, 'First Half')
                 
     if pp_time_phase == 'Second Half':
             fig, axs = plt.subplots(1,2, figsize=(15, 10), facecolor=bg_color)
