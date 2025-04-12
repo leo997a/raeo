@@ -910,7 +910,7 @@ if match_url and st.session_state.confirmed:
                     else:
                         st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
 
-elif an_tp == reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'):
+    elif an_tp == reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'):
     st.header(reshape_arabic_text('الخريطة الحرارية للأفعال الدفاعية'))
     dah_time_phase = st.radio(reshape_arabic_text("اختر الفترة:"), [reshape_arabic_text('الوقت الكامل'), reshape_arabic_text('الشوط الأول'), reshape_arabic_text('الشوط الثاني')], index=0, key='dah_time_pill')
 
