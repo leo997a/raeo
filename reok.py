@@ -673,7 +673,7 @@ with tab1:
                     st.write(reshape_arabic_text(f'أزواج التمرير لفريق {ateamName}:'))
                     if away_pass_btn is not None:
                         st.dataframe(away_pass_btn, hide_index=True)
-                else:
+            else:
                         st.write(reshape_arabic_text("لا توجد بيانات متاحة."))
     elif an_tp == 'Defensive Actions Heatmap':
                 st.header(f'{an_tp}')
