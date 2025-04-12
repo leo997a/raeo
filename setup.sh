@@ -1,4 +1,6 @@
 #!/bin/bash
+pip install --no-cache-dir -r requirements.txt
+streamlit run linkb.py --server.port 8501
 # Install prerequisites
 apt-get update
 apt-get install -y wget gnupg ca-certificates
