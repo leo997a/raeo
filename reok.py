@@ -932,7 +932,7 @@ if match_url and st.session_state.confirmed:
                 fig.text(0.5, 0.97, '@REO_SHOW', fontsize=15, ha='center', va='center', color='#FFD700')
 
                 fig.text(0.5, 0.05, reshape_arabic_text('*الدوائر = اللاعبون الأساسيون، المربعات = اللاعبون البدلاء، الأرقام داخلها = أرقام القمصان'), fontsize=10, fontstyle='italic', ha='center', va='center', color='white')
-                fig.text(0.5, 0.03, reshape_arabic_text('*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية للاعبي الميدان'), fontsize=10
+                fig.text(0.5, 0.03, reshape_arabic_text('*حجم الدوائر/المربعات يمثل عدد الأفعال الدفاعية للاعبي الميدان'), fontsize=10)
         himage = urlopen(f"https://images.fotmob.com/image_resources/logo/teamlogo/{hftmb_tid}.png")
         himage = Image.open(himage)
         ax_himage = add_image(himage, fig, left=0.085, bottom=0.97, width=0.125, height=0.125)
