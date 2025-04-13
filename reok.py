@@ -17,7 +17,7 @@ def extract_match_dict(match_url, chromedriver_path, save_output=False):
             st.error(f"ملف ChromeDriver غير موجود في: {chromedriver_path}. تأكد من المسار أو نزّل الملف.")
             return None
         
-        service = webdriver.ChromeService(executable_path=chromedriver_path)
+        service = Service(executable_path=chromedriver_path)
         driver = webdriver.Chrome(service=service)
         driver.get(match_url)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -85,7 +85,7 @@ def main():
     # إدخال مسار ChromeDriver
     chromedriver_path = st.text_input("مسار ChromeDriver", 
                                     value=r"C:\Users\Reo k\chromedriver.exe",
-                                    help="حدد مسار ملف chromedriver.exe على جهازك (مثال: C:\Users\Reo k\chromedriver.exe)")
+                                    help=r"حدد مسار ملف chromedriver.exe على جهازك (مثال: C:\Users\Reo k\chromedriver.exe)")
     
     if st.button("تحليل المباراة"):
         if not match_url:
