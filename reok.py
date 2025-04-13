@@ -89,32 +89,11 @@ chromedriver_path = st.sidebar.text_input("مسار ChromeDriver",
 
 # دالة لاستخراج البيانات من رابط المباراة
 @st.cache_data
-def get_event_data(match_url, chromedriver_path):
-    def extract_json_from_page(url, chromedriver_path):
-        try:
-            if not os.path.exists(chromedriver_path):
-                st.error(f"ملف ChromeDriver غير موجود في: {chromedriver_path}. تأكد من المسار أو نزّل الملف.")
-                return None
-            
-            service = Service(executable_path=chromedriver_path)
-            driver = webdriver.Chrome(service=service)
-            driver.get(url)
-            time.sleep(5)  # انتظر لتحميل الصفحة بالكامل
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-            element = soup.select_one('script:-soup-contains("matchCentreData")')
-            
-            if not element:
-                st.error("لم يتم العثور على بيانات المباراة. تأكد من صحة الرابط.")
-                driver.quit()
-                return None
-            
-            matchdict_text = element.text.split("matchCentreData: ")[1].split(',\n')[0]
-            matchdict = json.loads(matchdict_text)
-            driver.quit()
-            return matchdict
-        except Exception as e:
-            st.error(f"خطأ في استخراج البيانات: {e}")
-            return None
+def get_event_data(match_url):
+    json_data = extract_json_from_page(match_url)
+    if not json_data:
+        return None, None, None
+    events_dict, players_df, teams_dict = extract_data_from_dict(json_data)
 
     def extract_data_from_dict(data):
         events_dict = data["events"]
