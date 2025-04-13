@@ -24,3 +24,5 @@ requests
 unzip
 tqdm
 webdriver-manager
+chromium
+chromedriver-autoinstaller
