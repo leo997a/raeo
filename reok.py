@@ -2,30 +2,31 @@ import json
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 import warnings
 import streamlit as st
-import plotly.express as px  # للرسوم البيانية
+import plotly.express as px
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-def extract_match_dict(match_url, save_output=False):
+def extract_match_dict(match_url, chromedriver_path, save_output=False):
     """Extract match event from whoscored match center"""
     try:
-        service = webdriver.ChromeService()
+        service = webdriver.ChromeService(executable_path=chromedriver_path)
         driver = webdriver.Chrome(service=service)
         driver.get(match_url)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         element = soup.select_one('script:-soup-contains("matchCentreData")')
         
         if not element:
-            st.error("Could not find match data. Ensure the URL is correct.")
+            st.error("لم يتم العثور على بيانات المباراة. تأكد من صحة الرابط.")
             return None
         
         matchdict = json.loads(element.text.split("matchCentreData: ")[1].split(',\n')[0])
         driver.quit()
         return matchdict
     except Exception as e:
-        st.error(f"Error extracting data: {e}")
+        st.error(f"خطأ في استخراج البيانات: {e}")
         return None
 
 def extract_data_from_dict(data):
@@ -55,58 +56,88 @@ def analyze_events(events_dict, teams_dict):
         'Goals': {teams_dict.get(k, 'Unknown'): v for k, v in goals_count.items()}
     }
     
-    # تحليل التسديدات (مثال)
+    # تحليل التسديدات
     shots = df[df['type'].isin(['ShotOnTarget', 'ShotOffTarget'])][['teamId']]
     shots_count = shots.groupby('teamId').size().to_dict()
     stats['Shots'] = {teams_dict.get(k, 'Unknown'): v for k, v in shots_count.items()}
     
-    return stats
+    # تحليل التمريرات الناجحة (مثال)
+    passes = df[df['type'] == 'Pass'][['teamId', 'outcomeType']]
+    successful_passes = passes[passes['outcomeType'] == 'Successful'].groupby('teamId').size().to_dict()
+    stats['Successful Passes'] = {teams_dict.get(k, 'Unknown'): v for k, v in successful_passes.items()}
+    
+    return stats, df
 
 def main():
-    st.title("Football Match Analyzer")
-    st.write("Enter a WhoScored match URL to analyze the game.")
+    st.title("محلل مباريات كرة القدم 🏆")
+    st.write("أدخل رابط مباراة من موقع WhoScored لتحليل البيانات وعرض الإحصائيات.")
     
     # إدخال رابط المباراة
-    match_url = st.text_input("Match URL", placeholder="e.g., https://1xbet.whoscored.com/Matches/...")
+    match_url = st.text_input("رابط المباراة", 
+                             placeholder="مثال: https://1xbet.whoscored.com/Matches/...")
     
-    if st.button("Analyze Match"):
+    # إدخال مسار ChromeDriver
+    chromedriver_path = st.text_input("مسار ChromeDriver", 
+                                    value=r"C:\Users\Reo k\chromedriver.exe",
+                                    help="حدد مسار ملف chromedriver.exe على جهازك")
+    
+    if st.button("تحليل المباراة"):
         if not match_url:
-            st.warning("Please enter a valid URL.")
+            st.warning("الرجاء إدخال رابط مباراة صحيح.")
+            return
+        if not chromedriver_path:
+            st.warning("الرجاء إدخال مسار ChromeDriver صحيح.")
             return
         
-        with st.spinner("Extracting match data..."):
-            json_data = extract_match_dict(match_url)
+        with st.spinner("جارٍ استخراج بيانات المباراة..."):
+            json_data = extract_match_dict(match_url, chromedriver_path)
             if json_data:
                 events_dict, players_df, teams_dict = extract_data_from_dict(json_data)
                 
                 if events_dict:
-                    # عرض الأحداث
-                    st.subheader("Match Events")
-                    df = pd.DataFrame(events_dict)
-                    st.dataframe(df[['minute', 'type', 'playerId', 'teamId']].head(), hide_index=True)
+                    stats, events_df = analyze_events(events_dict, teams_dict)
                     
-                    # تحليل الإحصائيات
-                    st.subheader("Match Statistics")
-                    stats = analyze_events(events_dict, teams_dict)
+                    # عرض الأحداث
+                    st.subheader("أحداث المباراة")
+                    st.dataframe(events_df[['minute', 'type', 'playerId', 'teamId']].head(10), 
+                                hide_index=True)
+                    
+                    # عرض الإحصائيات
+                    st.subheader("إحصائيات المباراة")
                     if stats:
-                        col1, col2 = st.columns(2)
+                        col1, col2, col3 = st.columns(3)
                         with col1:
-                            st.write("**Goals**")
+                            st.write("**الأهداف**")
                             st.json(stats['Goals'])
                         with col2:
-                            st.write("**Shots**")
+                            st.write("**التسديدات**")
                             st.json(stats['Shots'])
+                        with col3:
+                            st.write("**التمريرات الناجحة**")
+                            st.json(stats['Successful Passes'])
                         
                         # رسم بياني للأهداف
                         goals_df = pd.DataFrame.from_dict(stats['Goals'], orient='index', columns=['Goals'])
-                        fig = px.bar(goals_df, x=goals_df.index, y='Goals', title="Goals per Team")
+                        fig = px.bar(goals_df, x=goals_df.index, y='Goals', 
+                                    title="الأهداف لكل فريق", 
+                                    labels={'index': 'الفريق', 'Goals': 'عدد الأهداف'})
                         st.plotly_chart(fig)
+                        
+                        # رسم بياني للتسديدات
+                        shots_df = pd.DataFrame.from_dict(stats['Shots'], orient='index', columns=['Shots'])
+                        fig_shots = px.bar(shots_df, x=shots_df.index, y='Shots', 
+                                          title="التسديدات لكل فريق", 
+                                          labels={'index': 'الفريق', 'Shots': 'عدد التسديدات'})
+                        st.plotly_chart(fig_shots)
                     
                     # عرض اللاعبين
-                    st.subheader("Players")
-                    st.dataframe(players_df[['name', 'position', 'teamId']], hide_index=True)
+                    st.subheader("قائمة اللاعبين")
+                    st.dataframe(players_df[['name', 'position', 'teamId']], 
+                                hide_index=True)
                 else:
-                    st.error("Failed to process match data.")
+                    st.error("فشل في معالجة بيانات المباراة.")
+            else:
+                st.error("فشل في استخراج بيانات المباراة.")
 
 if __name__ == "__main__":
     main()
