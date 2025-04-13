@@ -90,13 +90,17 @@ def reset_confirmed():
 
 # دالة لاستخراج بيانات المباراة من Whoscored باستخدام Firefox
 @st.cache_data
-def extract_match_dict(match_url, max_retries=2):
+def extract_match_dict(match_url, max_retries=2, firefox_binary_path=None):
     """Extract match event from Whoscored match center using Firefox"""
     firefox_options = Options()
     firefox_options.add_argument("--headless")
     firefox_options.add_argument("--no-sandbox")
     firefox_options.add_argument("--disable-dev-shm-usage")
     firefox_options.add_argument("--disable-gpu")
+    
+    # تحديد مسار Firefox يدويًا إذا تم توفيره
+    if firefox_binary_path:
+        firefox_options.binary_location = firefox_binary_path
     
     for attempt in range(max_retries):
         driver = None
@@ -169,7 +173,12 @@ def extract_data_from_dict(data):
 # دالة معدلة لجلب بيانات المباراة
 @st.cache_data
 def get_event_data(match_url):
-    json_data = extract_match_dict(match_url)
+    # تحديد مسار Firefox يدويًا (قم بتعديله حسب نظام التشغيل)
+    firefox_binary_path = None  # مثال: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" على Windows
+    # لـ MacOS: "/Applications/Firefox.app/Contents/MacOS/firefox"
+    # لـ Linux: "/usr/bin/firefox"
+    
+    json_data = extract_match_dict(match_url, firefox_binary_path=firefox_binary_path)
     if not json_data:
         return None, None, None
     
