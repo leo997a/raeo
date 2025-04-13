@@ -6,7 +6,7 @@ import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+import chromedriver_autoinstaller
 import re
 import time
 
@@ -14,21 +14,21 @@ st.title("مستخرج بيانات مباريات WhoScored")
 
 def fetch_whoscored_data(match_url):
     try:
+        # تثبيت ChromeDriver تلقائيًا
+        chromedriver_autoinstaller.install()
+
         # إعداد Selenium
         options = Options()
-        options.add_argument("--headless")
+        options.add_argument("--headless")  # تشغيل بدون واجهة
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
         
-        # تحديد مسار Chrome إذا لزم الأمر (قم بتعديل المسار حسب نظامك)
-        # مثال لنظام Linux:
-        # options.binary_location = "/usr/bin/google-chrome"
-        # لنظام Windows:
-        # options.binary_location = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+        # تحديد مسار Chromium في Streamlit Cloud
+        options.binary_location = "/usr/lib/chromium-browser/chrome"  # مسار Chromium في Streamlit Cloud
 
-        # استخدام webdriver-manager
-        service = Service(ChromeDriverManager().install())
+        # إعداد Service لـ ChromeDriver
+        service = Service("/usr/lib/chromium-browser/chromedriver")  # مسار ChromeDriver في Streamlit Cloud
         driver = webdriver.Chrome(service=service, options=options)
         
         st.write("جاري الوصول إلى الرابط...")
