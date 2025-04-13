@@ -14,19 +14,23 @@ st.title("مستخرج بيانات مباريات WhoScored")
 
 def fetch_whoscored_data(match_url):
     try:
-        # إعداد Selenium مع webdriver-manager
+        # إعداد Selenium
         options = Options()
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
         
-        # استخدام webdriver-manager لتحميل chromedriver تلقائيًا
+        # تحديد مسار Chrome إذا لزم الأمر (قم بتعديل المسار حسب نظامك)
+        # مثال: options.binary_location = "/usr/bin/google-chrome"
+        # إذا كنت على Streamlit Cloud، قد لا تحتاج إلى هذا إذا تم تثبيت Chrome
+        
+        # استخدام webdriver-manager
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         
         st.write("جاري الوصول إلى الرابط...")
         driver.get(match_url)
-        time.sleep(3)  # انتظار تحميل الصفحة
+        time.sleep(5)  # زيادة التأخير لضمان التحميل
         
         # استخراج المصدر
         soup = BeautifulSoup(driver.page_source, "html.parser")
