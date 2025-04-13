@@ -1,4 +1,4 @@
-# الاستيرادات (مع إضافات لـ Firefox وWhoscored)
+# الاستيرادات
 import json
 import re
 import pandas as pd
@@ -27,6 +27,9 @@ import time
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.firefox import GeckoDriverManager
 from bs4 import BeautifulSoup
 import warnings
@@ -87,38 +90,52 @@ def reset_confirmed():
 
 # دالة لاستخراج بيانات المباراة من Whoscored باستخدام Firefox
 @st.cache_data
-def extract_match_dict(match_url):
+def extract_match_dict(match_url, max_retries=2):
     """Extract match event from Whoscored match center using Firefox"""
     firefox_options = Options()
     firefox_options.add_argument("--headless")
     firefox_options.add_argument("--no-sandbox")
     firefox_options.add_argument("--disable-dev-shm-usage")
     firefox_options.add_argument("--disable-gpu")
-
-    driver = webdriver.Firefox(
-        service=Service(GeckoDriverManager().install()),
-        options=firefox_options
-    )
     
-    try:
-        driver.get(match_url)
-        time.sleep(5)  # انتظار تحميل الصفحة
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        element = soup.select_one('script:-soup-contains("matchCentreData")')
+    for attempt in range(max_retries):
+        driver = None
+        try:
+            driver = webdriver.Firefox(
+                service=Service(GeckoDriverManager().install()),
+                options=firefox_options
+            )
+            driver.get(match_url)
+            
+            # الانتظار حتى يتم تحميل العنصر المطلوب
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.TAG_NAME, "script"))
+            )
+            
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            element = soup.select_one('script:-soup-contains("matchCentreData")')
+            
+            if element:
+                try:
+                    matchdict = json.loads(element.text.split("matchCentreData: ")[1].split(',\n')[0])
+                    return matchdict
+                except json.JSONDecodeError:
+                    st.warning(reshape_arabic_text(f"فشل تحليل JSON في المحاولة {attempt + 1}. إعادة المحاولة..."))
+                    continue
+            else:
+                st.warning(reshape_arabic_text(f"تعذر العثور على matchCentreData في المحاولة {attempt + 1}. إعادة المحاولة..."))
+                continue
         
-        if element:
-            matchdict = json.loads(element.text.split("matchCentreData: ")[1].split(',\n')[0])
-            return matchdict
-        else:
-            st.error(reshape_arabic_text("تعذر العثور على matchCentreData في مصدر الصفحة"))
-            return None
+        except Exception as e:
+            st.error(reshape_arabic_text(f"خطأ في جلب البيانات (المحاولة {attempt + 1}): {str(e)}"))
+            continue
+        
+        finally:
+            if driver:
+                driver.quit()
     
-    except Exception as e:
-        st.error(reshape_arabic_text(f"خطأ في جلب البيانات: {str(e)}"))
-        return None
-    
-    finally:
-        driver.quit()
+    st.error(reshape_arabic_text("فشل جلب البيانات بعد عدة محاولات. تأكد من الرابط وحاول مرة أخرى."))
+    return None
 
 # دالة لاستخراج الأحداث، اللاعبين، والفرق من القاموس
 def extract_data_from_dict(data):
@@ -182,7 +199,6 @@ def get_event_data(match_url):
     df = cumulative_match_mins(df)
     
     def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50):
-        # (نفس الكود الأصلي لإدراج الـ carries)
         events_out = pd.DataFrame()
         match_events = events_df.reset_index()
         match_events.loc[match_events['type'] == 'BallRecovery', 'endX'] = match_events.loc[match_events['type'] == 'BallRecovery', 'endX'].fillna(match_events['x'])
@@ -402,6 +418,38 @@ def get_event_data(match_url):
     
     return df, teams_dict, players_df
 
+# دالة لحساب إحصائيات الحراس
+def calculate_gk_stats(df, players_df, hteamName, ateamName):
+    gk_stats = {}
+    
+    # تصفية الحراس
+    gk_home = players_df[(players_df['teamId'] == df[df['teamName'] == hteamName]['teamId'].iloc[0]) & (players_df['position'] == 'GK')]
+    gk_away = players_df[(players_df['teamId'] == df[df['teamName'] == ateamName]['teamId'].iloc[0]) & (players_df['position'] == 'GK')]
+    
+    for gk in gk_home['playerId']:
+        gk_name = players_df[players_df['playerId'] == gk]['name'].iloc[0]
+        saves = len(df[(df['playerId'] == gk) & (df['type'] == 'Save')])
+        passes = len(df[(df['playerId'] == gk) & (df['type'] == 'Pass') & (df['outcomeType'] == 'Successful')])
+        goals_conceded = len(df[(df['teamName'] != hteamName) & (df['type'] == 'Goal') & (~df['qualifiers'].str.contains('OwnGoal'))])
+        gk_stats[f"{gk_name} ({hteamName})"] = {
+            'Saves': saves,
+            'Successful Passes': passes,
+            'Goals Conceded': goals_conceded
+        }
+    
+    for gk in gk_away['playerId']:
+        gk_name = players_df[players_df['playerId'] == gk]['name'].iloc[0]
+        saves = len(df[(df['playerId'] == gk) & (df['type'] == 'Save')])
+        passes = len(df[(df['playerId'] == gk) & (df['type'] == 'Pass') & (df['outcomeType'] == 'Successful')])
+        goals_conceded = len(df[(df['teamName'] != ateamName) & (df['type'] == 'Goal') & (~df['qualifiers'].str.contains('OwnGoal'))])
+        gk_stats[f"{gk_name} ({ateamName})"] = {
+            'Saves': saves,
+            'Successful Passes': passes,
+            'Goals Conceded': goals_conceded
+        }
+    
+    return pd.DataFrame(gk_stats).T
+
 # معالجة الرابط المدخل
 if match_url:
     match_input = st.button(reshape_arabic_text('تأكيد الرابط'), on_click=lambda: st.session_state.update({'confirmed': True}))
@@ -431,12 +479,17 @@ if match_url and st.session_state.confirmed:
         agoal_count += len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
         
         df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/63f5b51d8bd8b3f40e3d02fece1defb2f18ddf54/teams_name_and_id.csv')
-        hftmb_tid = df_teamNameId[df_teamNameId['teamName'] == hteamName].teamId.to_list()[0]
-        aftmb_tid = df_teamNameId[df_teamNameId['teamName'] == ateamName].teamId.to_list()[0]
+        try:
+            hftmb_tid = df_teamNameId[df_teamNameId['teamName'] == hteamName].teamId.to_list()[0]
+            aftmb_tid = df_teamNameId[df_teamNameId['teamName'] == ateamName].teamId.to_list()[0]
+        except IndexError:
+            st.warning(reshape_arabic_text('تعذر العثور على معرفات الفرق. قد يكون اسم الفريق غير مطابق.'))
+            hftmb_tid = hteamID
+            aftmb_tid = ateamID
         
         st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
         
-        # إضافة تبويبات التحليلات (كما في الكود الأصلي)
+        # إضافة تبويبات التحليلات
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
             reshape_arabic_text('شبكة التمريرات'),
             reshape_arabic_text('خريطة التسديدات'),
@@ -446,39 +499,52 @@ if match_url and st.session_state.confirmed:
         ])
         
         with tab1:
-            # استدعاء دالة شبكة التمريرات (من الكود الأصلي)
             st.subheader(reshape_arabic_text('شبكة تمريرات الفريق المضيف'))
-            fig1 = pass_network(df, hteamName, hcol, bg_color, line_color)
-            st.pyplot(fig1)
+            try:
+                fig1 = pass_network(df, hteamName, hcol, bg_color, line_color)  # من الكود الأصلي
+                st.pyplot(fig1)
+            except NameError:
+                st.error(reshape_arabic_text('دالة pass_network غير معرفة. يرجى إضافتها.'))
             
             st.subheader(reshape_arabic_text('شبكة تمريرات الفريق الضيف'))
-            fig2 = pass_network(df, ateamName, acol, bg_color, line_color)
-            st.pyplot(fig2)
+            try:
+                fig2 = pass_network(df, ateamName, acol, bg_color, line_color)
+                st.pyplot(fig2)
+            except NameError:
+                st.error(reshape_arabic_text('دالة pass_network غير معرفة. يرجى إضافتها.'))
         
         with tab2:
-            # استدعاء دالة خريطة التسديدات (من الكود الأصلي)
             st.subheader(reshape_arabic_text('خريطة تسديدات الفريق المضيف'))
-            fig3 = plot_ShotsMap(df, hteamName, hcol, bg_color, line_color, gradient_colors, violet)
-            st.pyplot(fig3)
+            try:
+                fig3 = plot_ShotsMap(df, hteamName, hcol, bg_color, line_color, gradient_colors, violet)
+                st.pyplot(fig3)
+            except NameError:
+                st.error(reshape_arabic_text('دالة plot_ShotsMap غير معرفة. يرجى إضافتها.'))
             
             st.subheader(reshape_arabic_text('خريطة تسديدات الفريق الضيف'))
-            fig4 = plot_ShotsMap(df, ateamName, acol, bg_color, line_color, gradient_colors, violet)
-            st.pyplot(fig4)
+            try:
+                fig4 = plot_ShotsMap(df, ateamName, acol, bg_color, line_color, gradient_colors, violet)
+                st.pyplot(fig4)
+            except NameError:
+                st.error(reshape_arabic_text('دالة plot_ShotsMap غير معرفة. يرجى إضافتها.'))
         
         with tab3:
-            # استدعاء دالة الضغط (من الكود الأصلي)
             st.subheader(reshape_arabic_text('خريطة الضغط'))
-            fig5 = plot_pressure(df, hteamName, ateamName, hcol, acol, bg_color, line_color)
-            st.pyplot(fig5)
+            try:
+                fig5 = plot_pressure(df, hteamName, ateamName, hcol, acol, bg_color, line_color)
+                st.pyplot(fig5)
+            except NameError:
+                st.error(reshape_arabic_text('دالة plot_pressure غير معرفة. يرجى إضافتها.'))
         
         with tab4:
-            # استدعاء دالة إحصائيات الفريق (من الكود الأصلي)
             st.subheader(reshape_arabic_text('إحصائيات الفريق'))
-            team_stats = calculate_team_stats(df, hteamName, ateamName)
-            st.table(team_stats)
+            try:
+                team_stats = calculate_team_stats(df, hteamName, ateamName)
+                st.table(team_stats)
+            except NameError:
+                st.error(reshape_arabic_text('دالة calculate_team_stats غير معرفة. يرجى إضافتها.'))
         
         with tab5:
-            # استدعاء دالة إحصائيات الحراس (إذا كانت موجودة في الكود الأصلي)
             st.subheader(reshape_arabic_text('إحصائيات الحراس'))
             gk_stats = calculate_gk_stats(df, players_df, hteamName, ateamName)
             st.table(gk_stats)
