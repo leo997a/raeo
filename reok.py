@@ -14,7 +14,7 @@ def extract_match_dict(match_url, chromedriver_path, save_output=False):
     """Extract match event from whoscored match center"""
     try:
         if not os.path.exists(chromedriver_path):
-            st.error(f"ملف ChromeDriver غير موجود في: {chromedriver_path}")
+            st.error(f"ملف ChromeDriver غير موجود في: {chromedriver_path}. تأكد من المسار أو نزّل الملف.")
             return None
         
         service = webdriver.ChromeService(executable_path=chromedriver_path)
@@ -78,13 +78,14 @@ def main():
     st.write("أدخل رابط مباراة من موقع WhoScored لتحليل البيانات وعرض الإحصائيات.")
     
     # إدخال رابط المباراة
-    match_url = st.text_input("رابط المباراة", 
+    default_url = "https://1xbet.whoscored.com/Matches/1809770/Live/Europe-Europa-League-2023-2024-West-Ham-Bayer-Leverkusen"
+    match_url = st.text_input("رابط المباراة", value=default_url,
                              placeholder="مثال: https://1xbet.whoscored.com/Matches/...")
     
     # إدخال مسار ChromeDriver
     chromedriver_path = st.text_input("مسار ChromeDriver", 
                                     value=r"C:\chromedriver\chromedriver.exe",
-                                    help="حدد مسار ملف chromedriver.exe على جهازك")
+                                    help="حدد مسار ملف chromedriver.exe على جهازك (مثال: C:\chromedriver\chromedriver.exe)")
     
     if st.button("تحليل المباراة"):
         if not match_url:
