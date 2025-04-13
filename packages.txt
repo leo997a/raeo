@@ -1,3 +1,4 @@
+google-chrome-stable
 libglib2.0-0
 libnss3
 libgconf-2-4
