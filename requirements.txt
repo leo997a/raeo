@@ -14,3 +14,12 @@ python-bidi>=0.4.2
 Pillow>=10.0.0
 playwright>=1.48.0
 lxml>=5.0.0
+numpy
+pandas
+matplotlib
+seaborn
+selenium==4.16.0
+mplsoccer==1.2.2
+requests
+unzip
+tqdm
