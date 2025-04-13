@@ -23,7 +23,7 @@ import os
 import arabic_reshaper
 from bidi.algorithm import get_display
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -82,10 +82,22 @@ match_url = st.sidebar.text_input("رابط المباراة", value=default_url
 def extract_json_from_page(url):
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
-            page = browser.new_page()
-            page.goto(url, wait_until="networkidle", timeout=30000)
-            page_content = page.content()
+            # حاول استخدام Chromium أولاً
+            try:
+                browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
+            except Exception as e:
+                st.warning(f"فشل تشغيل Chromium: {str(e)}. جارٍ المحاولة باستخدام Firefox...")
+                browser = p.firefox.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
+            
+            page = browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            try:
+                page.goto(url, wait_until="networkidle", timeout=30000)
+                page_content = page.content()
+            except PlaywrightTimeoutError:
+                st.error("انتهت مهلة تحميل الصفحة. قد يكون الرابط غير صالح أو الموقع محمي.")
+                browser.close()
+                return None
+                
             soup = BeautifulSoup(page_content, 'html.parser')
             element = soup.select_one('script:-soup-contains("matchCentreData")')
             if not element:
@@ -522,7 +534,7 @@ if st.sidebar.button("تحليل المباراة"):
                             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='s', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.7, ax=ax)
 
                     for index, row in avg_locs_df.iterrows():
-                        player_inner_initials = row["shirtNo"]
+                        player_initials = row["shirtNo"]
                         pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c='white', ha='center', va='center', size=14, weight='bold', ax=ax)
 
                     avgph = round(avg_locs_df['avg_x'].median(), 2)
