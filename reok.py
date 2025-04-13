@@ -27,6 +27,9 @@ from bidi.algorithm import get_display
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import warnings
 
@@ -40,9 +43,7 @@ mpl.rcParams['axes.unicode_minus'] = False
 
 # دالة لتحويل النص العربي
 def reshape_arabic_text(text):
-    print(f"النص قبل التحويل: {text}")
     reshaped_text = arabic_reshaper.reshape(text)
-    print(f"النص بعد التحويل: {reshaped_text}")
     return get_display(reshaped_text)
 
 # إضافة CSS لدعم RTL في Streamlit
@@ -93,7 +94,9 @@ def extract_json_from_page(url):
         options.add_argument("--disable-dev-shm-usage")  # لتجنب مشاكل الذاكرة
         driver = webdriver.Chrome(options=options)  # Selenium Manager يدير ChromeDriver
         driver.get(url)
-        time.sleep(5)  # انتظر لتحميل الصفحة
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         element = soup.select_one('script:-soup-contains("matchCentreData")')
         if not element:
@@ -105,19 +108,23 @@ def extract_json_from_page(url):
         driver.quit()
         return matchdict
     except Exception as e:
-        st.error(f"خطأ في استخراج البيانات: {e}")
+        st.error(f"خطأ في استخراج البيانات: {str(e)}")
+        if 'driver' in locals():
+            driver.quit()
         return None
 
 # دالة لمعالجة البيانات المستخرجة
 def extract_data_from_dict(data):
-    events_dict = data["events"]
-    teams_dict = {data['home']['teamId']: data['home']['name'],
-                  data['away']['teamId']: data['away']['name']}
-    players_home_df = pd.DataFrame(data['home']['players'])
-    players_home_df["teamId"] = data['home']['teamId']
-    players_away_df = pd.DataFrame(data['away']['players'])
-    players_away_df["teamId"] = data['away']['teamId']
-    players_df = pd.concat([players_home_df, players_away_df])
+    events_dict = data.get("events", [])
+    teams_dict = {
+        data.get('home', {}).get('teamId'): data.get('home', {}).get('name'),
+        data.get('away', {}).get('teamId'): data.get('away', {}).get('name')
+    }
+    players_home_df = pd.DataFrame(data.get('home', {}).get('players', []))
+    players_home_df["teamId"] = data.get('home', {}).get('teamId')
+    players_away_df = pd.DataFrame(data.get('away', {}).get('players', []))
+    players_away_df["teamId"] = data.get('away', {}).get('teamId')
+    players_df = pd.concat([players_home_df, players_away_df], ignore_index=True)
     players_df['name'] = players_df['name'].astype(str)
     players_df['name'] = players_df['name'].apply(unidecode)
     return events_dict, players_df, teams_dict
@@ -130,6 +137,9 @@ def get_event_data(match_url):
         return None, None, None
 
     events_dict, players_df, teams_dict = extract_data_from_dict(json_data)
+    if not events_dict or players_df.empty or not teams_dict:
+        return None, None, None
+
     df = pd.DataFrame(events_dict)
     dfp = pd.DataFrame(players_df)
 
@@ -139,8 +149,10 @@ def get_event_data(match_url):
     df['period'] = df['period'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else x)
 
     # تحويل الفترات إلى أرقام
-    df['period'] = df['period'].replace({'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3,
-                                         'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 'PreMatch': 16})
+    df['period'] = df['period'].replace({
+        'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3,
+        'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 'PreMatch': 16
+    })
 
     def cumulative_match_mins(events_df):
         events_out = pd.DataFrame()
@@ -173,7 +185,7 @@ def get_event_data(match_url):
                 take_ons = 0
                 incorrect_next_evt = True
 
-                while incorrect_next_evt:
+                while incorrect_next_evt and next_evt_idx < len(match_events):
                     next_evt = match_events.loc[next_evt_idx]
                     if next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Successful':
                         take_ons += 1
@@ -196,7 +208,7 @@ def get_event_data(match_url):
                 min_time = dt >= min_carry_duration
                 same_phase = dt < max_carry_duration
                 same_period = match_event['period'] == next_evt['period']
-                valid_carry = same_team & not_ball_touch & far_enough & not_too_far & min_time & same_phase & same_period
+                valid_carry = same_team and not_ball_touch and far_enough and not_too_far and min_time and same_phase and same_period
 
                 if valid_carry:
                     carry = pd.DataFrame()
@@ -262,8 +274,10 @@ def get_event_data(match_url):
     dfxT['x2_bin_xT'] = pd.cut(dfxT['endX'], bins=xT_cols, labels=False)
     dfxT['y2_bin_xT'] = pd.cut(dfxT['endY'], bins=xT_rows, labels=False)
 
-    dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]] if pd.notnull(x[0]) and pd.notnull(x[1]) else 0, axis=1)
-    dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]] if pd.notnull(x[0]) and pd.notnull(x[1]) else 0, axis=1)
+    dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(
+        lambda x: xT[int(x[1])][int(x[0])] if pd.notnull(x[0]) and pd.notnull(x[1]) else 0, axis=1)
+    dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(
+        lambda x: xT[int(x[1])][int(x[0])] if pd.notnull(x[0]) and pd.notnull(x[1]) else 0, axis=1)
 
     dfxT['xT'] = dfxT['end_zone_value_xT'] - dfxT['start_zone_value_xT']
     columns_to_drop = ['eventId', 'minute', 'second', 'teamId', 'x', 'y', 'expandedMinute', 'period', 'outcomeType',
@@ -319,9 +333,10 @@ def get_event_data(match_url):
     def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
         events_out = pd.DataFrame()
         match_events_df = events_df.reset_index()
-        match_pos_events_df = match_events_df[~match_events_df['type'].isin(['OffsideGiven', 'CornerAwarded', 'Start', 'Card',
-                                                                             'SubstitutionOff', 'SubstitutionOn', 'FormationChange',
-                                                                             'FormationSet', 'End'])].copy()
+        match_pos_events_df = match_events_df[~match_events_df['type'].isin([
+            'OffsideGiven', 'CornerAwarded', 'Start', 'Card', 'SubstitutionOff',
+            'SubstitutionOn', 'FormationChange', 'FormationSet', 'End'
+        ])].copy()
 
         match_pos_events_df['outcomeBinary'] = match_pos_events_df['outcomeType'].apply(lambda x: 1 if x == 'Successful' else 0)
         match_pos_events_df['teamBinary'] = match_pos_events_df['teamName'].apply(lambda x: 1 if x == min(match_pos_events_df['teamName']) else 0)
@@ -357,23 +372,27 @@ def get_event_data(match_url):
         for idx in np.arange(1, len(valid_pos_start_id)):
             current_team = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
             previous_team = pos_chain_df.loc[valid_pos_start_id[idx - 1], 'teamName']
-            if ((previous_team == current_team) & (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_goal'] != 1) &
-                    (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_period_change'] != 1)):
+            if ((previous_team == current_team) and
+                (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_goal'] != 1) and
+                (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_period_change'] != 1)):
                 pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = np.nan
             else:
                 pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = possession_id
                 pos_chain_df.loc[valid_pos_start_id[idx], 'possession_team'] = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
                 possession_id += 1
 
-        match_events_df = pd.merge(match_events_df, pos_chain_df[['possession_id', 'possession_team']], how='left', left_index=True, right_index=True)
+        match_events_df = pd.merge(match_events_df, pos_chain_df[['possession_id', 'possession_team']],
+                                  how='left', left_index=True, right_index=True)
         match_events_df[['possession_id', 'possession_team']] = match_events_df[['possession_id', 'possession_team']].fillna(method='ffill')
         match_events_df[['possession_id', 'possession_team']] = match_events_df[['possession_id', 'possession_team']].fillna(method='bfill')
         events_out = pd.concat([events_out, match_events_df])
         return events_out
 
-    df = get_possession_chains(df, 5, 3)
-    df['period'] = df['period'].replace({1: 'FirstHalf', 2: 'SecondHalf', 3: 'FirstPeriodOfExtraTime',
-                                         4: 'SecondPeriodOfExtraTime', 5: 'PenaltyShootout', 14: 'PostGame', 16: 'PreMatch'})
+    df = get_possession_chains(df, chain_check=5, suc_evts_in_chain=3)
+    df['period'] = df['period'].replace({
+        1: 'FirstHalf', 2: 'SecondHalf', 3: 'FirstPeriodOfExtraTime',
+        4: 'SecondPeriodOfExtraTime', 5: 'PenaltyShootout', 14: 'PostGame', 16: 'PreMatch'
+    })
     df = df[df['period'] != 'PenaltyShootout']
     df = df.reset_index(drop=True)
     return df, teams_dict, players_df
@@ -446,14 +465,16 @@ if st.sidebar.button("تحليل المباراة"):
                                                           (df_pass['teamName'].shift(-1) == team_name), 'name'].shift(-1)
                     df_pass['pass_receiver'] = df_pass['pass_receiver'].fillna('No')
 
-                    off_acts_df = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'].isin(['Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup']))]
+                    off_acts_df = df_pass[(df_pass['teamName'] == team_name) & (df_pass['type'].isin([
+                        'Pass', 'Goal', 'MissedShots', 'SavedShot', 'ShotOnPost', 'TakeOn', 'BallTouch', 'KeeperPickup'
+                    ]))]
                     off_acts_df = off_acts_df[['name', 'x', 'y']].reset_index(drop=True)
                     avg_locs_df = off_acts_df.groupby('name').agg(avg_x=('x', 'median'), avg_y=('y', 'median')).reset_index()
                     team_pdf = players_df[['name', 'shirtNo', 'position', 'isFirstEleven']]
                     avg_locs_df = avg_locs_df.merge(team_pdf, on='name', how='left')
 
-                    df_pass = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & (df_pass['teamName'] == team_name) &
-                                      (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
+                    df_pass = df_pass[(df_pass['type'] == 'Pass') & (df_pass['outcomeType'] == 'Successful') & 
+                                     (df_pass['teamName'] == team_name) & (~df_pass['qualifiers'].str.contains('Corner|Freekick'))]
                     df_pass = df_pass[['type', 'name', 'pass_receiver']].reset_index(drop=True)
 
                     pass_count_df = df_pass.groupby(['name', 'pass_receiver']).size().reset_index(name='pass_count').sort_values(by='pass_count', ascending=False)
@@ -461,7 +482,8 @@ if st.sidebar.button("تحليل المباراة"):
 
                     pass_counts_df = pd.merge(pass_count_df, avg_locs_df, on='name', how='left')
                     pass_counts_df.rename(columns={'avg_x': 'pass_avg_x', 'avg_y': 'pass_avg_y'}, inplace=True)
-                    pass_counts_df = pd.merge(pass_counts_df, avg_locs_df, left_on='pass_receiver', right_on='name', how='left', suffixes=('', '_receiver'))
+                    pass_counts_df = pd.merge(pass_counts_df, avg_locs_df, left_on='pass_receiver', right_on='name', 
+                                             how='left', suffixes=('', '_receiver'))
                     pass_counts_df.drop(columns=['name_receiver'], inplace=True)
                     pass_counts_df.rename(columns={'avg_x': 'receiver_avg_x', 'avg_y': 'receiver_avg_y'}, inplace=True)
                     pass_counts_df = pass_counts_df.sort_values(by='pass_count', ascending=False).reset_index(drop=True)
@@ -474,7 +496,8 @@ if st.sidebar.button("تحليل المباراة"):
                     MIN_TRANSPARENCY = 0.2
                     MAX_TRANSPARENCY = 0.9
 
-                    pass_counts_df['line_width'] = (pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()) * (MAX_LINE_WIDTH - MIN_LINE_WIDTH) + MIN_LINE_WIDTH
+                    pass_counts_df['line_width'] = (pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()) * \
+                                                  (MAX_LINE_WIDTH - MIN_LINE_WIDTH) + MIN_LINE_WIDTH
                     c_transparency = pass_counts_df['pass_count'] / pass_counts_df['pass_count'].max()
                     c_transparency = (c_transparency * (MAX_TRANSPARENCY - MIN_TRANSPARENCY)) + MIN_TRANSPARENCY
 
@@ -530,15 +553,19 @@ if st.sidebar.button("تحليل المباراة"):
 
                     if phase_tag == 'Full Time':
                         ax.text(34, 115, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-                        ax.text(34, 112, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+                        ax.text(34, 112, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), 
+                                color='white', fontsize=12, ha='center', va='center')
                     elif phase_tag == 'First Half':
                         ax.text(34, 115, reshape_arabic_text('الشوط الأول: 0-45 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-                        ax.text(34, 112, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+                        ax.text(34, 112, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), 
+                                color='white', fontsize=12, ha='center', va='center')
                     elif phase_tag == 'Second Half':
                         ax.text(34, 115, reshape_arabic_text('الشوط الثاني: 45-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
-                        ax.text(34, 112, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), color='white', fontsize=12, ha='center', va='center')
+                        ax.text(34, 112, reshape_arabic_text(f'إجمالي التمريرات: {len(total_pass)} | الناجحة: {len(accrt_pass)} | الدقة: {accuracy}%'), 
+                                color='white', fontsize=12, ha='center', va='center')
 
-                    ax.text(34, -6, reshape_arabic_text(f"على الكرة\nالتماسك العمودي (المنطقة المظللة): {v_comp}%"), color='white', fontsize=12, ha='center', va='center', weight='bold')
+                    ax.text(34, -6, reshape_arabic_text(f"على الكرة\nالتماسك العمودي (المنطقة المظللة): {v_comp}%"), 
+                            color='white', fontsize=12, ha='center', va='center', weight='bold')
                     return pass_btn
 
                 # عرض شبكة التمريرات
