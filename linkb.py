@@ -5,20 +5,24 @@ import pandas as pd
 import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import re
 import time
 
 st.title("مستخرج بيانات مباريات WhoScored")
 
 def fetch_whoscored_data(match_url):
-    # إعداد Selenium
     try:
+        # إعداد Selenium مع webdriver-manager
         options = Options()
-        options.add_argument("--headless")  # تشغيل بدون واجهة
+        options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-        driver = webdriver.Chrome(options=options)
+        
+        # استخدام webdriver-manager لتحميل chromedriver تلقائيًا
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         
         st.write("جاري الوصول إلى الرابط...")
         driver.get(match_url)
