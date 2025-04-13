@@ -22,15 +22,18 @@ def fetch_whoscored_data(match_url):
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
         
         # تحديد مسار Chrome إذا لزم الأمر (قم بتعديل المسار حسب نظامك)
-        # مثال: options.binary_location = "/usr/bin/google-chrome"
-        # إذا كنت على Streamlit Cloud، قد لا تحتاج إلى هذا إذا تم تثبيت Chrome
-        
+        # مثال لنظام Linux:
+        # options.binary_location = "/usr/bin/google-chrome"
+        # لنظام Windows:
+        # options.binary_location = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+
         # استخدام webdriver-manager
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
         
         st.write("جاري الوصول إلى الرابط...")
         driver.get(match_url)
-        time.sleep(5)  # زيادة التأخير لضمان التحميل
+        time.sleep(5)  # التأخير لضمان التحميل
         
         # استخراج المصدر
         soup = BeautifulSoup(driver.page_source, "html.parser")
