@@ -25,12 +25,12 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 import time
 from selenium import webdriver
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import warnings
 
@@ -88,26 +88,22 @@ if 'confirmed' not in st.session_state:
 def reset_confirmed():
     st.session_state['confirmed'] = False
 
-# دالة لاستخراج بيانات المباراة من Whoscored باستخدام Firefox
+# دالة لاستخراج بيانات المباراة من Whoscored باستخدام Chrome
 @st.cache_data
-def extract_match_dict(match_url, max_retries=2, firefox_binary_path="C:\\Program Files\\Mozilla Firefox\\firefox.exe"):
-    """Extract match event from Whoscored match center using Firefox"""
-    firefox_options = Options()
-    firefox_options.add_argument("--headless")
-    firefox_options.add_argument("--no-sandbox")
-    firefox_options.add_argument("--disable-dev-shm-usage")
-    firefox_options.add_argument("--disable-gpu")
-    
-    # تحديد مسار Firefox يدويًا إذا تم توفيره
-    if firefox_binary_path:
-        firefox_options.binary_location = firefox_binary_path
+def extract_match_dict(match_url, max_retries=2):
+    """Extract match event from Whoscored match center using Chrome"""
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
     
     for attempt in range(max_retries):
         driver = None
         try:
-            driver = webdriver.Firefox(
-                service=Service(GeckoDriverManager().install()),
-                options=firefox_options
+            driver = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()),
+                options=chrome_options
             )
             driver.get(match_url)
             
@@ -173,12 +169,7 @@ def extract_data_from_dict(data):
 # دالة معدلة لجلب بيانات المباراة
 @st.cache_data
 def get_event_data(match_url):
-    # تحديد مسار Firefox يدويًا (قم بتعديله حسب نظام التشغيل)
-    firefox_binary_path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe"  # مثال: "C:\\Program Files\\Mozilla Firefox\\firefox.exe" على Windows
-    # لـ MacOS: "/Applications/Firefox.app/Contents/MacOS/firefox"
-    # لـ Linux: "/usr/bin/firefox"
-    
-    json_data = extract_match_dict(match_url, firefox_binary_path=firefox_binary_path)
+    json_data = extract_match_dict(match_url)
     if not json_data:
         return None, None, None
     
