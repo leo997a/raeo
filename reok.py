@@ -84,8 +84,8 @@ def main():
     
     # إدخال مسار ChromeDriver
     chromedriver_path = st.text_input("مسار ChromeDriver", 
-                                    value=r"C:\chromedriver\chromedriver.exe",
-                                    help="حدد مسار ملف chromedriver.exe على جهازك (مثال: C:\chromedriver\chromedriver.exe)")
+                                    value=r"C:\Users\Reo k\chromedriver.exe",
+                                    help="حدد مسار ملف chromedriver.exe على جهازك (مثال: C:\Users\Reo k\chromedriver.exe)")
     
     if st.button("تحليل المباراة"):
         if not match_url:
