@@ -23,4 +23,3 @@ mplsoccer==1.2.2
 requests
 unzip
 tqdm
-cloudscraper==1.8.0
