@@ -6,12 +6,17 @@ from selenium.webdriver.chrome.service import Service
 import warnings
 import streamlit as st
 import plotly.express as px
+import os
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def extract_match_dict(match_url, chromedriver_path, save_output=False):
     """Extract match event from whoscored match center"""
     try:
+        if not os.path.exists(chromedriver_path):
+            st.error(f"ملف ChromeDriver غير موجود في: {chromedriver_path}")
+            return None
+        
         service = webdriver.ChromeService(executable_path=chromedriver_path)
         driver = webdriver.Chrome(service=service)
         driver.get(match_url)
@@ -46,7 +51,7 @@ def extract_data_from_dict(data):
 def analyze_events(events_dict, teams_dict):
     """Analyze events to generate statistics"""
     if not events_dict:
-        return None
+        return None, None
     df = pd.DataFrame(events_dict)
     
     # تحليل الأهداف
@@ -61,7 +66,7 @@ def analyze_events(events_dict, teams_dict):
     shots_count = shots.groupby('teamId').size().to_dict()
     stats['Shots'] = {teams_dict.get(k, 'Unknown'): v for k, v in shots_count.items()}
     
-    # تحليل التمريرات الناجحة (مثال)
+    # تحليل التمريرات الناجحة
     passes = df[df['type'] == 'Pass'][['teamId', 'outcomeType']]
     successful_passes = passes[passes['outcomeType'] == 'Successful'].groupby('teamId').size().to_dict()
     stats['Successful Passes'] = {teams_dict.get(k, 'Unknown'): v for k, v in successful_passes.items()}
@@ -78,7 +83,7 @@ def main():
     
     # إدخال مسار ChromeDriver
     chromedriver_path = st.text_input("مسار ChromeDriver", 
-                                    value=r"C:\Users\Reo k\chromedriver.exe",
+                                    value=r"C:\chromedriver\chromedriver.exe",
                                     help="حدد مسار ملف chromedriver.exe على جهازك")
     
     if st.button("تحليل المباراة"):
