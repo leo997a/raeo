@@ -8,7 +8,6 @@ import random
 from fake_useragent import UserAgent
 import arabic_reshaper
 from bidi.algorithm import get_display
-import os
 
 # إعدادات Streamlit
 st.set_page_config(page_title=reshape_arabic_text("تحليل مباريات WhoScored"), layout="wide")
@@ -33,7 +32,7 @@ def extract_match_dict(match_id, retries=3, delay=5):
         dict: بيانات المباراة بصيغة JSON، أو None إذا فشل
     """
     # نقطة النهاية الافتراضية - استبدلها بالرابط الحقيقي من Network requests
-    url = f"https://1xbet.whoscored.com/matches/1821690/live/spain-laliga-2024-2025-leganes-barcelona"
+    url = f"https://1xbet.whoscored.com/Matches/{match_id}/LiveStatistics"
     headers = {
         "Accept": "*/*",
         "Referer": f"https://1xbet.whoscored.com/Matches/{match_id}/Live",
@@ -42,8 +41,10 @@ def extract_match_dict(match_id, retries=3, delay=5):
         "Sec-Ch-Ua-Platform": '"Windows"',
         "User-Agent": UserAgent().random,
         "X-Kl-Saas-Ajax-Request": "Ajax_Request",
-        "X-Requested-With": "XMLHttpRequest",
-        # "model-last-mode": "tsDxcBt6yu5JL+yeWfokrty/eQU18bcLdmOZlweljBE="  # قد تكون ديناميكية، أزلها إذا لم تكن ضرورية
+        "X-Requested-With": "XMLHttpRequest"
+        # ملاحظة: model-last-mode غير مضاف لأنه قد يكون ديناميكيًا
+        # إذا لزم الأمر، أضفه كما يلي:
+        # "model-last-mode": "tsDxcBt6yu5JL+yeWfokrty/eQU18bcLdmOZlweljBE="
     }
     
     scraper = cloudscraper.create_scraper()
@@ -54,7 +55,7 @@ def extract_match_dict(match_id, retries=3, delay=5):
             response.raise_for_status()
             data = response.json()
             if not data or "events" not in data:
-                st.warning(reshape_arabic_text("البيانات المستلمة غير مكتملة، جارٍ المحاولة مرة أخرى..."))
+                st.warning(reshape_arabic_text(f"البيانات المستلمة غير مكتملة، المحاولة {attempt+1}/{retries}..."))
                 continue
             return data
         except requests.exceptions.HTTPError as e:
@@ -62,7 +63,7 @@ def extract_match_dict(match_id, retries=3, delay=5):
                 st.warning(reshape_arabic_text(f"تم حظر الطلب (429)، المحاولة {attempt+1}/{retries} بعد {delay} ثوان..."))
                 time.sleep(delay + random.uniform(0, 2))
             elif response.status_code == 403:
-                st.error(reshape_arabic_text("الوصول مرفوض (403)، قد تكون هناك حماية Cloudflare."))
+                st.error(reshape_arabic_text("الوصول مرفوض (403)، قد تكون هناك حماية Cloudflare. تحقق من نقطة النهاية أو الرؤوس."))
                 return None
             else:
                 st.error(reshape_arabic_text(f"خطأ HTTP: {str(e)}"))
