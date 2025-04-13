@@ -22,13 +22,8 @@ import streamlit as st
 import os
 import arabic_reshaper
 from bidi.algorithm import get_display
-import time
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -83,34 +78,26 @@ default_url = "https://1xbet.whoscored.com/Matches/1821690/Live/Spain-LaLiga-202
 match_url = st.sidebar.text_input("رابط المباراة", value=default_url,
                                  placeholder="مثال: https://1xbet.whoscored.com/Matches/...")
 
-# دالة لاستخراج البيانات من الصفحة
+# دالة لاستخراج البيانات من الصفحة باستخدام Playwright
 def extract_json_from_page(url):
     try:
-        options = Options()
-        options.add_argument("--headless=new")  # استخدام الوضع الجديد لـ headless
-        options.add_argument("--no-sandbox")  # تجنب مشاكل الأذونات
-        options.add_argument("--disable-dev-shm-usage")  # تجنب مشاكل الذاكرة
-        options.add_argument("--disable-gpu")  # تعطيل GPU لتجنب الأخطاء
-        options.add_argument("--disable-extensions")  # تعطيل الإضافات
-        driver = webdriver.Chrome(options=options)  # تشغيل ChromeDriver
-        driver.get(url)
-        WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        element = soup.select_one('script:-soup-contains("matchCentreData")')
-        if not element:
-            st.error("لم يتم العثور على بيانات المباراة. تأكد من صحة الرابط.")
-            driver.quit()
-            return None
-        matchdict_text = element.text.split("matchCentreData: ")[1].split(',\n')[0]
-        matchdict = json.loads(matchdict_text)
-        driver.quit()
-        return matchdict
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
+            page = browser.new_page()
+            page.goto(url, wait_until="networkidle", timeout=30000)
+            page_content = page.content()
+            soup = BeautifulSoup(page_content, 'html.parser')
+            element = soup.select_one('script:-soup-contains("matchCentreData")')
+            if not element:
+                st.error("لم يتم العثور على بيانات المباراة. تأكد من صحة الرابط.")
+                browser.close()
+                return None
+            matchdict_text = element.text.split("matchCentreData: ")[1].split(',\n')[0]
+            matchdict = json.loads(matchdict_text)
+            browser.close()
+            return matchdict
     except Exception as e:
         st.error(f"خطأ في استخراج البيانات: {str(e)}")
-        if 'driver' in locals():
-            driver.quit()
         return None
 
 # دالة لمعالجة البيانات المستخرجة
@@ -535,7 +522,7 @@ if st.sidebar.button("تحليل المباراة"):
                             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='s', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.7, ax=ax)
 
                     for index, row in avg_locs_df.iterrows():
-                        player_initials = row["shirtNo"]
+                        player_inner_initials = row["shirtNo"]
                         pitch.annotate(player_initials, xy=(row.avg_x, row.avg_y), c='white', ha='center', va='center', size=14, weight='bold', ax=ax)
 
                     avgph = round(avg_locs_df['avg_x'].median(), 2)
