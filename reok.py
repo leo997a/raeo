@@ -26,7 +26,7 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 import time
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 import warnings
 
@@ -78,37 +78,54 @@ gradient_end = st.sidebar.color_picker('نهاية التدرج', default_gradie
 gradient_colors = [gradient_start, gradient_end]
 line_color = st.sidebar.color_picker('لون الخطوط', '#ffffff', key='line_color_picker')
 
-# إدخال رابط المباراة ومسار ChromeDriver
+# إدخال رابط المباراة
 st.sidebar.title('إدخال بيانات المباراة')
 default_url = "https://1xbet.whoscored.com/Matches/1821690/Live/Spain-LaLiga-2024-2025-Leganes-Barcelona"
 match_url = st.sidebar.text_input("رابط المباراة", value=default_url,
                                  placeholder="مثال: https://1xbet.whoscored.com/Matches/...")
-chromedriver_path = st.sidebar.text_input("مسار ChromeDriver",
-                                        value=r"C:\Users\Reo k\chromedriver.exe",
-                                        help=r"حدد مسار ملف chromedriver.exe على جهازك (مثال: C:\Users\Reo k\chromedriver.exe)")
 
-# دالة لاستخراج البيانات من رابط المباراة
+# دالة لاستخراج البيانات من الصفحة
+def extract_json_from_page(url):
+    try:
+        options = Options()
+        options.add_argument("--headless")  # تشغيل بدون واجهة رسومية
+        options.add_argument("--no-sandbox")  # لتجنب مشاكل الأذونات على Linux
+        options.add_argument("--disable-dev-shm-usage")  # لتجنب مشاكل الذاكرة
+        driver = webdriver.Chrome(options=options)  # Selenium Manager يدير ChromeDriver
+        driver.get(url)
+        time.sleep(5)  # انتظر لتحميل الصفحة
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        element = soup.select_one('script:-soup-contains("matchCentreData")')
+        if not element:
+            st.error("لم يتم العثور على بيانات المباراة. تأكد من صحة الرابط.")
+            driver.quit()
+            return None
+        matchdict_text = element.text.split("matchCentreData: ")[1].split(',\n')[0]
+        matchdict = json.loads(matchdict_text)
+        driver.quit()
+        return matchdict
+    except Exception as e:
+        st.error(f"خطأ في استخراج البيانات: {e}")
+        return None
+
+# دالة لمعالجة البيانات المستخرجة
+def extract_data_from_dict(data):
+    events_dict = data["events"]
+    teams_dict = {data['home']['teamId']: data['home']['name'],
+                  data['away']['teamId']: data['away']['name']}
+    players_home_df = pd.DataFrame(data['home']['players'])
+    players_home_df["teamId"] = data['home']['teamId']
+    players_away_df = pd.DataFrame(data['away']['players'])
+    players_away_df["teamId"] = data['away']['teamId']
+    players_df = pd.concat([players_home_df, players_away_df])
+    players_df['name'] = players_df['name'].astype(str)
+    players_df['name'] = players_df['name'].apply(unidecode)
+    return events_dict, players_df, teams_dict
+
+# دالة رئيسية لاستخراج ومعالجة بيانات المباراة
 @st.cache_data
 def get_event_data(match_url):
     json_data = extract_json_from_page(match_url)
-    if not json_data:
-        return None, None, None
-    events_dict, players_df, teams_dict = extract_data_from_dict(json_data)
-
-    def extract_data_from_dict(data):
-        events_dict = data["events"]
-        teams_dict = {data['home']['teamId']: data['home']['name'],
-                      data['away']['teamId']: data['away']['name']}
-        players_home_df = pd.DataFrame(data['home']['players'])
-        players_home_df["teamId"] = data['home']['teamId']
-        players_away_df = pd.DataFrame(data['away']['players'])
-        players_away_df["teamId"] = data['away']['teamId']
-        players_df = pd.concat([players_home_df, players_away_df])
-        players_df['name'] = players_df['name'].astype(str)
-        players_df['name'] = players_df['name'].apply(unidecode)
-        return events_dict, players_df, teams_dict
-
-    json_data = extract_json_from_page(match_url, chromedriver_path)
     if not json_data:
         return None, None, None
 
@@ -245,14 +262,14 @@ def get_event_data(match_url):
     dfxT['x2_bin_xT'] = pd.cut(dfxT['endX'], bins=xT_cols, labels=False)
     dfxT['y2_bin_xT'] = pd.cut(dfxT['endY'], bins=xT_rows, labels=False)
 
-    dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
-    dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]], axis=1)
+    dfxT['start_zone_value_xT'] = dfxT[['x1_bin_xT', 'y1_bin_xT']].apply(lambda x: xT[x[1]][x[0]] if pd.notnull(x[0]) and pd.notnull(x[1]) else 0, axis=1)
+    dfxT['end_zone_value_xT'] = dfxT[['x2_bin_xT', 'y2_bin_xT']].apply(lambda x: xT[x[1]][x[0]] if pd.notnull(x[0]) and pd.notnull(x[1]) else 0, axis=1)
 
     dfxT['xT'] = dfxT['end_zone_value_xT'] - dfxT['start_zone_value_xT']
     columns_to_drop = ['eventId', 'minute', 'second', 'teamId', 'x', 'y', 'expandedMinute', 'period', 'outcomeType',
                        'qualifiers', 'type', 'satisfiedEventsTypes', 'isTouch', 'playerId', 'endX', 'endY',
                        'relatedEventId', 'relatedPlayerId', 'blockedX', 'blockedY', 'goalMouthZ', 'goalMouthY', 'isShot', 'cumulative_mins']
-    dfxT.drop(columns=columns_to_drop, inplace=True)
+    dfxT.drop(columns=columns_to_drop, errors='ignore', inplace=True)
 
     df = df.merge(dfxT, on='index', how='left')
     df['teamName'] = df['teamId'].map(teams_dict)
@@ -270,7 +287,7 @@ def get_event_data(match_url):
     columns_to_drop = ['height', 'weight', 'age', 'isManOfTheMatch', 'field', 'stats', 'subbedInPlayerId',
                        'subbedOutPeriod', 'subbedOutExpandedMinute', 'subbedInPeriod', 'subbedInExpandedMinute',
                        'subbedOutPlayerId', 'teamId']
-    dfp.drop(columns=columns_to_drop, inplace=True)
+    dfp.drop(columns=columns_to_drop, errors='ignore', inplace=True)
     df = df.merge(dfp, on='playerId', how='left')
 
     df['qualifiers'] = df['qualifiers'].astype(str)
@@ -365,12 +382,14 @@ def get_event_data(match_url):
 if st.sidebar.button("تحليل المباراة"):
     if not match_url:
         st.warning("الرجاء إدخال رابط مباراة صحيح.")
-    elif not chromedriver_path:
-        st.warning("الرجاء إدخال مسار ChromeDriver صحيح.")
     else:
         with st.spinner("جارٍ استخراج بيانات المباراة..."):
-            df, teams_dict, players_df = get_event_data(match_url, chromedriver_path)
-            if df is not None:
+            result = get_event_data(match_url)
+            if result is None or any(x is None for x in result):
+                st.error("فشل في استخراج بيانات المباراة. تحقق من الرابط أو حاول مرة أخرى.")
+            else:
+                df, teams_dict, players_df = result
+
                 def get_short_name(full_name):
                     if pd.isna(full_name):
                         return full_name
@@ -404,7 +423,7 @@ if st.sidebar.button("تحليل المباراة"):
                 st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
                 st.text(f'تحليل المباراة')
 
-                # دالة pass_network (بدون تغيير)
+                # دالة pass_network
                 def pass_network(ax, team_name, col, phase_tag):
                     if phase_tag == 'Full Time':
                         df_pass = df.copy()
@@ -527,5 +546,3 @@ if st.sidebar.button("تحليل المباراة"):
                 pass_network(axs[0], hteamName, hcol, 'Full Time')
                 pass_network(axs[1], ateamName, acol, 'Full Time')
                 st.pyplot(fig)
-            else:
-                st.error("فشل في استخراج بيانات المباراة.")
