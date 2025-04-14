@@ -1,56 +1,31 @@
-import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-import chromedriver_autoinstaller
+from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 import json
 import pandas as pd
 import re
-import time
-import os
+import streamlit as st
 
 st.title("مستخرج بيانات مباريات WhoScored")
 
 def fetch_whoscored_data(match_url):
     try:
-        # تثبيت ChromeDriver في مسار مؤقت
-        chromedriver_path = "/tmp/chromedriver"
-        os.makedirs(chromedriver_path, exist_ok=True)
-        chromedriver_autoinstaller.install(path=chromedriver_path)
-
-        # إعداد Selenium
-        options = Options()
-        options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-        
-        # تحديد مسار Chromium
-        options.binary_location = "/usr/bin/chromium"  # مسار شائع في Streamlit Cloud
-
-        # إعداد Service مع المسار المخصص
-        service = Service(executable_path=f"{chromedriver_path}/chromedriver")
-        driver = webdriver.Chrome(service=service, options=options)
-        
-        st.write("جاري الوصول إلى الرابط...")
-        driver.get(match_url)
-        time.sleep(5)
-        
-        # استخراج المصدر
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-        driver.quit()
-        
-        # البحث عن السكربت
-        scripts = soup.find_all("script")
-        for script in scripts:
-            if script.string and "matchCentreData" in script.string:
-                match = re.search(r"matchCentreData\s*:\s*({.*?})\s*,", script.string, re.DOTALL)
-                if match:
-                    data_str = match.group(1)
-                    return json.loads(data_str)
-        st.error("لم يتم العثور على بيانات المباراة في السكربت!")
-        return None
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(match_url)
+            page.wait_for_timeout(5000)
+            soup = BeautifulSoup(page.content(), "html.parser")
+            browser.close()
+            
+            scripts = soup.find_all("script")
+            for script in scripts:
+                if script.string and "matchCentreData" in script.string:
+                    match = re.search(r"matchCentreData\s*:\s*({.*?})\s*,", script.string, re.DOTALL)
+                    if match:
+                        data_str = match.group(1)
+                        return json.loads(data_str)
+            st.error("لم يتم العثور على بيانات المباراة في السكربت!")
+            return None
     except Exception as e:
         st.error(f"حدث خطأ: {e}")
         return None
