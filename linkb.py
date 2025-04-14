@@ -9,20 +9,25 @@ import os
 st.title("مستخرج بيانات مباريات WhoScored باستخدام ScraperAPI")
 
 # قراءة مفتاح API من متغير بيئي
-SCRAPERAPI_KEY = os.getenv("SCRAPERAPI_KEY", "c5934992cd26ad3bc075dc2c60b7b532")  # استخدم المفتاح الافتراضي للاختبار المحلي فقط
+SCRAPERAPI_KEY = os.getenv("SCRAPERAPI_KEY")
 
 def fetch_whoscored_data(match_url):
+    if not SCRAPERAPI_KEY:
+        st.error("مفتاح ScraperAPI غير محدد! أضفه في إعدادات Streamlit Cloud.")
+        return None
+    
     try:
         # إعداد الطلب إلى ScraperAPI
         payload = {
-            "api_key": SCRAPERAPI_KEY,
-            "url": match_url,
-            "render": "true",  # تفعيل جلب محتوى JavaScript
-            "country_code": "us"  # تحديد الوكيل في الولايات المتحدة لتجنب الحظر
+            'api_key': SCRAPERAPI_KEY,
+            'url': match_url,
+            'render': 'true',  # تفعيل جلب محتوى JavaScript
+            'country_code': 'us'  # وكيل في الولايات المتحدة لتجنب الحظر
         }
         
         # إرسال الطلب
-        response = requests.get("http://api.scraperapi.com", params=payload, timeout=30)
+        st.write("جاري جلب البيانات من ScraperAPI...")
+        response = requests.get('https://api.scraperapi.com/', params=payload, timeout=30)
         response.raise_for_status()  # التحقق من نجاح الطلب
         
         # تحليل محتوى الصفحة
@@ -36,7 +41,7 @@ def fetch_whoscored_data(match_url):
                 if match:
                     data_str = match.group(1)
                     return json.loads(data_str)
-        st.error("لم يتم العثور على بيانات المباراة في السكربت! تأكد من أن الرابط صحيح.")
+        st.error("لم يتم العثور على بيانات المباراة في السكربت! تأكد من أن الرابط يحتوي على بيانات المباراة.")
         return None
     except requests.exceptions.RequestException as e:
         st.error(f"خطأ في جلب البيانات: {e}")
