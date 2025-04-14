@@ -16,7 +16,7 @@ def fetch_whoscored_data(match_url):
     try:
         # تثبيت ChromeDriver في مسار مؤقت
         chromedriver_path = "/tmp/chromedriver"
-        os.makedirs(chromedriver_path, exist_ok=True)  # إنشاء المجلد إذا لم يكن موجودًا
+        os.makedirs(chromedriver_path, exist_ok=True)
         chromedriver_autoinstaller.install(path=chromedriver_path)
 
         # إعداد Selenium
@@ -27,7 +27,7 @@ def fetch_whoscored_data(match_url):
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
         
         # تحديد مسار Chromium
-        options.binary_location = "/usr/bin/chromium"  # مسار صحيح في Streamlit Cloud
+        options.binary_location = "/usr/bin/chromium"  # مسار شائع في Streamlit Cloud
 
         # إعداد Service مع المسار المخصص
         service = Service(executable_path=f"{chromedriver_path}/chromedriver")
@@ -55,7 +55,6 @@ def fetch_whoscored_data(match_url):
         st.error(f"حدث خطأ: {e}")
         return None
 
-# إدخال الرابط
 match_url = st.text_input("أدخل رابط المباراة من WhoScored:", 
                           "https://1xbet.whoscored.com/matches/1821689/live/spain-laliga-2024-2025-deportivo-alaves-real-madrid")
 
