@@ -1,39 +1,41 @@
-import requests
-from bs4 import BeautifulSoup
-import json
-import pandas as pd
 import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 import chromedriver_autoinstaller
+from bs4 import BeautifulSoup
+import json
+import pandas as pd
 import re
 import time
+import os
 
 st.title("مستخرج بيانات مباريات WhoScored")
 
 def fetch_whoscored_data(match_url):
     try:
-        # تثبيت ChromeDriver تلقائيًا
-        chromedriver_autoinstaller.install()
+        # تثبيت ChromeDriver في مسار مؤقت
+        chromedriver_path = "/tmp/chromedriver"
+        os.makedirs(chromedriver_path, exist_ok=True)  # إنشاء المجلد إذا لم يكن موجودًا
+        chromedriver_autoinstaller.install(path=chromedriver_path)
 
         # إعداد Selenium
         options = Options()
-        options.add_argument("--headless")  # تشغيل بدون واجهة
+        options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
         
-        # تحديد مسار Chromium في Streamlit Cloud
-        options.binary_location = "/usr/lib/chromium-browser/chrome"  # مسار Chromium في Streamlit Cloud
+        # تحديد مسار Chromium
+        options.binary_location = "/usr/bin/chromium"  # مسار Chromium في Streamlit Cloud
 
-        # إعداد Service لـ ChromeDriver
-        service = Service("/usr/lib/chromium-browser/chromedriver")  # مسار ChromeDriver في Streamlit Cloud
+        # إعداد Service مع المسار المخصص
+        service = Service(executable_path=f"{chromedriver_path}/chromedriver")
         driver = webdriver.Chrome(service=service, options=options)
         
         st.write("جاري الوصول إلى الرابط...")
         driver.get(match_url)
-        time.sleep(5)  # التأخير لضمان التحميل
+        time.sleep(5)
         
         # استخراج المصدر
         soup = BeautifulSoup(driver.page_source, "html.parser")
