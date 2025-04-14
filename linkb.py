@@ -1,35 +1,54 @@
-from playwright.sync_api import sync_playwright
+import streamlit as st
+import requests
 from bs4 import BeautifulSoup
 import json
 import pandas as pd
 import re
-import streamlit as st
+import os
 
-st.title("مستخرج بيانات مباريات WhoScored")
+st.title("مستخرج بيانات مباريات WhoScored باستخدام ScraperAPI")
+
+# قراءة مفتاح API من متغير بيئي
+SCRAPERAPI_KEY = os.getenv("SCRAPERAPI_KEY", "c5934992cd26ad3bc075dc2c60b7b532")  # استخدم المفتاح الافتراضي للاختبار المحلي فقط
 
 def fetch_whoscored_data(match_url):
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(match_url)
-            page.wait_for_timeout(5000)
-            soup = BeautifulSoup(page.content(), "html.parser")
-            browser.close()
-            
-            scripts = soup.find_all("script")
-            for script in scripts:
-                if script.string and "matchCentreData" in script.string:
-                    match = re.search(r"matchCentreData\s*:\s*({.*?})\s*,", script.string, re.DOTALL)
-                    if match:
-                        data_str = match.group(1)
-                        return json.loads(data_str)
-            st.error("لم يتم العثور على بيانات المباراة في السكربت!")
-            return None
+        # إعداد الطلب إلى ScraperAPI
+        payload = {
+            "api_key": SCRAPERAPI_KEY,
+            "url": match_url,
+            "render": "true",  # تفعيل جلب محتوى JavaScript
+            "country_code": "us"  # تحديد الوكيل في الولايات المتحدة لتجنب الحظر
+        }
+        
+        # إرسال الطلب
+        response = requests.get("http://api.scraperapi.com", params=payload, timeout=30)
+        response.raise_for_status()  # التحقق من نجاح الطلب
+        
+        # تحليل محتوى الصفحة
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # البحث عن السكربت الذي يحتوي على matchCentreData
+        scripts = soup.find_all("script")
+        for script in scripts:
+            if script.string and "matchCentreData" in script.string:
+                match = re.search(r"matchCentreData\s*:\s*({.*?})\s*,", script.string, re.DOTALL)
+                if match:
+                    data_str = match.group(1)
+                    return json.loads(data_str)
+        st.error("لم يتم العثور على بيانات المباراة في السكربت! تأكد من أن الرابط صحيح.")
+        return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"خطأ في جلب البيانات: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        st.error(f"خطأ في تحليل JSON: {e}")
+        return None
     except Exception as e:
-        st.error(f"حدث خطأ: {e}")
+        st.error(f"حدث خطأ غير متوقع: {e}")
         return None
 
+# إدخال رابط المباراة
 match_url = st.text_input("أدخل رابط المباراة من WhoScored:", 
                           "https://1xbet.whoscored.com/matches/1821689/live/spain-laliga-2024-2025-deportivo-alaves-real-madrid")
 
@@ -42,5 +61,8 @@ if match_url:
         st.success("تم جلب البيانات بنجاح!")
         if not events.empty:
             st.dataframe(events.head())
+            # إضافة خيار تحميل البيانات كـ CSV
+            csv = events.to_csv(index=False)
+            st.download_button("تحميل البيانات كـ CSV", csv, "match_data.csv", "text/csv")
         else:
             st.warning("لا توجد أحداث في البيانات!")
