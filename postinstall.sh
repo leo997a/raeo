@@ -1,2 +1,4 @@
 #!/bin/bash
-playwright install chromium
+
+echo "تثبيت المتصفح عبر Python بدلاً من CLI..."
+python -m playwright install chromium
