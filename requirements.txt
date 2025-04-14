@@ -26,3 +26,4 @@ tqdm
 webdriver-manager
 chromium
 chromedriver_autoinstaller==0.4.0
+playwright
