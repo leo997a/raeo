@@ -27,9 +27,9 @@ def fetch_whoscored_data(match_url):
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
         
         # تحديد مسار Chromium
-        options.binary_location = "/usr/bin/chromium"  # مسار شائع في Streamlit Cloud
+        options.binary_location = "/usr/bin/chromium"
 
-        # إعداد Service مع المسار المخصص
+        # إعداد Service
         service = Service(executable_path=f"{chromedriver_path}/chromedriver")
         driver = webdriver.Chrome(service=service, options=options)
         
