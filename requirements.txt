@@ -25,4 +25,4 @@ unzip
 tqdm
 webdriver-manager
 chromium
-chromedriver-autoinstaller
+chromedriver_autoinstaller==0.4.0
