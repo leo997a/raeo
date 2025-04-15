@@ -12,3 +12,4 @@ python-bidi
 selenium-wire
 webdriver-manager
 blinker==1.6.2
+cloudscraper
