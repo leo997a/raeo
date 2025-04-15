@@ -13,9 +13,7 @@ from PIL import Image
 from urllib.request import urlopen
 import arabic_reshaper
 from bidi.algorithm import get_display
-from seleniumwire import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-import time
+import cloudscraper
 from requests.exceptions import RequestException
 
 # تهيئة matplotlib لدعم العربية
@@ -86,8 +84,6 @@ def cumulative_match_mins(events_df):
         if period > 1:
             t_delta = match_events[match_events['period'] == period - 1]['cumulative_mins'].max() - \
                       match_events[match_events['period'] == period]['cumulative_mins'].min()
-        elif period == 1 or period == 5:
-            t_delta = 0
         else:
             t_delta = 0
         match_events.loc[match_events['period'] == period, 'cumulative_mins'] += t_delta
@@ -98,7 +94,7 @@ def cumulative_match_mins(events_df):
 def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50):
     events_out = pd.DataFrame()
     min_carry_length = 3.0
-    max carry_length = 100.0
+    max_carry_length = 100.0
     min_carry_duration = 1.0
     max_carry_duration = 50.0
     match_events = events_df.reset_index()
@@ -113,7 +109,7 @@ def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min
             init_next_evt = match_events.loc[next_evt_idx]
             take_ons = 0
             incorrect_next_evt = True
-            while incorrect_next_evt:
+            while incorrect_next_evt and next_evt_idx < len(match_events):
                 next_evt = match_events.loc[next_evt_idx]
                 if next_evt['type'] == 'TakeOn' and next_evt['outcomeType'] == 'Successful':
                     take_ons += 1
@@ -126,17 +122,19 @@ def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min
                 else:
                     incorrect_next_evt = False
                 next_evt_idx += 1
+            if next_evt_idx >= len(match_events):
+                continue
             same_team = prev_evt_team == next_evt['teamId']
             not_ball_touch = match_event['type'] != 'BallTouch'
-            dx = 105*(match_event['endX'] - next_evt['x'])/100
-            dy = 68*(match_event['endY'] - next_evt['y'])/100
+            dx = 105 * (match_event['endX'] - next_evt['x']) / 100
+            dy = 68 * (match_event['endY'] - next_evt['y']) / 100
             far_enough = dx ** 2 + dy ** 2 >= min_carry_length ** 2
             not_too_far = dx ** 2 + dy ** 2 <= max_carry_length ** 2
             dt = 60 * (next_evt['cumulative_mins'] - match_event['cumulative_mins'])
             min_time = dt >= min_carry_duration
             same_phase = dt < max_carry_duration
             same_period = match_event['period'] == next_evt['period']
-            valid_carry = same_team & not_ball_touch & far_enough & not_too_far & min_time & same_phase & same_period
+            valid_carry = same_team and not_ball_touch and far_enough and not_too_far and min_time and same_phase and same_period
             if valid_carry:
                 carry = pd.DataFrame()
                 prev = match_event
@@ -152,10 +150,10 @@ def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min
                 carry['expandedMinute'] = np.floor(((init_next_evt['expandedMinute'] * 60 + init_next_evt['second']) +
                                                     (prev['expandedMinute'] * 60 + prev['second'])) / (2 * 60))
                 carry['period'] = nex['period']
-                carry['type'] = carry.apply(lambda x: {'value': 99, 'displayName': 'Carry'}, axis=1)
+                carry['type'] = 'Carry'
                 carry['outcomeType'] = 'Successful'
-                carry['qualifiers'] = carry.apply(lambda x: {'type': {'value': 999, 'displayName': 'takeOns'}, 'value': str(take_ons)}, axis=1)
-                carry['satisfiedEventsTypes'] = carry.apply(lambda x: [], axis=1)
+                carry['qualifiers'] = [{'type': {'value': 999, 'displayName': 'takeOns'}, 'value': str(take_ons)}]
+                carry['satisfiedEventsTypes'] = [[]]
                 carry['isTouch'] = True
                 carry['playerId'] = nex['playerId']
                 carry['endX'] = nex['x']
@@ -170,7 +168,6 @@ def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min
                 carry['isGoal'] = np.nan
                 carry['cardType'] = np.nan
                 carry['isOwnGoal'] = np.nan
-                carry['type'] = 'Carry'
                 carry['cumulative_mins'] = (prev['cumulative_mins'] + init_next_evt['cumulative_mins']) / 2
                 match_carries = pd.concat([match_carries, carry], ignore_index=True, sort=False)
     match_events_and_carries = pd.concat([match_carries, match_events], ignore_index=True, sort=False)
@@ -179,19 +176,16 @@ def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min
     return events_out
 
 # دالة لسلاسل الاستحواذ
-def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
+def get_possession_chains(events_df, chain_check=5, suc_evts_in_chain=3):
     events_out = pd.DataFrame()
     match_events_df = events_df.reset_index()
-    match_pos_events_df = match_events_df[~match_events_df['type'].isin(['OffsideGiven', 'CornerAwarded','Start', 'Card', 'SubstitutionOff',
-                                                                          'SubstitutionOn', 'FormationChange','FormationSet', 'End'])].copy()
-    match_pos_events_df['outcomeBinary'] = (match_pos_events_df['outcomeType']
-                                                .apply(lambda x: 1 if x == 'Successful' else 0))
-    match_pos_events_df['teamBinary'] = (match_pos_events_df['teamName']
-                         .apply(lambda x: 1 if x == min(match_pos_events_df['teamName']) else 0))
-    match_pos_events_df['goalBinary'] = ((match_pos_events_df['type'] == 'Goal')
-                         .astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0))
+    match_pos_events_df = match_events_df[~match_events_df['type'].isin(['OffsideGiven', 'CornerAwarded', 'Start', 'Card', 'SubstitutionOff',
+                                                                          'SubstitutionOn', 'FormationChange', 'FormationSet', 'End'])].copy()
+    match_pos_events_df['outcomeBinary'] = match_pos_events_df['outcomeType'].apply(lambda x: 1 if x == 'Successful' else 0)
+    match_pos_events_df['teamBinary'] = match_pos_events_df['teamName'].apply(lambda x: 1 if x == min(match_pos_events_df['teamName']) else 0)
+    match_pos_events_df['goalBinary'] = (match_pos_events_df['type'] == 'Goal').astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0)
     pos_chain_df = pd.DataFrame()
-    for n in np.arange(1, chain_check):
+    for n in range(1, chain_check):
         pos_chain_df[f'evt_{n}_same_team'] = abs(match_pos_events_df['teamBinary'].diff(periods=-n))
         pos_chain_df[f'evt_{n}_same_team'] = pos_chain_df[f'evt_{n}_same_team'].apply(lambda x: 1 if x > 1 else x)
     pos_chain_df['enough_evt_same_team'] = pos_chain_df.sum(axis=1).apply(lambda x: 1 if x < chain_check - suc_evts_in_chain else 0)
@@ -199,14 +193,13 @@ def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
     pos_chain_df[pos_chain_df['enough_evt_same_team'] < 0] = 0
     match_pos_events_df['period'] = pd.to_numeric(match_pos_events_df['period'], errors='coerce')
     pos_chain_df['upcoming_ko'] = 0
-    for ko in match_pos_events_df[(match_pos_events_df['goalBinary'] == 1) | (match_pos_events_df['period'].diff(periods=1))].index.values:
+    for ko in match_pos_events_df[(match_pos_events_df['goalBinary'] == 1) | (match_pos_events_df['period'].diff(periods=1) != 0)].index.values:
         ko_pos = match_pos_events_df.index.to_list().index(ko)
-        pos_chain_df.iloc[ko_pos - suc_evts_in_chain:ko_pos, 5] = 1
-    pos_chain_df['valid_pos_start'] = (pos_chain_df.fillna(0)['enough_evt_same_team'] - pos_chain_df.fillna(0)['upcoming_ko'])
+        pos_chain_df.iloc[ko_pos - suc_evts_in_chain:ko_pos, pos_chain_df.columns.get_loc('upcoming_ko')] = 1
+    pos_chain_df['valid_pos_start'] = pos_chain_df.fillna(0)['enough_evt_same_team'] - pos_chain_df.fillna(0)['upcoming_ko']
     pos_chain_df['kick_off_period_change'] = match_pos_events_df['period'].diff(periods=1)
-    pos_chain_df['kick_off_goal'] = ((match_pos_events_df['type'] == 'Goal')
-                     .astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0))
-    pos_chain_df.loc[pos_chain_df['kick_off_period_change'] == 1, 'valid_pos_start'] = 1
+    pos_chain_df['kick_off_goal'] = (match_pos_events_df['type'] == 'Goal').astype(int).diff(periods=1).apply(lambda x: 1 if x < 0 else 0)
+    pos_chain_df.loc[pos_chain_df['kick_off_period_change'] != 0, 'valid_pos_start'] = 1
     pos_chain_df.loc[pos_chain_df['kick_off_goal'] == 1, 'valid_pos_start'] = 1
     pos_chain_df['teamName'] = match_pos_events_df['teamName']
     pos_chain_df.loc[pos_chain_df.head(1).index, 'valid_pos_start'] = 1
@@ -214,61 +207,40 @@ def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
     pos_chain_df.loc[pos_chain_df.head(1).index, 'possession_team'] = pos_chain_df.loc[pos_chain_df.head(1).index, 'teamName']
     valid_pos_start_id = pos_chain_df[pos_chain_df['valid_pos_start'] > 0].index
     possession_id = 2
-    for idx in np.arange(1, len(valid_pos_start_id)):
+    for idx in range(1, len(valid_pos_start_id)):
         current_team = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
         previous_team = pos_chain_df.loc[valid_pos_start_id[idx - 1], 'teamName']
-        if ((previous_team == current_team) & (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_goal'] != 1) &
-                (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_period_change'] != 1)):
+        if (previous_team == current_team) and (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_goal'] != 1) and \
+           (pos_chain_df.loc[valid_pos_start_id[idx], 'kick_off_period_change'] == 0):
             pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = np.nan
         else:
             pos_chain_df.loc[valid_pos_start_id[idx], 'possession_id'] = possession_id
-            pos_chain_df.loc[valid_pos_start_id[idx], 'possession_team'] = pos_chain_df.loc[valid_pos_start_id[idx], 'teamName']
+            pos_chain_df.loc[valid_pos_start_id[idx], 'possession_team'] = current_team
             possession_id += 1
     match_events_df = pd.merge(match_events_df, pos_chain_df[['possession_id', 'possession_team']], how='left', left_index=True, right_index=True)
-    match_events_df[['possession_id', 'possession_team']] = (match_events_df[['possession_id', 'possession_team']].fillna(method='ffill'))
-    match_events_df[['possession_id', 'possession_team']] = (match_events_df[['possession_id', 'possession_team']].fillna(method='bfill'))
+    match_events_df[['possession_id', 'possession_team']] = match_events_df[['possession_id', 'possession_team']].fillna(method='ffill')
+    match_events_df[['possession_id', 'possession_team']] = match_events_df[['possession_id', 'possession_team']].fillna(method='bfill')
     events_out = pd.concat([events_out, match_events_df])
     return events_out
 
-# دالة استخراج البيانات باستخدام Selenium
+# دالة استخراج البيانات باستخدام cloudscraper
 @st.cache_data
 def get_event_data(match_url):
-    # التحقق من صلاحية الرابط
     if not match_url.startswith('https://1xbet.whoscored.com/Matches/'):
         st.error("الرابط غير صالح. يرجى إدخال رابط مباراة من WhoScored.")
         return None, None, None
 
-    # تهيئة Selenium
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-extensions')
-    options.add_argument('--disable-infobars')
-    options.add_argument('--window-size=1920,1080')
-    options.binary_location = '/usr/bin/chromium'  # مسار Chromium في Streamlit Cloud
-
-    driver = None
+    scraper = cloudscraper.create_scraper()
     try:
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
-        driver.get(match_url)
-        time.sleep(5)  # انتظار تحميل JavaScript
-        html = driver.page_source
+        response = scraper.get(match_url)
+        response.raise_for_status()
+        html = response.text
     except Exception as e:
         st.error(f"فشل في تحميل الصفحة: {str(e)}")
         return None, None, None
     finally:
-        if driver is not None:
-            try:
-                driver.quit()
-            except:
-                pass
+        scraper.close()
 
-    # استخراج JSON
     regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
     try:
         data_txt = re.findall(regex_pattern, html)[0]
@@ -282,16 +254,12 @@ def get_event_data(match_url):
         st.error("فشل في استخراج أو تحليل بيانات JSON من الصفحة.")
         return None, None, None
 
-    # معالجة البيانات
     def extract_data_from_dict(data):
-        event_types_json = data["matchCentreEventTypeJson"]
-        formation_mappings = data["formationIdNameMappings"]
         events_dict = data["matchCentreData"]["events"]
         teams_dict = {
             data["matchCentreData"]['home']['teamId']: data["matchCentreData"]['home']['name'],
             data["matchCentreData"]['away']['teamId']: data["matchCentreData"]['away']['name']
         }
-        players_dict = data["matchCentreData"]["playerIdNameDictionary"]
         players_home_df = pd.DataFrame(data["matchCentreData"]['home']['players'])
         players_home_df["teamId"] = data["matchCentreData"]['home']['teamId']
         players_away_df = pd.DataFrame(data["matchCentreData"]['away']['players'])
@@ -305,13 +273,9 @@ def get_event_data(match_url):
     df = pd.DataFrame(events_dict)
     dfp = pd.DataFrame(players_df)
 
-    # معالجة الأحداث
-    df['type'] = df['type'].astype(str)
-    df['outcomeType'] = df['outcomeType'].astype(str)
-    df['period'] = df['period'].astype(str)
-    df['type'] = df['type'].str.extract(r"'displayName': '([^']+)")
-    df['outcomeType'] = df['outcomeType'].str.extract(r"'displayName': '([^']+)")
-    df['period'] = df['period'].str.extract(r"'displayName': '([^']+)")
+    df['type'] = df['type'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else str(x))
+    df['outcomeType'] = df['outcomeType'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else str(x))
+    df['period'] = df['period'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else str(x))
     df['period'] = df['period'].replace({
         'FirstHalf': 1, 'SecondHalf': 2, 'FirstPeriodOfExtraTime': 3,
         'SecondPeriodOfExtraTime': 4, 'PenaltyShootout': 5, 'PostGame': 14, 'PreMatch': 16
@@ -323,14 +287,13 @@ def get_event_data(match_url):
     df['index'] = range(1, len(df) + 1)
     df = df[['index'] + [col for col in df.columns if col != 'index']]
 
-    # حساب xT
     df_base = df
     dfxT = df_base.copy()
     dfxT['qualifiers'] = dfxT['qualifiers'].astype(str)
     dfxT = dfxT[(~dfxT['qualifiers'].str.contains('Corner'))]
     dfxT = dfxT[(dfxT['type'].isin(['Pass', 'Carry'])) & (dfxT['outcomeType'] == 'Successful')]
     try:
-        xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/refs/heads/main/xT_Grid.csv", header=None)
+        xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/main/xT_Grid.csv", header=None)
         xT = np.array(xT)
     except RequestException:
         st.error("فشل في تحميل شبكة xT.")
@@ -353,7 +316,6 @@ def get_event_data(match_url):
     opposition_dict = {team_names[i]: team_names[1 - i] for i in range(len(team_names))}
     df['oppositionTeamName'] = df['teamName'].map(opposition_dict)
 
-    # تحجيم الملعب
     df['x'] = df['x'] * 1.05
     df['y'] = df['y'] * 0.68
     df['endX'] = df['endX'] * 1.05
@@ -374,7 +336,6 @@ def get_event_data(match_url):
     df['name'] = df['name'].astype(str)
     df['name'] = df['name'].apply(unidecode)
     df['shortName'] = df['name'].apply(get_short_name)
-    df['qualifiers'] = df['qualifiers'].astype(str)
     columns_to_drop2 = ['id']
     df.drop(columns=columns_to_drop2, inplace=True, errors='ignore')
 
@@ -463,7 +424,7 @@ def pass_network(ax, team_name, col, phase_tag):
         )
 
     for index, row in avg_locs_df.iterrows():
-        if row['isFirstEleven'] == True:
+        if row['isFirstEleven']:
             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='o', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.9, ax=ax)
         else:
             pitch.scatter(row['avg_x'], row['avg_y'], s=800, marker='s', color=col, edgecolor=line_color, linewidth=1.5, alpha=0.7, ax=ax)
@@ -475,13 +436,13 @@ def pass_network(ax, team_name, col, phase_tag):
     avgph = round(avg_locs_df['avg_x'].median(), 2)
     ax.axhline(y=avgph, color='white', linestyle='--', alpha=0.5, linewidth=1.5)
     center_backs_height = avg_locs_df[avg_locs_df['position'] == 'DC']
-    def_line_h = round(center_backs_height['avg_x'].median(), 2)
-    Forwards_height = avg_locs_df[avg_locs_df['isFirstEleven'] == 1].sort_values(by='avg_x', ascending=False).head(2)
-    fwd_line_h = round(Forwards_height['avg_x'].mean(), 2)
+    def_line_h = round(center_backs_height['avg_x'].median(), 2) if not center_backs_height.empty else avgph
+    forwards_height = avg_locs_df[avg_locs_df['isFirstEleven']].sort_values(by='avg_x', ascending=False).head(2)
+    fwd_line_h = round(forwards_height['avg_x'].mean(), 2) if not forwards_height.empty else avgph
     ymid = [0, 0, 68, 68]
     xmid = [def_line_h, fwd_line_h, fwd_line_h, def_line_h]
     ax.fill(ymid, xmid, col, alpha=0.2)
-    v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2)
+    v_comp = round((1 - ((fwd_line_h - def_line_h) / 105)) * 100, 2) if fwd_line_h != def_line_h else 0
 
     if phase_tag == 'Full Time':
         ax.text(34, 115, reshape_arabic_text('الوقت بالكامل: 0-90 دقيقة'), color='white', fontsize=14, ha='center', va='center', weight='bold')
@@ -514,14 +475,13 @@ if match_url and st.session_state.confirmed:
 
     hgoal_count = len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (~homedf['qualifiers'].str.contains('OwnGoal'))])
     agoal_count = len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (~awaydf['qualifiers'].str.contains('OwnGoal'))])
-    hgoal_count = hgoal_count + len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
-    agoal_count = agoal_count + len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
+    hgoal_count += len(awaydf[(awaydf['teamName'] == ateamName) & (awaydf['type'] == 'Goal') & (awaydf['qualifiers'].str.contains('OwnGoal'))])
+    agoal_count += len(homedf[(homedf['teamName'] == hteamName) & (homedf['type'] == 'Goal') & (homedf['qualifiers'].str.contains('OwnGoal'))])
 
-    # محاولة جلب معرفات الفرق لشعارات FotMob
     try:
-        df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/63f5b51d8bd8b3f40e3d02fece1defb2f18ddf54/teams_name_and_id.csv')
-        hftmb_tid = df_teamNameId[df_teamNameId['teamName'] == hteamName].teamId.to_list()[0]
-        aftmb_tid = df_teamNameId[df_teamNameId['teamName'] == ateamName].teamId.to_list()[0]
+        df_teamNameId = pd.read_csv('https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/main/teams_name_and_id.csv')
+        hftmb_tid = df_teamNameId[df_teamNameId['teamName'] == hteamName]['teamId'].iloc[0] if hteamName in df_teamNameId['teamName'].values else None
+        aftmb_tid = df_teamNameId[df_teamNameId['teamName'] == ateamName]['teamId'].iloc[0] if ateamName in df_teamNameId['teamName'].values else None
     except:
         st.warning("فشل في جلب معرفات الفرق. الشعارات قد لا تظهر.")
         hftmb_tid = None
@@ -529,7 +489,6 @@ if match_url and st.session_state.confirmed:
 
     st.header(f'{hteamName} {hgoal_count} - {agoal_count} {ateamName}')
 
-    # تبويبات التحليل
     tab1, tab2, tab3, tab4 = st.tabs(['تحليل الفريق', 'تحليل اللاعب', 'إحصائيات المباراة', 'أفضل اللاعبين'])
 
     with tab1:
