@@ -98,7 +98,7 @@ def cumulative_match_mins(events_df):
 def insert_ball_carries(events_df, min_carry_length=3, max_carry_length=100, min_carry_duration=1, max_carry_duration=50):
     events_out = pd.DataFrame()
     min_carry_length = 3.0
-    max_carry_length = 100.0
+    max carry_length = 100.0
     min_carry_duration = 1.0
     max_carry_duration = 50.0
     match_events = events_df.reset_index()
@@ -259,11 +259,14 @@ def get_event_data(match_url):
         time.sleep(5)  # انتظار تحميل JavaScript
         html = driver.page_source
     except Exception as e:
-        st.error(f"فشل في تحميل الصفحة: {e}")
+        st.error(f"فشل في تحميل الصفحة: {str(e)}")
         return None, None, None
     finally:
         if driver is not None:
-            driver.quit()
+            try:
+                driver.quit()
+            except:
+                pass
 
     # استخراج JSON
     regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
