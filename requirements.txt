@@ -27,3 +27,4 @@ webdriver-manager
 chromium
 chromedriver_autoinstaller==0.4.0
 --extra-index-url https://pypi.org/simple
+selenium-wire
