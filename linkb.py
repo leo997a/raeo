@@ -15,6 +15,9 @@ import arabic_reshaper
 from bidi.algorithm import get_display
 import cloudscraper
 from requests.exceptions import RequestException
+from fake_useragent import UserAgent
+import time
+import random
 
 # تهيئة matplotlib لدعم العربية
 mpl.rcParams['text.usetex'] = False
@@ -232,14 +235,30 @@ def get_event_data(match_url):
         st.error("الرابط غير صالح. يرجى إدخال رابط مباراة من WhoScored يحتوي على معرف مباراة (مثل https://1xbet.whoscored.com/matches/1234567/live).")
         return None, None, None
 
+    # إنشاء رأس HTTP عشوائي
+    ua = UserAgent()
+    headers = {
+        'User-Agent': ua.random,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+    }
+
     # إنشاء جلسة cloudscraper
-    scraper = cloudscraper.create_scraper()
+    scraper = cloudscraper.create_scraper(
+        browser={'browser': 'chrome', 'platform': 'linux', 'mobile': False},
+        delay=10
+    )
     try:
-        response = scraper.get(match_url)
+        # تأخير عشوائي لتجنب الحظر
+        time.sleep(random.uniform(2, 5))
+        response = scraper.get(match_url, headers=headers, timeout=30)
         response.raise_for_status()
         html = response.text
     except Exception as e:
-        st.error(f"فشل في تحميل الصفحة: {str(e)}. تحقق من الرابط أو حاول مرة أخرى لاحقًا.")
+        st.error(f"فشل في تحميل الصفحة: {str(e)}. الموقع قد يكون محميًا بواسطة Cloudflare. جرب رابطًا آخر أو انتظر قليلاً قبل المحاولة مجددًا.")
         return None, None, None
     finally:
         scraper.close()
