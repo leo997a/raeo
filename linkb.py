@@ -48,7 +48,7 @@ default_gradient_colors = ['#003087', '#d00000']
 
 # واجهة Streamlit
 st.sidebar.title('إدخال رابط المباراة')
-match_url = st.sidebar.text_input('أدخل رابط المباراة:', key='match_url', placeholder='https://1xbet.whoscored.com/Matches/1234567/Live')
+match_url = st.sidebar.text_input('أدخل رابط المباراة:', key='match_url', placeholder='https://1xbet.whoscored.com/matches/1234567/live')
 match_input = st.sidebar.button('تحليل المباراة', key='confirm_url', on_click=lambda: st.session_state.update({'confirmed': True}))
 
 st.sidebar.title('اختيار الألوان')
@@ -226,21 +226,25 @@ def get_possession_chains(events_df, chain_check=5, suc_evts_in_chain=3):
 # دالة استخراج البيانات باستخدام cloudscraper
 @st.cache_data
 def get_event_data(match_url):
-    if not match_url.startswith('https://1xbet.whoscored.com/Matches/'):
-        st.error("الرابط غير صالح. يرجى إدخال رابط مباراة من WhoScored.")
+    # تحقق مرن من الرابط
+    if not (match_url.lower().startswith('https://1xbet.whoscored.com/matches/') or
+            re.match(r'https://1xbet\.whoscored\.com/matches/\d+/live', match_url, re.IGNORECASE)):
+        st.error("الرابط غير صالح. يرجى إدخال رابط مباراة من WhoScored يحتوي على معرف مباراة (مثل https://1xbet.whoscored.com/matches/1234567/live).")
         return None, None, None
 
+    # إنشاء جلسة cloudscraper
     scraper = cloudscraper.create_scraper()
     try:
         response = scraper.get(match_url)
         response.raise_for_status()
         html = response.text
     except Exception as e:
-        st.error(f"فشل في تحميل الصفحة: {str(e)}")
+        st.error(f"فشل في تحميل الصفحة: {str(e)}. تحقق من الرابط أو حاول مرة أخرى لاحقًا.")
         return None, None, None
     finally:
         scraper.close()
 
+    # استخراج JSON
     regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
     try:
         data_txt = re.findall(regex_pattern, html)[0]
@@ -250,10 +254,11 @@ def get_event_data(match_url):
         data_txt = data_txt.replace('formationIdNameMappings', '"formationIdNameMappings"')
         data_txt = data_txt.replace('};', '}')
         data = json.loads(data_txt)
-    except (IndexError, json.JSONDecodeError):
-        st.error("فشل في استخراج أو تحليل بيانات JSON من الصفحة.")
+    except (IndexError, json.JSONDecodeError) as e:
+        st.error(f"فشل في استخراج أو تحليل بيانات JSON من الصفحة: {str(e)}. قد يكون الرابط غير صحيح أو الموقع محمي.")
         return None, None, None
 
+    # معالجة البيانات
     def extract_data_from_dict(data):
         events_dict = data["matchCentreData"]["events"]
         teams_dict = {
@@ -273,6 +278,7 @@ def get_event_data(match_url):
     df = pd.DataFrame(events_dict)
     dfp = pd.DataFrame(players_df)
 
+    # معالجة الأحداث
     df['type'] = df['type'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else str(x))
     df['outcomeType'] = df['outcomeType'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else str(x))
     df['period'] = df['period'].apply(lambda x: x.get('displayName') if isinstance(x, dict) else str(x))
@@ -287,6 +293,7 @@ def get_event_data(match_url):
     df['index'] = range(1, len(df) + 1)
     df = df[['index'] + [col for col in df.columns if col != 'index']]
 
+    # حساب xT
     df_base = df
     dfxT = df_base.copy()
     dfxT['qualifiers'] = dfxT['qualifiers'].astype(str)
@@ -296,7 +303,7 @@ def get_event_data(match_url):
         xT = pd.read_csv("https://raw.githubusercontent.com/adnaaan433/Post-Match-Report-2.0/main/xT_Grid.csv", header=None)
         xT = np.array(xT)
     except RequestException:
-        st.error("فشل في تحميل شبكة xT.")
+        st.error("فشل في تحميل شبكة xT. تحقق من الاتصال بالإنترنت أو حاول مرة أخرى.")
         return None, None, None
     xT_rows, xT_cols = xT.shape
     dfxT['x1_bin_xT'] = pd.cut(dfxT['x'], bins=xT_cols, labels=False)
@@ -316,6 +323,7 @@ def get_event_data(match_url):
     opposition_dict = {team_names[i]: team_names[1 - i] for i in range(len(team_names))}
     df['oppositionTeamName'] = df['teamName'].map(opposition_dict)
 
+    # تحجيم الملعب
     df['x'] = df['x'] * 1.05
     df['y'] = df['y'] * 0.68
     df['endX'] = df['endX'] * 1.05
