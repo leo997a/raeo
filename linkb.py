@@ -13,8 +13,7 @@ from PIL import Image
 from urllib.request import urlopen
 import arabic_reshaper
 from bidi.algorithm import get_display
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+from seleniumwire import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 from requests.exceptions import RequestException
@@ -234,14 +233,28 @@ def get_possession_chains(events_df, chain_check, suc_evts_in_chain):
 # دالة استخراج البيانات باستخدام Selenium
 @st.cache_data
 def get_event_data(match_url):
+    # التحقق من صلاحية الرابط
+    if not match_url.startswith('https://1xbet.whoscored.com/Matches/'):
+        st.error("الرابط غير صالح. يرجى إدخال رابط مباراة من WhoScored.")
+        return None, None, None
+
     # تهيئة Selenium
     options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # تشغيل بدون واجهة
+    options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-infobars')
+    options.add_argument('--window-size=1920,1080')
+    options.binary_location = '/usr/bin/chromium'  # مسار Chromium في Streamlit Cloud
+
+    driver = None
     try:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=options
+        )
         driver.get(match_url)
         time.sleep(5)  # انتظار تحميل JavaScript
         html = driver.page_source
@@ -249,7 +262,8 @@ def get_event_data(match_url):
         st.error(f"فشل في تحميل الصفحة: {e}")
         return None, None, None
     finally:
-        driver.quit()
+        if driver is not None:
+            driver.quit()
 
     # استخراج JSON
     regex_pattern = r'(?<=require\.config\.params\["args"\].=.)[\s\S]*?;'
